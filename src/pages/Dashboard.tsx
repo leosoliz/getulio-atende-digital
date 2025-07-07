@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
           services:service_id (name),
           profiles:attendant_id (full_name)
         `)
-        .eq('status', 'called')
+        .eq('status', 'calling')
         .order('called_at', { ascending: false })
         .limit(1);
 
