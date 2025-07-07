@@ -58,7 +58,7 @@ const Attendant: React.FC = () => {
         services:service_id (name, estimated_time)
       `)
       .eq('attendant_id', profile.id)
-      .eq('status', 'in_progress')
+      .eq('status', 'in_service')
       .single();
 
     setCurrentCustomer(currentData || null);
@@ -96,7 +96,7 @@ const Attendant: React.FC = () => {
       const { error } = await supabase
         .from('queue_customers')
         .update({
-          status: 'called',
+          status: 'calling',
           attendant_id: profile?.id,
           called_at: new Date().toISOString()
         })
@@ -127,7 +127,7 @@ const Attendant: React.FC = () => {
       const { error } = await supabase
         .from('queue_customers')
         .update({
-          status: 'in_progress',
+          status: 'in_service',
           started_at: new Date().toISOString()
         })
         .eq('id', customerId);
@@ -249,7 +249,7 @@ const Attendant: React.FC = () => {
                     </div>
 
                     <div className="flex gap-3">
-                      {currentCustomer.status === 'called' && (
+                      {currentCustomer.status === 'calling' && (
                         <Button 
                           onClick={() => startService(currentCustomer.id)}
                           disabled={loading}
@@ -260,7 +260,7 @@ const Attendant: React.FC = () => {
                         </Button>
                       )}
                       
-                      {currentCustomer.status === 'in_progress' && (
+                      {currentCustomer.status === 'in_service' && (
                         <Button 
                           onClick={() => completeService(currentCustomer.id)}
                           disabled={loading}
