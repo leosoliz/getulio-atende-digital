@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -25,10 +26,19 @@ interface UserFormData {
   full_name: string;
   user_type: string;
   location: string;
+  services: string[];
+}
+
+interface Service {
+  id: string;
+  name: string;
+  active: boolean;
 }
 
 const Admin: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [userServices, setUserServices] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,13 +48,16 @@ const Admin: React.FC = () => {
     password: '',
     full_name: '',
     user_type: 'attendant',
-    location: ''
+    location: '',
+    services: []
   });
 
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
+    fetchServices();
+    fetchUserServices();
   }, []);
 
   const fetchUsers = async () => {
@@ -59,6 +72,51 @@ const Admin: React.FC = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao carregar usuários",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar serviços",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchUserServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('attendant_services')
+        .select('attendant_id, service_id');
+
+      if (error) throw error;
+      
+      const servicesMap: Record<string, string[]> = {};
+      data?.forEach(item => {
+        if (!servicesMap[item.attendant_id]) {
+          servicesMap[item.attendant_id] = [];
+        }
+        servicesMap[item.attendant_id].push(item.service_id);
+      });
+      
+      setUserServices(servicesMap);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar serviços dos usuários",
         description: error.message,
         variant: "destructive",
       });
@@ -83,6 +141,11 @@ const Admin: React.FC = () => {
 
         if (error) throw error;
 
+        // Atualizar serviços do atendente se for atendente
+        if (formData.user_type === 'attendant') {
+          await updateUserServices(editingUser.id, formData.services);
+        }
+
         toast({
           title: "Usuário atualizado",
           description: "As informações do usuário foram atualizadas com sucesso",
@@ -103,6 +166,11 @@ const Admin: React.FC = () => {
 
         if (authError) throw authError;
 
+        // Adicionar serviços do atendente se for atendente e tiver user_id
+        if (formData.user_type === 'attendant' && authData.user?.id) {
+          await updateUserServices(authData.user.id, formData.services);
+        }
+
         toast({
           title: "Usuário criado",
           description: "O novo usuário foi criado com sucesso",
@@ -112,6 +180,7 @@ const Admin: React.FC = () => {
       setIsDialogOpen(false);
       resetForm();
       fetchUsers();
+      fetchUserServices();
     } catch (error: any) {
       toast({
         title: "Erro ao salvar usuário",
@@ -123,6 +192,28 @@ const Admin: React.FC = () => {
     setLoading(false);
   };
 
+  const updateUserServices = async (userId: string, serviceIds: string[]) => {
+    // Remover serviços existentes
+    await supabase
+      .from('attendant_services')
+      .delete()
+      .eq('attendant_id', userId);
+
+    // Adicionar novos serviços
+    if (serviceIds.length > 0) {
+      const servicesData = serviceIds.map(serviceId => ({
+        attendant_id: userId,
+        service_id: serviceId
+      }));
+
+      const { error } = await supabase
+        .from('attendant_services')
+        .insert(servicesData);
+
+      if (error) throw error;
+    }
+  };
+
   const handleEdit = (user: UserProfile) => {
     setEditingUser(user);
     setFormData({
@@ -130,7 +221,8 @@ const Admin: React.FC = () => {
       password: '',
       full_name: user.full_name,
       user_type: user.user_type,
-      location: user.location || ''
+      location: user.location || '',
+      services: userServices[user.id] || []
     });
     setIsDialogOpen(true);
   };
@@ -142,7 +234,8 @@ const Admin: React.FC = () => {
       password: '',
       full_name: '',
       user_type: 'attendant',
-      location: ''
+      location: '',
+      services: []
     });
   };
 
@@ -285,6 +378,38 @@ const Admin: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       />
                     </div>
+
+                    {formData.user_type === 'attendant' && (
+                      <div>
+                        <Label>Serviços Prestados</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
+                          {services.map((service) => (
+                            <div key={service.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={service.id}
+                                checked={formData.services.includes(service.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFormData({
+                                      ...formData,
+                                      services: [...formData.services, service.id]
+                                    });
+                                  } else {
+                                    setFormData({
+                                      ...formData,
+                                      services: formData.services.filter(id => id !== service.id)
+                                    });
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={service.id} className="text-sm">
+                                {service.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="flex gap-2 pt-4">
                       <Button type="submit" disabled={loading} className="flex-1">
@@ -345,6 +470,21 @@ const Admin: React.FC = () => {
                           <p className="text-sm text-muted-foreground mt-2">
                             📍 {user.location}
                           </p>
+                        )}
+                        {user.user_type === 'attendant' && userServices[user.id] && (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground mb-1">Serviços:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {userServices[user.id].map((serviceId) => {
+                                const service = services.find(s => s.id === serviceId);
+                                return service ? (
+                                  <Badge key={serviceId} variant="outline" className="text-xs">
+                                    {service.name}
+                                  </Badge>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
                       <Button
