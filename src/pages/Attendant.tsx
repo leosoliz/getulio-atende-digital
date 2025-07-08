@@ -104,6 +104,24 @@ const Attendant: React.FC = () => {
 
       if (error) throw error;
 
+      // Automaticamente iniciar o atendimento após chamar
+      setTimeout(async () => {
+        const { error: startError } = await supabase
+          .from('queue_customers')
+          .update({
+            status: 'in_service',
+            started_at: new Date().toISOString()
+          })
+          .eq('id', nextCustomer.id);
+
+        if (!startError) {
+          toast({
+            title: "Atendimento iniciado",
+            description: `${nextCustomer.name} está sendo atendido`,
+          });
+        }
+      }, 2000); // 2 segundos após a chamada
+
       toast({
         title: "Cliente chamado",
         description: `${nextCustomer.name} foi chamado para atendimento`,

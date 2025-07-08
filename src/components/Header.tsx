@@ -26,6 +26,10 @@ const Header: React.FC = () => {
     }
   };
 
+  const handleAdminClick = () => {
+    navigate('/admin');
+  };
+
   return (
     <header className="bg-gradient-to-r from-primary to-primary-hover shadow-shadow-primary border-b border-border">
       <div className="container mx-auto px-6 py-4">
@@ -55,16 +59,31 @@ const Header: React.FC = () => {
                 <p className="text-sm text-primary-foreground/80">
                   {getUserTypeLabel(profile.user_type)}
                 </p>
+                {profile.location && (
+                  <p className="text-xs text-primary-foreground/60">
+                    📍 {profile.location}
+                  </p>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <div className="bg-primary-foreground/20 p-2 rounded-full">
                   <User className="h-5 w-5 text-primary-foreground" />
                 </div>
+                {profile.user_type === 'admin' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleAdminClick}
+                    className="text-primary-foreground hover:bg-primary-foreground/10"
+                  >
+                    Admin
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSignOut}
-                  className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
+                  className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sair

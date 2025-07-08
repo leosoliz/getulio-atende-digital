@@ -8,6 +8,7 @@ interface Profile {
   full_name: string;
   user_type: 'admin' | 'attendant' | 'receptionist';
   location_id?: string;
+  location?: string;
 }
 
 interface AuthContextType {

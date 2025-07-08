@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Reception from "./pages/Reception";
 import Attendant from "./pages/Attendant";
 import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Admin />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

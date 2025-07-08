@@ -16,7 +16,11 @@ interface QueueCustomer {
   called_at: string | null;
   services: { name: string };
   attendant_id: string | null;
-  profiles?: { full_name: string };
+  profiles?: { full_name: string; location: string };
+}
+
+interface CallQueueItem extends QueueCustomer {
+  showUntil: Date;
 }
 
 interface DashboardStats {
@@ -28,7 +32,7 @@ interface DashboardStats {
 }
 
 const Dashboard: React.FC = () => {
-  const [currentCall, setCurrentCall] = useState<QueueCustomer | null>(null);
+  const [callQueue, setCallQueue] = useState<CallQueueItem[]>([]);
   const [queueCustomers, setQueueCustomers] = useState<QueueCustomer[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalInQueue: 0,
@@ -38,6 +42,34 @@ const Dashboard: React.FC = () => {
     priorityInQueue: 0,
   });
 
+  // Som da campainha
+  const playBell = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playTone = (frequency: number, duration: number, delay: number) => {
+      setTimeout(() => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+      }, delay);
+    };
+
+    // 3 toques de campainha em 5 segundos
+    playTone(800, 0.3, 0);      // Primeiro toque
+    playTone(800, 0.3, 1500);   // Segundo toque
+    playTone(800, 0.3, 3000);   // Terceiro toque
+  };
+
   useEffect(() => {
     fetchDashboardData();
     
@@ -46,9 +78,20 @@ const Dashboard: React.FC = () => {
       .channel('dashboard-updates')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
-        () => { fetchDashboardData(); }
+        (payload) => {
+          if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
+            handleNewCall(payload.new as QueueCustomer);
+          }
+          fetchDashboardData();
+        }
       )
       .subscribe();
+
+    // Limpar fila de chamadas expiradas a cada segundo
+    const cleanupInterval = setInterval(() => {
+      const now = new Date();
+      setCallQueue(prev => prev.filter(call => call.showUntil > now));
+    }, 1000);
 
     // Atualizar a cada 10 segundos
     const interval = setInterval(fetchDashboardData, 10000);
@@ -56,24 +99,36 @@ const Dashboard: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
+      clearInterval(cleanupInterval);
     };
   }, []);
 
+  const handleNewCall = async (newCall: QueueCustomer) => {
+    // Buscar dados completos do cliente com perfil do atendente
+    const { data: fullCall } = await supabase
+      .from('queue_customers')
+      .select(`
+        *,
+        services:service_id (name),
+        profiles:attendant_id (full_name, location)
+      `)
+      .eq('id', newCall.id)
+      .single();
+
+    if (fullCall) {
+      const callWithTimer: CallQueueItem = {
+        ...fullCall,
+        showUntil: new Date(Date.now() + 10000) // Mostrar por 10 segundos
+      };
+
+      setCallQueue(prev => [...prev, callWithTimer]);
+      playBell(); // Tocar campainha
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
-      // Buscar cliente sendo chamado mais recentemente
-      const { data: calledData } = await supabase
-        .from('queue_customers')
-        .select(`
-          *,
-          services:service_id (name),
-          profiles:attendant_id (full_name)
-        `)
-        .eq('status', 'calling')
-        .order('called_at', { ascending: false })
-        .limit(1);
-
-      setCurrentCall(calledData?.[0] || null);
+      // Não buscar chamada atual aqui, usar a fila de chamadas
 
       // Buscar fila atual
       const { data: queueData } = await supabase
@@ -171,34 +226,41 @@ const Dashboard: React.FC = () => {
       <Header />
       
       <div className="container mx-auto px-6 py-8">
-        {/* Chamada Atual */}
-        {currentCall && (
-          <Card className="mb-8 shadow-shadow-elevated border-2 border-primary bg-gradient-to-r from-primary/10 to-accent/10">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-4">
-                  <PhoneCall className="h-12 w-12 text-primary animate-pulse" />
-                </div>
-                <h2 className="text-3xl font-bold text-primary mb-2">
-                  CHAMANDO CLIENTE
-                </h2>
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <Badge variant="outline" className="text-2xl py-2 px-4 bg-primary text-primary-foreground">
-                    #{currentCall.queue_number}
-                  </Badge>
-                  <div>
-                    <p className="text-xl font-bold">{currentCall.name}</p>
-                    <p className="text-lg text-muted-foreground">{currentCall.services?.name}</p>
+        {/* Chamadas Ativas */}
+        {callQueue.length > 0 && (
+          <div className="mb-8 space-y-4">
+            {callQueue.map((call, index) => (
+              <Card key={call.id} className="shadow-shadow-elevated border-2 border-primary bg-gradient-to-r from-primary/10 to-accent/10 animate-pulse">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-4">
+                      <PhoneCall className="h-12 w-12 text-primary animate-pulse" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-primary mb-2">
+                      CHAMANDO CLIENTE
+                    </h2>
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                      <Badge variant="outline" className="text-2xl py-2 px-4 bg-primary text-primary-foreground">
+                        #{call.queue_number}
+                      </Badge>
+                      <div>
+                        <p className="text-xl font-bold">{call.name}</p>
+                        <p className="text-lg text-muted-foreground">{call.services?.name}</p>
+                      </div>
+                    </div>
+                    {call.profiles?.full_name && (
+                      <div className="text-lg text-muted-foreground">
+                        <p>Atendente: {call.profiles.full_name}</p>
+                        {call.profiles.location && (
+                          <p className="font-medium text-primary">Local: {call.profiles.location}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-                {currentCall.profiles?.full_name && (
-                  <p className="text-lg text-muted-foreground">
-                    Atendente: {currentCall.profiles.full_name}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
         {/* Estatísticas */}
