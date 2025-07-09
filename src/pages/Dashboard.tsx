@@ -104,7 +104,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleNewCall = async (newCall: QueueCustomer) => {
-    // Buscar dados completos do cliente com perfil do atendente
+    // Buscar dados completos do cidadão com perfil do atendente
     const { data: fullCall } = await supabase
       .from('queue_customers')
       .select(`
@@ -168,7 +168,7 @@ const Dashboard: React.FC = () => {
       .eq('status', 'completed')
       .gte('created_at', `${today}T00:00:00`);
 
-    // Clientes prioritários na fila
+    // Cidadãos prioritários na fila
     const { count: priorityInQueue } = await supabase
       .from('queue_customers')
       .select('*', { count: 'exact', head: true })
@@ -237,7 +237,7 @@ const Dashboard: React.FC = () => {
                       <PhoneCall className="h-12 w-12 text-primary animate-pulse" />
                     </div>
                     <h2 className="text-3xl font-bold text-primary mb-2">
-                      CHAMANDO CLIENTE
+                      CHAMANDO CIDADÃO
                     </h2>
                     <div className="flex items-center justify-center gap-4 mb-4">
                       <Badge variant="outline" className="text-2xl py-2 px-4 bg-primary text-primary-foreground">
@@ -326,7 +326,7 @@ const Dashboard: React.FC = () => {
               Fila Atual
             </CardTitle>
             <CardDescription>
-              Próximos clientes a serem atendidos
+              Próximos cidadãos a serem atendidos
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -335,7 +335,7 @@ const Dashboard: React.FC = () => {
                 <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">Fila vazia</h3>
                 <p className="text-muted-foreground">
-                  Não há clientes aguardando atendimento
+                  Não há cidadãos aguardando atendimento
                 </p>
               </div>
             ) : (

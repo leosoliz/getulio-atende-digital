@@ -114,7 +114,7 @@ const Reception: React.FC = () => {
         throw numberError;
       }
 
-      // Adicionar cliente à fila
+      // Adicionar cidadão à fila
       const { error } = await supabase
         .from('queue_customers')
         .insert({
@@ -131,7 +131,7 @@ const Reception: React.FC = () => {
       }
 
       toast({
-        title: "Cliente adicionado à fila",
+        title: "Cidadão adicionado à fila",
         description: `${customerName} foi adicionado à fila com o número ${nextNumber}`,
       });
 
@@ -143,7 +143,7 @@ const Reception: React.FC = () => {
       
     } catch (error: any) {
       toast({
-        title: "Erro ao adicionar cliente",
+        title: "Erro ao adicionar cidadão",
         description: error.message,
         variant: "destructive",
       });
@@ -165,21 +165,21 @@ const Reception: React.FC = () => {
       
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Formulário de Adicionar Cliente */}
+          {/* Formulário de Adicionar Cidadão */}
           <Card className="shadow-shadow-card">
             <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Adicionar Cliente à Fila
+                Adicionar Cidadão à Fila
               </CardTitle>
               <CardDescription>
-                Cadastre um novo cliente na fila de atendimento
+                Cadastre um novo cidadão na fila de atendimento
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={addToQueue} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Nome do Cliente</Label>
+                  <Label htmlFor="name">Nome do Cidadão</Label>
                   <Input
                     id="name"
                     value={customerName}
@@ -243,14 +243,14 @@ const Reception: React.FC = () => {
                 Fila Atual ({queueCustomers.length} pessoas)
               </CardTitle>
               <CardDescription>
-                Clientes aguardando atendimento
+                Cidadãos aguardando atendimento
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {queueCustomers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    Nenhum cliente na fila
+                    Nenhum cidadão na fila
                   </p>
                 ) : (
                   queueCustomers.map((customer) => (

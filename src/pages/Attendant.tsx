@@ -63,7 +63,14 @@ const Attendant: React.FC = () => {
 
     setCurrentCustomer(currentData || null);
 
-    // Buscar fila de espera (priorizar urgentes)
+    // Buscar fila de espera (priorizar urgentes) - apenas serviços que o atendente pode prestar
+    const { data: attendantServices } = await supabase
+      .from('attendant_services')
+      .select('service_id')
+      .eq('attendant_id', profile.id);
+
+    const serviceIds = attendantServices?.map(as => as.service_id) || [];
+    
     const { data: waitingData } = await supabase
       .from('queue_customers')
       .select(`
@@ -71,6 +78,7 @@ const Attendant: React.FC = () => {
         services:service_id (name, estimated_time)
       `)
       .eq('status', 'waiting')
+      .in('service_id', serviceIds)
       .order('is_priority', { ascending: false })
       .order('queue_number', { ascending: true })
       .limit(10);
@@ -82,7 +90,7 @@ const Attendant: React.FC = () => {
     if (waitingQueue.length === 0) {
       toast({
         title: "Fila vazia",
-        description: "Não há clientes aguardando atendimento",
+        description: "Não há cidadãos aguardando atendimento",
         variant: "destructive",
       });
       return;
@@ -123,13 +131,13 @@ const Attendant: React.FC = () => {
       }, 2000); // 2 segundos após a chamada
 
       toast({
-        title: "Cliente chamado",
+        title: "Cidadão chamado",
         description: `${nextCustomer.name} foi chamado para atendimento`,
       });
       
     } catch (error: any) {
       toast({
-        title: "Erro ao chamar cliente",
+        title: "Erro ao chamar cidadão",
         description: error.message,
         variant: "destructive",
       });
@@ -225,10 +233,10 @@ const Attendant: React.FC = () => {
             <CardHeader className="bg-gradient-to-r from-success/10 to-primary/10">
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                {currentCustomer ? 'Cliente em Atendimento' : 'Nenhum Cliente'}
+                {currentCustomer ? 'Cidadão em Atendimento' : 'Nenhum Cidadão'}
               </CardTitle>
               <CardDescription>
-                {currentCustomer ? 'Atendimento em andamento' : 'Chame o próximo cliente da fila'}
+                {currentCustomer ? 'Atendimento em andamento' : 'Chame o próximo cidadão da fila'}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -295,9 +303,9 @@ const Attendant: React.FC = () => {
               ) : (
                 <div className="text-center py-12">
                   <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Nenhum cliente sendo atendido</h3>
+                  <h3 className="text-lg font-medium mb-2">Nenhum cidadão sendo atendido</h3>
                   <p className="text-muted-foreground mb-6">
-                    Chame o próximo cliente da fila para iniciar o atendimento
+                    Chame o próximo cidadão da fila para iniciar o atendimento
                   </p>
                   <Button 
                     onClick={callNextCustomer}
@@ -305,7 +313,7 @@ const Attendant: React.FC = () => {
                     size="lg"
                   >
                     <Phone className="h-5 w-5 mr-2" />
-                    Chamar Próximo Cliente
+                    Chamar Próximo Cidadão
                   </Button>
                 </div>
               )}
@@ -320,14 +328,14 @@ const Attendant: React.FC = () => {
                 Próximos na Fila ({waitingQueue.length})
               </CardTitle>
               <CardDescription>
-                Clientes aguardando para serem chamados
+                Cidadãos aguardando para serem chamados
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {waitingQueue.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    Nenhum cliente aguardando
+                    Nenhum cidadão aguardando
                   </p>
                 ) : (
                   waitingQueue.map((customer, index) => (
@@ -386,7 +394,7 @@ const Attendant: React.FC = () => {
                     size="lg"
                   >
                     <Phone className="h-5 w-5 mr-2" />
-                    Chamar Próximo Cliente
+                    Chamar Próximo Cidadão
                   </Button>
                 </div>
               )}
