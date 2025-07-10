@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Clock, X } from "lucide-react";
 
 interface CompletedService {
   id: string;
@@ -32,6 +32,7 @@ export default function SatisfactionSurvey() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [dismissedServices, setDismissedServices] = useState<Set<string>>(new Set());
   
   // Form state
   const [overallRating, setOverallRating] = useState("");
@@ -183,6 +184,12 @@ export default function SatisfactionSurvey() {
     return services.find(s => s.id === serviceId)?.name || "Serviço não encontrado";
   };
 
+  const dismissService = (serviceId: string) => {
+    setDismissedServices(prev => new Set([...prev, serviceId]));
+  };
+
+  const filteredServices = completedServices.filter(service => !dismissedServices.has(service.id));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -201,31 +208,44 @@ export default function SatisfactionSurvey() {
       </div>
 
       <div className="grid gap-4">
-        {completedServices.length === 0 ? (
+        {filteredServices.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-lg text-muted-foreground">
-                Nenhum atendimento finalizado encontrado
+                {completedServices.length === 0 
+                  ? "Nenhum atendimento finalizado encontrado"
+                  : "Todos os cards foram removidos da visualização"
+                }
               </p>
             </CardContent>
           </Card>
         ) : (
-          completedServices.map((service) => (
+          filteredServices.map((service) => (
             <Card key={service.id} className="w-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <span className="text-lg">Cidadão: {service.name}</span>
                     <div className="text-sm text-muted-foreground">
                       Senha: {service.queue_number} | Telefone: {service.phone}
                     </div>
                   </div>
-                  {service.has_survey ? (
-                    <CheckCircle className="h-6 w-6 text-success" />
-                  ) : (
-                    <XCircle className="h-6 w-6 text-muted-foreground" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {service.has_survey ? (
+                      <CheckCircle className="h-6 w-6 text-success" />
+                    ) : (
+                      <XCircle className="h-6 w-6 text-muted-foreground" />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => dismissService(service.id)}
+                      className="h-6 w-6 p-0 hover:bg-destructive/10"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>

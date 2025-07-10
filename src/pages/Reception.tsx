@@ -37,12 +37,15 @@ const Reception: React.FC = () => {
   const [selectedService, setSelectedService] = useState('');
   const [isPriority, setIsPriority] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [customerHistory, setCustomerHistory] = useState<Array<{name: string, phone: string}>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   const { toast } = useToast();
 
   useEffect(() => {
     fetchServices();
     fetchQueueCustomers();
+    fetchCustomerHistory();
     
     // Configurar real-time para a fila
     const channel = supabase
@@ -89,6 +92,29 @@ const Reception: React.FC = () => {
     }
     
     setQueueCustomers(data || []);
+  };
+
+  const fetchCustomerHistory = async () => {
+    const { data, error } = await supabase
+      .from('queue_customers')
+      .select('name, phone')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    
+    if (error) {
+      console.error('Erro ao buscar histórico:', error);
+      return;
+    }
+    
+    // Remove duplicates based on name
+    const uniqueCustomers = data?.reduce((acc: Array<{name: string, phone: string}>, curr) => {
+      if (!acc.find(item => item.name.toLowerCase() === curr.name.toLowerCase())) {
+        acc.push(curr);
+      }
+      return acc;
+    }, []) || [];
+    
+    setCustomerHistory(uniqueCustomers);
   };
 
   const addToQueue = async (e: React.FormEvent) => {
@@ -159,6 +185,21 @@ const Reception: React.FC = () => {
     return diffInMinutes;
   };
 
+  const handleNameChange = (value: string) => {
+    setCustomerName(value);
+    setShowSuggestions(value.length > 0);
+  };
+
+  const selectCustomer = (customer: {name: string, phone: string}) => {
+    setCustomerName(customer.name);
+    setCustomerPhone(customer.phone);
+    setShowSuggestions(false);
+  };
+
+  const filteredCustomers = customerHistory.filter(customer =>
+    customer.name.toLowerCase().includes(customerName.toLowerCase())
+  ).slice(0, 5);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -178,15 +219,31 @@ const Reception: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={addToQueue} className="space-y-4">
-                <div>
+                <div className="relative">
                   <Label htmlFor="name">Nome do Cidadão</Label>
                   <Input
                     id="name"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    onFocus={() => setShowSuggestions(customerName.length > 0)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     placeholder="Digite o nome completo"
                     required
                   />
+                  {showSuggestions && filteredCustomers.length > 0 && (
+                    <div className="absolute z-10 w-full bg-background border border-border rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto">
+                      {filteredCustomers.map((customer, index) => (
+                        <div
+                          key={index}
+                          className="p-2 hover:bg-muted cursor-pointer border-b border-border last:border-b-0"
+                          onClick={() => selectCustomer(customer)}
+                        >
+                          <div className="font-medium">{customer.name}</div>
+                          <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div>
