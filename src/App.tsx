@@ -9,6 +9,7 @@ import Reception from "./pages/Reception";
 import Attendant from "./pages/Attendant";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import SatisfactionSurvey from "./pages/SatisfactionSurvey";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/satisfaction" element={
+              <ProtectedRoute>
+                <SatisfactionSurvey />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

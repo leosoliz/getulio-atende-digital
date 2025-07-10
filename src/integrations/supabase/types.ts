@@ -269,6 +269,54 @@ export type Database = {
           },
         ]
       }
+      satisfaction_surveys: {
+        Row: {
+          attendant_id: string
+          created_at: string
+          id: string
+          improvement_aspect: string
+          overall_rating: string
+          problem_resolved: string
+          queue_customer_id: string
+          updated_at: string
+        }
+        Insert: {
+          attendant_id: string
+          created_at?: string
+          id?: string
+          improvement_aspect: string
+          overall_rating: string
+          problem_resolved: string
+          queue_customer_id: string
+          updated_at?: string
+        }
+        Update: {
+          attendant_id?: string
+          created_at?: string
+          id?: string
+          improvement_aspect?: string
+          overall_rating?: string
+          problem_resolved?: string
+          queue_customer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satisfaction_surveys_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_queue_customer_id_fkey"
+            columns: ["queue_customer_id"]
+            isOneToOne: false
+            referencedRelation: "queue_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_locations: {
         Row: {
           active: boolean | null

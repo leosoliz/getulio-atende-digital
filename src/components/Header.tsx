@@ -30,6 +30,10 @@ const Header: React.FC = () => {
     navigate('/admin');
   };
 
+  const handleSatisfactionClick = () => {
+    navigate('/satisfaction');
+  };
+
   return (
     <header className="bg-gradient-to-r from-primary to-primary-hover shadow-shadow-primary border-b border-border">
       <div className="container mx-auto px-6 py-4">
@@ -79,6 +83,14 @@ const Header: React.FC = () => {
                     Admin
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSatisfactionClick}
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                >
+                  Satisfação
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
