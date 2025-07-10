@@ -86,7 +86,7 @@ export default function SatisfactionSurvey() {
         const completedWithSurveys = queueData.map(customer => ({
           ...customer,
           has_survey: surveysSet.has(customer.id)
-        }));
+        })).filter(customer => !customer.has_survey);
 
         setCompletedServices(completedWithSurveys);
       }
