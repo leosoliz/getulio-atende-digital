@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
+import SatisfactionIndicators from '@/components/SatisfactionIndicators';
 
 interface QueueCustomer {
   id: string;
@@ -316,6 +317,11 @@ const Dashboard: React.FC = () => {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Indicadores de Satisfação */}
+        <div className="mb-8">
+          <SatisfactionIndicators />
         </div>
 
         {/* Fila Atual */}
