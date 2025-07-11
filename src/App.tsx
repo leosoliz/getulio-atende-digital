@@ -65,7 +65,7 @@ const RoleBasedRedirect: React.FC = () => {
     case 'attendant':
       return <Navigate to="/attendant" replace />;
     case 'admin':
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/admin" replace />;
     default:
       return <Navigate to="/dashboard" replace />;
   }
