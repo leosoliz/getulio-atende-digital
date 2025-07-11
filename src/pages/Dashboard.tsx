@@ -18,10 +18,24 @@ interface QueueCustomer {
   services: { name: string };
   attendant_id: string | null;
   profiles?: { full_name: string; location: string };
+  phone?: string; // Opcional para suportar agendamentos
+}
+
+interface IdentityAppointment {
+  id: string;
+  name: string;
+  phone: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  attendant_id: string | null;
+  called_at: string | null;
+  profiles?: { full_name: string; location: string };
 }
 
 interface CallQueueItem extends QueueCustomer {
   showUntil: Date;
+  type: 'queue' | 'appointment';
 }
 
 interface DashboardStats {
@@ -71,6 +85,17 @@ const Dashboard: React.FC = () => {
     playTone(800, 0.3, 3000);   // Terceiro toque
   };
 
+  // Text-to-speech em português
+  const speakName = (name: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(`Chamando ${name}`);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      speechSynthesis.speak(utterance);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
     
@@ -81,9 +106,17 @@ const Dashboard: React.FC = () => {
         { event: '*', schema: 'public', table: 'queue_customers' },
         (payload) => {
           if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
-            handleNewCall(payload.new as QueueCustomer);
+            handleNewCall(payload.new as QueueCustomer, 'queue');
           }
           fetchDashboardData();
+        }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'identity_appointments' },
+        (payload) => {
+          if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
+            handleNewAppointmentCall(payload.new as IdentityAppointment);
+          }
         }
       )
       .subscribe();
@@ -104,7 +137,7 @@ const Dashboard: React.FC = () => {
     };
   }, []);
 
-  const handleNewCall = async (newCall: QueueCustomer) => {
+  const handleNewCall = async (newCall: QueueCustomer, type: 'queue' | 'appointment' = 'queue') => {
     // Buscar dados completos do cidadão com perfil do atendente
     const { data: fullCall } = await supabase
       .from('queue_customers')
@@ -119,11 +152,49 @@ const Dashboard: React.FC = () => {
     if (fullCall) {
       const callWithTimer: CallQueueItem = {
         ...fullCall,
-        showUntil: new Date(Date.now() + 10000) // Mostrar por 10 segundos
+        showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
+        type
       };
 
       setCallQueue(prev => [...prev, callWithTimer]);
       playBell(); // Tocar campainha
+      speakName(fullCall.name); // Text-to-speech
+    }
+  };
+
+  const handleNewAppointmentCall = async (newAppointment: IdentityAppointment) => {
+    // Buscar dados completos do agendamento com perfil do atendente
+    const { data: fullAppointment } = await supabase
+      .from('identity_appointments')
+      .select(`
+        *,
+        profiles:attendant_id (full_name, location)
+      `)
+      .eq('id', newAppointment.id)
+      .single();
+
+    if (fullAppointment) {
+      // Converter agendamento para formato similar ao queue_customers
+      const appointmentAsCall: CallQueueItem = {
+        id: fullAppointment.id,
+        name: fullAppointment.name,
+        phone: fullAppointment.phone,
+        queue_number: 0, // Agendamentos não têm número na fila
+        service_id: '', // Para agendamentos de identidade
+        is_priority: false,
+        status: 'calling',
+        called_at: fullAppointment.called_at,
+        created_at: fullAppointment.appointment_date,
+        services: { name: 'Emissão de Identidade' },
+        attendant_id: fullAppointment.attendant_id,
+        profiles: fullAppointment.profiles,
+        showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
+        type: 'appointment'
+      };
+
+      setCallQueue(prev => [...prev, appointmentAsCall]);
+      playBell(); // Tocar campainha
+      speakName(fullAppointment.name); // Text-to-speech
     }
   };
 
@@ -240,15 +311,21 @@ const Dashboard: React.FC = () => {
                     <h2 className="text-3xl font-bold text-primary mb-2">
                       CHAMANDO CIDADÃO
                     </h2>
-                    <div className="flex items-center justify-center gap-4 mb-4">
-                      <Badge variant="outline" className="text-2xl py-2 px-4 bg-primary text-primary-foreground">
-                        #{call.queue_number}
-                      </Badge>
-                      <div>
-                        <p className="text-xl font-bold">{call.name}</p>
-                        <p className="text-lg text-muted-foreground">{call.services?.name}</p>
-                      </div>
-                    </div>
+                     <div className="flex items-center justify-center gap-4 mb-4">
+                       {call.type === 'queue' ? (
+                         <Badge variant="outline" className="text-2xl py-2 px-4 bg-primary text-primary-foreground">
+                           #{call.queue_number}
+                         </Badge>
+                       ) : (
+                         <Badge variant="outline" className="text-xl py-2 px-4 bg-accent text-accent-foreground">
+                           AGENDAMENTO
+                         </Badge>
+                       )}
+                       <div>
+                         <p className="text-xl font-bold">{call.name}</p>
+                         <p className="text-lg text-muted-foreground">{call.services?.name}</p>
+                       </div>
+                     </div>
                     {call.profiles?.full_name && (
                       <div className="text-lg text-muted-foreground">
                         <p>Atendente: {call.profiles.full_name}</p>

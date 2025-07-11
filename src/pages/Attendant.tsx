@@ -138,6 +138,29 @@ const Attendant: React.FC = () => {
   };
 
   const fetchIdentityAppointments = async () => {
+    if (!profile?.id) return;
+
+    // Verificar se o atendente tem o serviço de Emissão de Identidade
+    const { data: attendantServices } = await supabase
+      .from('attendant_services')
+      .select('service_id')
+      .eq('attendant_id', profile.id);
+
+    const serviceIds = attendantServices?.map(as => as.service_id) || [];
+    
+    // Buscar o ID do serviço de Emissão de Identidade
+    const { data: identityService } = await supabase
+      .from('services')
+      .select('id')
+      .eq('name', 'Emissão de Identidade')
+      .single();
+
+    // Só mostrar agendamentos se o atendente presta esse serviço
+    if (!identityService || !serviceIds.includes(identityService.id)) {
+      setIdentityAppointments([]);
+      return;
+    }
+    
     const today = new Date().toISOString().split('T')[0];
     
     const { data } = await supabase
@@ -293,24 +316,73 @@ const Attendant: React.FC = () => {
       const { error } = await supabase
         .from('identity_appointments')
         .update({
-          status: 'in_service',
+          status: 'calling',
           attendant_id: profile?.id,
-          called_at: new Date().toISOString(),
-          started_at: new Date().toISOString()
+          called_at: new Date().toISOString()
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      // Automaticamente iniciar o atendimento após 2 segundos
+      setTimeout(async () => {
+        const { error: startError } = await supabase
+          .from('identity_appointments')
+          .update({
+            status: 'in_service',
+            started_at: new Date().toISOString()
+          })
+          .eq('id', appointmentId);
+
+        if (!startError) {
+          const appointment = identityAppointments.find(a => a.id === appointmentId);
+          toast({
+            title: "Agendamento iniciado",
+            description: `${appointment?.name} está sendo atendido`,
+          });
+        }
+      }, 2000);
+
+      toast({
+        title: "Agendamento chamado",
+        description: "Cidadão foi chamado para atendimento",
+      });
+      
+      fetchIdentityAppointments();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao chamar agendamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
+  const completeIdentityAppointment = async (appointmentId: string) => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('identity_appointments')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString()
         })
         .eq('id', appointmentId);
 
       if (error) throw error;
 
       toast({
-        title: "Agendamento iniciado",
-        description: "Agendamento de identidade iniciado",
+        title: "Agendamento concluído",
+        description: "Agendamento foi finalizado com sucesso",
       });
       
       fetchIdentityAppointments();
     } catch (error: any) {
       toast({
-        title: "Erro ao iniciar agendamento",
+        title: "Erro ao finalizar agendamento",
         description: error.message,
         variant: "destructive",
       });
@@ -548,24 +620,20 @@ const Attendant: React.FC = () => {
           </Card>
 
           {/* Agendamentos de Identidade */}
-          <Card className="shadow-shadow-card">
-            <CardHeader className="bg-gradient-to-r from-accent/10 to-secondary/10">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Agendamentos Identidade ({identityAppointments.length})
-              </CardTitle>
-              <CardDescription>
-                Agendamentos para hoje
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {identityAppointments.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nenhum agendamento para hoje
-                  </p>
-                ) : (
-                  identityAppointments.map((appointment) => (
+          {identityAppointments.length > 0 && (
+            <Card className="shadow-shadow-card">
+              <CardHeader className="bg-gradient-to-r from-accent/10 to-secondary/10">
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Agendamentos Identidade ({identityAppointments.length})
+                </CardTitle>
+                <CardDescription>
+                  Agendamentos para hoje
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {identityAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
                       className="p-4 rounded-lg border border-border bg-card"
@@ -597,11 +665,11 @@ const Attendant: React.FC = () => {
                         </Button>
                       )}
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* WhatsApp Service Registration */}
