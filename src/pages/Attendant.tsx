@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,16 +26,40 @@ interface QueueCustomer {
   services: { name: string; estimated_time: number };
 }
 
+interface Service {
+  id: string;
+  name: string;
+}
+
+interface IdentityAppointment {
+  id: string;
+  name: string;
+  phone: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+}
+
 const Attendant: React.FC = () => {
   const [currentCustomer, setCurrentCustomer] = useState<QueueCustomer | null>(null);
   const [waitingQueue, setWaitingQueue] = useState<QueueCustomer[]>([]);
   const [loading, setLoading] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
+  const [identityAppointments, setIdentityAppointments] = useState<IdentityAppointment[]>([]);
+  
+  // WhatsApp service form states
+  const [whatsappName, setWhatsappName] = useState('');
+  const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [whatsappService, setWhatsappService] = useState('');
+  const [whatsappNotes, setWhatsappNotes] = useState('');
   
   const { toast } = useToast();
   const { profile } = useAuth();
 
   useEffect(() => {
     fetchQueues();
+    fetchServices();
+    fetchIdentityAppointments();
     
     // Configurar real-time para a fila
     const channel = supabase
@@ -39,6 +67,10 @@ const Attendant: React.FC = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
         () => { fetchQueues(); }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'identity_appointments' },
+        () => { fetchIdentityAppointments(); }
       )
       .subscribe();
 
@@ -84,6 +116,38 @@ const Attendant: React.FC = () => {
       .limit(10);
 
     setWaitingQueue(waitingData || []);
+  };
+
+  const fetchServices = async () => {
+    if (!profile?.id) return;
+
+    const { data: attendantServices } = await supabase
+      .from('attendant_services')
+      .select('service_id')
+      .eq('attendant_id', profile.id);
+
+    const serviceIds = attendantServices?.map(as => as.service_id) || [];
+    
+    const { data: servicesData } = await supabase
+      .from('services')
+      .select('id, name')
+      .in('id', serviceIds)
+      .eq('active', true);
+
+    setServices(servicesData || []);
+  };
+
+  const fetchIdentityAppointments = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data } = await supabase
+      .from('identity_appointments')
+      .select('*')
+      .eq('appointment_date', today)
+      .eq('status', 'scheduled')
+      .order('appointment_time');
+
+    setIdentityAppointments(data || []);
   };
 
   const callNextCustomer = async () => {
@@ -222,12 +286,94 @@ const Attendant: React.FC = () => {
     return diffInMinutes;
   };
 
+  const callIdentityAppointment = async (appointmentId: string) => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('identity_appointments')
+        .update({
+          status: 'in_service',
+          attendant_id: profile?.id,
+          called_at: new Date().toISOString(),
+          started_at: new Date().toISOString()
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Agendamento iniciado",
+        description: "Agendamento de identidade iniciado",
+      });
+      
+      fetchIdentityAppointments();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao iniciar agendamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
+  const registerWhatsappService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!whatsappName || !whatsappPhone || !whatsappService) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('whatsapp_services')
+        .insert({
+          name: whatsappName,
+          phone: whatsappPhone,
+          service_id: whatsappService,
+          attendant_id: profile?.id,
+          notes: whatsappNotes
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Atendimento registrado",
+        description: `Atendimento por WhatsApp de ${whatsappName} foi registrado`,
+      });
+
+      // Limpar formulário
+      setWhatsappName('');
+      setWhatsappPhone('');
+      setWhatsappService('');
+      setWhatsappNotes('');
+      
+    } catch (error: any) {
+      toast({
+        title: "Erro ao registrar atendimento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cliente Atual */}
           <Card className="shadow-shadow-card">
             <CardHeader className="bg-gradient-to-r from-success/10 to-primary/10">
@@ -398,6 +544,136 @@ const Attendant: React.FC = () => {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Agendamentos de Identidade */}
+          <Card className="shadow-shadow-card">
+            <CardHeader className="bg-gradient-to-r from-accent/10 to-secondary/10">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Agendamentos Identidade ({identityAppointments.length})
+              </CardTitle>
+              <CardDescription>
+                Agendamentos para hoje
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {identityAppointments.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhum agendamento para hoje
+                  </p>
+                ) : (
+                  identityAppointments.map((appointment) => (
+                    <div
+                      key={appointment.id}
+                      className="p-4 rounded-lg border border-border bg-card"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium">{appointment.name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {appointment.phone}
+                          </p>
+                          <p className="text-sm font-medium text-primary">
+                            {appointment.appointment_time}
+                          </p>
+                        </div>
+                        <Badge variant="outline">
+                          {appointment.status === 'scheduled' ? 'Agendado' : 'Em atendimento'}
+                        </Badge>
+                      </div>
+                      
+                      {appointment.status === 'scheduled' && (
+                        <Button 
+                          onClick={() => callIdentityAppointment(appointment.id)}
+                          disabled={loading}
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Calendar className="h-4 w-4 mr-2" />
+                          Chamar Agendamento
+                        </Button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* WhatsApp Service Registration */}
+        <div className="mt-8">
+          <Card className="shadow-shadow-card">
+            <CardHeader className="bg-gradient-to-r from-success/10 to-primary/10">
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Registrar Atendimento por WhatsApp
+              </CardTitle>
+              <CardDescription>
+                Registre um atendimento que foi realizado via WhatsApp
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={registerWhatsappService} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="whatsapp-name">Nome do Cidadão</Label>
+                  <Input
+                    id="whatsapp-name"
+                    value={whatsappName}
+                    onChange={(e) => setWhatsappName(e.target.value)}
+                    placeholder="Nome completo"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="whatsapp-phone">Telefone</Label>
+                  <Input
+                    id="whatsapp-phone"
+                    value={whatsappPhone}
+                    onChange={(e) => setWhatsappPhone(e.target.value)}
+                    placeholder="(47) 99999-9999"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="whatsapp-service">Serviço Prestado</Label>
+                  <Select value={whatsappService} onValueChange={setWhatsappService} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o serviço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="whatsapp-notes">Observações (opcional)</Label>
+                  <Textarea
+                    id="whatsapp-notes"
+                    value={whatsappNotes}
+                    onChange={(e) => setWhatsappNotes(e.target.value)}
+                    placeholder="Detalhes do atendimento..."
+                    className="min-h-[40px]"
+                  />
+                </div>
+                
+                <div className="md:col-span-2 lg:col-span-4">
+                  <Button type="submit" disabled={loading} className="w-full">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {loading ? 'Registrando...' : 'Registrar Atendimento'}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>

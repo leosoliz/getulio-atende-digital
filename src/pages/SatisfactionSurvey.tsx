@@ -256,20 +256,12 @@ export default function SatisfactionSurvey() {
                 </div>
                 
                 <div className="flex gap-2">
-                  {!service.has_survey ? (
+                  {!service.has_survey && (
                     <Button 
                       onClick={() => openSurveyDialog(service)}
                       className="flex-1"
                     >
                       Realizar Pesquisa
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => cancelSurvey(service.id)}
-                      className="flex-1"
-                    >
-                      Cancelar Pesquisa
                     </Button>
                   )}
                 </div>

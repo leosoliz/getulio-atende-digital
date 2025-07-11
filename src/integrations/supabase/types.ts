@@ -50,6 +50,59 @@ export type Database = {
           },
         ]
       }
+      identity_appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          attendant_id: string | null
+          called_at: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_appointments_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obra_vistorias: {
         Row: {
           created_at: string
@@ -399,6 +452,51 @@ export type Database = {
             columns: ["vistoria_id"]
             isOneToOne: false
             referencedRelation: "obra_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_services: {
+        Row: {
+          attendant_id: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          service_id: string
+        }
+        Insert: {
+          attendant_id: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          service_id: string
+        }
+        Update: {
+          attendant_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_services_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]

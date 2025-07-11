@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, User, Clock, AlertTriangle, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -40,12 +41,21 @@ const Reception: React.FC = () => {
   const [customerHistory, setCustomerHistory] = useState<Array<{name: string, phone: string}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
+  // Identity appointment states
+  const [appointmentName, setAppointmentName] = useState('');
+  const [appointmentPhone, setAppointmentPhone] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [appointmentTime, setAppointmentTime] = useState('');
+  const [appointmentHistory, setAppointmentHistory] = useState<Array<{name: string, phone: string}>>([]);
+  const [showAppointmentSuggestions, setShowAppointmentSuggestions] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
     fetchServices();
     fetchQueueCustomers();
     fetchCustomerHistory();
+    fetchAppointmentHistory();
     
     // Configurar real-time para a fila
     const channel = supabase
@@ -117,6 +127,29 @@ const Reception: React.FC = () => {
     setCustomerHistory(uniqueCustomers);
   };
 
+  const fetchAppointmentHistory = async () => {
+    const { data, error } = await supabase
+      .from('identity_appointments')
+      .select('name, phone')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    
+    if (error) {
+      console.error('Erro ao buscar histórico de agendamentos:', error);
+      return;
+    }
+    
+    // Remove duplicates based on name
+    const uniqueCustomers = data?.reduce((acc: Array<{name: string, phone: string}>, curr) => {
+      if (!acc.find(item => item.name.toLowerCase() === curr.name.toLowerCase())) {
+        acc.push(curr);
+      }
+      return acc;
+    }, []) || [];
+    
+    setAppointmentHistory(uniqueCustomers);
+  };
+
   const addToQueue = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -178,6 +211,57 @@ const Reception: React.FC = () => {
     setLoading(false);
   };
 
+  const scheduleIdentityAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!appointmentName || !appointmentPhone || !appointmentDate || !appointmentTime) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('identity_appointments')
+        .insert({
+          name: appointmentName,
+          phone: appointmentPhone,
+          appointment_date: appointmentDate,
+          appointment_time: appointmentTime,
+          status: 'scheduled'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Agendamento realizado",
+        description: `${appointmentName} foi agendado para ${appointmentDate} às ${appointmentTime}`,
+      });
+
+      // Limpar formulário
+      setAppointmentName('');
+      setAppointmentPhone('');
+      setAppointmentDate('');
+      setAppointmentTime('');
+      
+    } catch (error: any) {
+      toast({
+        title: "Erro ao agendar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
   const getWaitingTime = (createdAt: string) => {
     const now = new Date();
     const created = new Date(createdAt);
@@ -200,12 +284,34 @@ const Reception: React.FC = () => {
     customer.name.toLowerCase().includes(customerName.toLowerCase())
   ).slice(0, 5);
 
+  const handleAppointmentNameChange = (value: string) => {
+    setAppointmentName(value);
+    setShowAppointmentSuggestions(value.length > 0);
+  };
+
+  const selectAppointmentCustomer = (customer: {name: string, phone: string}) => {
+    setAppointmentName(customer.name);
+    setAppointmentPhone(customer.phone);
+    setShowAppointmentSuggestions(false);
+  };
+
+  const filteredAppointmentCustomers = appointmentHistory.filter(customer =>
+    customer.name.toLowerCase().includes(appointmentName.toLowerCase())
+  ).slice(0, 5);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Tabs defaultValue="queue" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="queue">Fila Normal</TabsTrigger>
+            <TabsTrigger value="identity">Agendamento Identidade</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="queue">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
           {/* Formulário de Adicionar Cidadão */}
           <Card className="shadow-shadow-card">
             <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
@@ -354,6 +460,112 @@ const Reception: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+      </TabsContent>
+      
+      <TabsContent value="identity">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+          {/* Formulário de Agendamento */}
+          <Card className="shadow-shadow-card">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Agendar Emissão de Identidade
+              </CardTitle>
+              <CardDescription>
+                Agende um horário para emissão de identidade
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={scheduleIdentityAppointment} className="space-y-4">
+                <div className="relative">
+                  <Label htmlFor="appointment-name">Nome do Cidadão</Label>
+                  <Input
+                    id="appointment-name"
+                    value={appointmentName}
+                    onChange={(e) => handleAppointmentNameChange(e.target.value)}
+                    onFocus={() => setShowAppointmentSuggestions(appointmentName.length > 0)}
+                    onBlur={() => setTimeout(() => setShowAppointmentSuggestions(false), 200)}
+                    placeholder="Digite o nome completo"
+                    required
+                  />
+                  {showAppointmentSuggestions && filteredAppointmentCustomers.length > 0 && (
+                    <div className="absolute z-10 w-full bg-background border border-border rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto">
+                      {filteredAppointmentCustomers.map((customer, index) => (
+                        <div
+                          key={index}
+                          className="p-2 hover:bg-muted cursor-pointer border-b border-border last:border-b-0"
+                          onClick={() => selectAppointmentCustomer(customer)}
+                        >
+                          <div className="font-medium">{customer.name}</div>
+                          <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="appointment-phone">Telefone</Label>
+                  <Input
+                    id="appointment-phone"
+                    value={appointmentPhone}
+                    onChange={(e) => setAppointmentPhone(e.target.value)}
+                    placeholder="(47) 99999-9999"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="appointment-date">Data</Label>
+                  <Input
+                    id="appointment-date"
+                    type="date"
+                    value={appointmentDate}
+                    onChange={(e) => setAppointmentDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="appointment-time">Horário</Label>
+                  <Input
+                    id="appointment-time"
+                    type="time"
+                    value={appointmentTime}
+                    onChange={(e) => setAppointmentTime(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Agendando...' : 'Agendar Atendimento'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Lista de Agendamentos */}
+          <Card className="shadow-shadow-card">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Agendamentos de Hoje
+              </CardTitle>
+              <CardDescription>
+                Lista de agendamentos para emissão de identidade
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">
+                Agendamentos carregados pelo atendente
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+      
+      </Tabs>
       </div>
     </div>
   );
