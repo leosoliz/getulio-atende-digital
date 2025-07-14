@@ -266,6 +266,9 @@ const Reception: React.FC = () => {
         description: `${appointmentName} foi agendado para ${appointmentDate} às ${appointmentTime}`,
       });
 
+      // Atualizar lista de agendamentos de hoje imediatamente
+      fetchTodayAppointments();
+
       // Limpar formulário
       setAppointmentName('');
       setAppointmentPhone('');
