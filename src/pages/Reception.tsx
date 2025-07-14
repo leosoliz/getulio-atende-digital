@@ -48,6 +48,13 @@ const Reception: React.FC = () => {
   const [appointmentTime, setAppointmentTime] = useState('');
   const [appointmentHistory, setAppointmentHistory] = useState<Array<{name: string, phone: string}>>([]);
   const [showAppointmentSuggestions, setShowAppointmentSuggestions] = useState(false);
+  const [todayAppointments, setTodayAppointments] = useState<Array<{
+    id: string;
+    name: string;
+    phone: string;
+    appointment_time: string;
+    status: string;
+  }>>([]);
   
   const { toast } = useToast();
 
@@ -56,9 +63,10 @@ const Reception: React.FC = () => {
     fetchQueueCustomers();
     fetchCustomerHistory();
     fetchAppointmentHistory();
+    fetchTodayAppointments();
     
     // Configurar real-time para a fila
-    const channel = supabase
+    const queueChannel = supabase
       .channel('queue-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
@@ -66,8 +74,21 @@ const Reception: React.FC = () => {
       )
       .subscribe();
 
+    // Configurar real-time para agendamentos de identidade
+    const appointmentsChannel = supabase
+      .channel('appointments-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'identity_appointments' },
+        () => { 
+          fetchAppointmentHistory();
+          fetchTodayAppointments();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(queueChannel);
+      supabase.removeChannel(appointmentsChannel);
     };
   }, []);
 
@@ -298,6 +319,23 @@ const Reception: React.FC = () => {
   const filteredAppointmentCustomers = appointmentHistory.filter(customer =>
     customer.name.toLowerCase().includes(appointmentName.toLowerCase())
   ).slice(0, 5);
+
+  const fetchTodayAppointments = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('identity_appointments')
+      .select('id, name, phone, appointment_time, status')
+      .eq('appointment_date', today)
+      .order('appointment_time');
+    
+    if (error) {
+      console.error('Erro ao buscar agendamentos de hoje:', error);
+      return;
+    }
+    
+    setTodayAppointments(data || []);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -557,9 +595,51 @@ const Reception: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <p className="text-muted-foreground text-center py-8">
-                Agendamentos carregados pelo atendente
-              </p>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {todayAppointments.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhum agendamento para hoje
+                  </p>
+                ) : (
+                  todayAppointments.map((appointment) => (
+                    <div
+                      key={appointment.id}
+                      className="p-4 rounded-lg border border-border bg-card"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={
+                              appointment.status === 'scheduled' ? 'secondary' :
+                              appointment.status === 'called' ? 'outline' :
+                              appointment.status === 'in_progress' ? 'default' :
+                              appointment.status === 'completed' ? 'secondary' : 'secondary'
+                            }>
+                              {appointment.status === 'scheduled' ? 'Agendado' :
+                               appointment.status === 'called' ? 'Chamado' :
+                               appointment.status === 'in_progress' ? 'Em Atendimento' :
+                               appointment.status === 'completed' ? 'Finalizado' : 'Agendado'}
+                            </Badge>
+                          </div>
+                          <h4 className="font-medium">{appointment.name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Emissão de Identidade
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {appointment.phone}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {appointment.appointment_time}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
