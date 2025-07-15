@@ -287,14 +287,6 @@ export default function SatisfactionSurvey() {
                     ) : (
                       <XCircle className="h-6 w-6 text-muted-foreground" />
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => dismissService(service.id)}
-                      className="h-6 w-6 p-0 hover:bg-destructive/10"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
