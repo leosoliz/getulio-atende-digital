@@ -75,83 +75,78 @@ const Attendant: React.FC = () => {
     
     console.log('=== INICIANDO CONFIGURAÇÃO REALTIME ===');
     console.log('Profile ID:', profile.id);
-    console.log('Configurando canal realtime...');
     
-    // Configurar real-time para a fila
+    // IMPORTANTE: Canal global para todos os atendentes escutarem mudanças na fila
     const channel = supabase
-      .channel('attendant-queue-changes-' + profile.id)
+      .channel('queue-realtime-global')
       .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'queue_customers' },
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'queue_customers' 
+        },
         (payload) => { 
-          console.log('🔥 Queue INSERT detected:', payload);
-          console.log('New record data:', payload.new);
+          console.log('🔥 QUEUE INSERT DETECTED:', payload);
+          console.log('🔥 New customer added:', payload.new);
+          console.log('🔥 Calling fetchQueues...');
           fetchQueues(); 
         }
       )
       .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'queue_customers' },
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'queue_customers' 
+        },
         (payload) => { 
-          console.log('🔥 Queue UPDATE detected:', payload);
-          console.log('Old record:', payload.old);
-          console.log('New record:', payload.new);
+          console.log('🔥 QUEUE UPDATE DETECTED:', payload);
+          console.log('🔥 Updated customer:', payload.new);
+          console.log('🔥 Previous state:', payload.old);
           fetchQueues(); 
         }
       )
       .on('postgres_changes', 
-        { event: 'DELETE', schema: 'public', table: 'queue_customers' },
+        { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'queue_customers' 
+        },
         (payload) => { 
-          console.log('🔥 Queue DELETE detected:', payload);
-          console.log('Deleted record:', payload.old);
+          console.log('🔥 QUEUE DELETE DETECTED:', payload);
+          console.log('🔥 Deleted customer:', payload.old);
           fetchQueues(); 
-        }
-      )
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'identity_appointments' },
-        (payload) => { 
-          console.log('🔥 Identity appointment change detected:', payload);
-          fetchIdentityAppointments();
         }
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status);
+        console.log('📡 REALTIME STATUS:', status);
+        
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to queue changes');
-          console.log('📊 Channel state after subscription:', channel.state);
+          console.log('✅ SUCCESSFULLY CONNECTED TO REALTIME!');
+          console.log('✅ Channel topic:', channel.topic);
+          console.log('✅ Listening to queue_customers changes...');
+          
+          // Teste imediato de conectividade
+          setTimeout(() => {
+            console.log('🔍 REALTIME CONNECTION TEST:');
+            console.log('🔍 Channel state:', channel.state);
+            console.log('🔍 Socket state:', channel.socket?.connectionState());
+            console.log('🔍 Is connected:', channel.socket?.isConnected());
+          }, 1000);
+          
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Channel error in realtime subscription');
+          console.error('❌ REALTIME CHANNEL ERROR!');
         } else if (status === 'TIMED_OUT') {
-          console.error('⏰ Realtime subscription timed out');
+          console.error('⏰ REALTIME TIMEOUT!');
         } else if (status === 'CLOSED') {
-          console.error('🔒 Realtime subscription closed');
+          console.error('🔒 REALTIME CONNECTION CLOSED!');
         }
       });
 
-    // Testar se o canal está funcionando
-    setTimeout(() => {
-      console.log('🔍 Testing channel status:', channel.state);
-      console.log('🔍 Channel bindings:', channel.bindings);
-      console.log('🔍 Channel topic:', channel.topic);
-      console.log('🔍 Channel socket state:', channel.socket?.connectionState);
-    }, 2000);
-
-    // Teste adicional para verificar se a tabela está na publicação
-    setTimeout(() => {
-      console.log('🔍 Testando se a tabela está na publicação realtime...');
-      console.log('🔍 Fazendo uma query para verificar a conexão com a tabela');
-      
-      supabase
-        .from('queue_customers')
-        .select('count')
-        .then(({ data, error }) => {
-          console.log('🔍 Query test result:', { data, error });
-        });
-    }, 3000);
-
     return () => {
-      console.log('🧹 Cleaning up real-time subscriptions');
+      console.log('🧹 CLEANING UP REALTIME SUBSCRIPTION');
       supabase.removeChannel(channel);
     };
-  }, [profile?.id]); // Depender do profile.id para recriar a subscription quando necessário
+  }, [profile?.id]);
 
   const fetchQueues = async () => {
     if (!profile?.id) return;
