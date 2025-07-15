@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import SatisfactionIndicators from '@/components/SatisfactionIndicators';
-import SatisfactionDetailedIndicators from '@/components/SatisfactionDetailedIndicators';
 
 interface QueueCustomer {
   id: string;
@@ -418,9 +417,9 @@ const Dashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Primeira linha: Score de Satisfação + Fila Atual */}
+        {/* Primeira linha: Satisfação do Atendimento + Fila Atual */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Score de Satisfação */}
+          {/* Satisfação do Atendimento */}
           <SatisfactionIndicators />
           
           {/* Fila Atual */}
@@ -487,11 +486,6 @@ const Dashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </div>
-
-        {/* Segunda linha: Avaliação Geral + Resolução de Problemas */}
-        <div className="mb-8">
-          <SatisfactionDetailedIndicators />
         </div>
       </div>
     </div>
