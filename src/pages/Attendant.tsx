@@ -24,6 +24,7 @@ interface QueueCustomer {
   called_at: string | null;
   started_at: string | null;
   created_at: string;
+  attendant_id: string | null;
   services: { name: string; estimated_time: number };
 }
 
