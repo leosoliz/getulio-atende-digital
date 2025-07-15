@@ -42,6 +42,7 @@ const SatisfactionIndicators: React.FC = () => {
     improvementAspect: { waitTime: 0, information: 0, politeness: 0, resolution: 0, none: 0 },
     satisfactionScore: 0,
   });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchSatisfactionData();
@@ -53,6 +54,7 @@ const SatisfactionIndicators: React.FC = () => {
         { event: '*', schema: 'public', table: 'satisfaction_surveys' },
         (payload) => {
           console.log('Satisfaction survey changed:', payload);
+          setIsUpdating(true);
           fetchSatisfactionData(); // Refetch data quando há mudanças
         }
       )
@@ -77,6 +79,13 @@ const SatisfactionIndicators: React.FC = () => {
         .gte('created_at', `${today}T00:00:00`);
 
       if (!surveys || surveys.length === 0) {
+        setStats({
+          totalSurveys: 0,
+          overallRating: { excellent: 0, good: 0, regular: 0, poor: 0, terrible: 0 },
+          problemResolved: { yes: 0, partially: 0, no: 0 },
+          improvementAspect: { waitTime: 0, information: 0, politeness: 0, resolution: 0, none: 0 },
+          satisfactionScore: 0,
+        });
         return;
       }
 
@@ -119,8 +128,12 @@ const SatisfactionIndicators: React.FC = () => {
         improvementAspect,
         satisfactionScore,
       });
+      
+      // Remover indicador de atualização após um delay
+      setTimeout(() => setIsUpdating(false), 1000);
     } catch (error) {
       console.error('Erro ao buscar dados de satisfação:', error);
+      setIsUpdating(false);
     }
   };
 
@@ -142,6 +155,9 @@ const SatisfactionIndicators: React.FC = () => {
           <CardTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5" />
             Satisfação do Atendimento
+            {isUpdating && (
+              <div className="h-2 w-2 bg-primary rounded-full animate-pulse"></div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -158,7 +174,12 @@ const SatisfactionIndicators: React.FC = () => {
       {/* Score Geral */}
       <Card className="shadow-shadow-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Score de Satisfação</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            Score de Satisfação
+            {isUpdating && (
+              <div className="h-2 w-2 bg-primary rounded-full animate-pulse"></div>
+            )}
+          </CardTitle>
           <Heart className="h-4 w-4 text-primary" />
         </CardHeader>
         <CardContent>
