@@ -117,6 +117,45 @@ const Attendant: React.FC = () => {
           fetchQueues(); 
         }
       )
+      // Real-time para agendamentos de identidade
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'identity_appointments' 
+        },
+        (payload) => { 
+          console.log('🔥 IDENTITY APPOINTMENT INSERT DETECTED:', payload);
+          console.log('🔥 New appointment added:', payload.new);
+          console.log('🔥 Calling fetchIdentityAppointments...');
+          fetchIdentityAppointments(); 
+        }
+      )
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'identity_appointments' 
+        },
+        (payload) => { 
+          console.log('🔥 IDENTITY APPOINTMENT UPDATE DETECTED:', payload);
+          console.log('🔥 Updated appointment:', payload.new);
+          console.log('🔥 Previous state:', payload.old);
+          fetchIdentityAppointments(); 
+        }
+      )
+      .on('postgres_changes', 
+        { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'identity_appointments' 
+        },
+        (payload) => { 
+          console.log('🔥 IDENTITY APPOINTMENT DELETE DETECTED:', payload);
+          console.log('🔥 Deleted appointment:', payload.old);
+          fetchIdentityAppointments(); 
+        }
+      )
       .subscribe((status) => {
         console.log('📡 REALTIME STATUS:', status);
         
