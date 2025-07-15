@@ -114,11 +114,11 @@ const Attendant: React.FC = () => {
           services:service_id (name, estimated_time)
         `)
         .eq('attendant_id', profile.id)
-        .in('status', ['calling', 'in_service'])
-        .single();
+        .in('status', ['calling', 'in_service']);
 
       console.log('Current customer data:', currentData);
-      setCurrentCustomer(currentData || null);
+      // currentData pode ser um array quando há múltiplos clientes
+      setCurrentCustomer(Array.isArray(currentData) ? currentData[0] || null : currentData || null);
 
       // Buscar serviços que o atendente pode prestar
       const { data: attendantServices, error: servicesError } = await supabase
