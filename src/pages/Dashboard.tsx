@@ -318,40 +318,40 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-secondary/20 to-accent/20">
       <Header />
       
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-8 py-6 max-w-[1920px]">
         {/* Chamadas Ativas */}
         {callQueue.length > 0 && (
-          <div className="mb-8 space-y-4">
+          <div className="mb-12 space-y-6">
             {callQueue.map((call, index) => (
-              <Card key={call.id} className="shadow-shadow-elevated border-2 border-primary bg-gradient-to-r from-primary/10 to-accent/10 animate-pulse">
-                <CardContent className="pt-6">
+              <Card key={call.id} className="shadow-shadow-elevated border-4 border-primary bg-gradient-to-r from-primary/15 to-accent/15 animate-pulse">
+                <CardContent className="pt-12 pb-12">
                   <div className="text-center">
-                    <div className="flex items-center justify-center mb-4">
-                      <PhoneCall className="h-12 w-12 text-primary animate-pulse" />
+                    <div className="flex items-center justify-center mb-8">
+                      <PhoneCall className="h-20 w-20 text-primary animate-pulse" />
                     </div>
-                     <h2 className="text-5xl font-bold text-primary mb-4">
+                     <h2 className="text-8xl font-black text-primary mb-8 tracking-wide">
                        CHAMANDO CIDADÃO
                      </h2>
-                      <div className="flex items-center justify-center gap-6 mb-6">
+                      <div className="flex items-center justify-center gap-12 mb-8">
                         {call.type === 'queue' ? (
-                          <Badge variant="outline" className="text-4xl py-3 px-6 bg-primary text-primary-foreground">
+                          <Badge variant="outline" className="text-6xl py-6 px-12 bg-primary text-primary-foreground font-black border-4">
                             #{call.queue_number}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-3xl py-3 px-6 bg-accent text-accent-foreground">
+                          <Badge variant="outline" className="text-5xl py-6 px-12 bg-accent text-accent-foreground font-black border-4">
                             AGENDAMENTO
                           </Badge>
                         )}
                         <div>
-                          <p className="text-4xl font-bold">{call.name}</p>
-                          <p className="text-2xl text-muted-foreground">{call.services?.name}</p>
+                          <p className="text-7xl font-black mb-2">{call.name}</p>
+                          <p className="text-4xl text-muted-foreground font-bold">{call.services?.name}</p>
                         </div>
                       </div>
                     {call.profiles?.full_name && (
-                      <div className="text-lg text-muted-foreground">
+                      <div className="text-3xl text-muted-foreground font-bold">
                         <p>Atendente: {call.profiles.full_name}</p>
                         {call.profiles.location && (
-                          <p className="font-medium text-primary">Local: {call.profiles.location}</p>
+                          <p className="font-black text-primary text-4xl mt-2">Local: {call.profiles.location}</p>
                         )}
                       </div>
                     )}
@@ -363,54 +363,54 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-medium">Na Fila</CardTitle>
-              <Users className="h-6 w-6 text-primary" />
+        <div className="grid grid-cols-4 gap-8 mb-12">
+          <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-3xl font-bold">Na Fila</CardTitle>
+              <Users className="h-12 w-12 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-primary">{stats.totalInQueue}</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-8xl font-black text-primary mb-4">{stats.totalInQueue}</div>
+              <p className="text-2xl text-muted-foreground font-bold">
                 {stats.priorityInQueue} prioritários
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-medium">Atendidos Hoje</CardTitle>
-              <CheckCircle className="h-6 w-6 text-success" />
+          <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-3xl font-bold">Atendidos Hoje</CardTitle>
+              <CheckCircle className="h-12 w-12 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-success">{stats.totalServedToday}</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-8xl font-black text-success mb-4">{stats.totalServedToday}</div>
+              <p className="text-2xl text-muted-foreground font-bold">
                 Total do dia
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-medium">Tempo Médio Espera</CardTitle>
-              <Clock className="h-6 w-6 text-secondary" />
+          <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-3xl font-bold">Tempo Médio Espera</CardTitle>
+              <Clock className="h-12 w-12 text-secondary" />
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-secondary">{stats.averageWaitTime} min</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-8xl font-black text-secondary mb-4">{stats.averageWaitTime} min</div>
+              <p className="text-2xl text-muted-foreground font-bold">
                 Média do dia
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-medium">Tempo Médio Atendimento</CardTitle>
-              <TrendingUp className="h-6 w-6 text-accent" />
+          <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-3xl font-bold">Tempo Médio Atendimento</CardTitle>
+              <TrendingUp className="h-12 w-12 text-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-accent">{stats.averageServiceTime} min</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-8xl font-black text-accent mb-4">{stats.averageServiceTime} min</div>
+              <p className="text-2xl text-muted-foreground font-bold">
                 Média do dia
               </p>
             </CardContent>
@@ -423,63 +423,63 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Fila Atual */}
-        <Card className="shadow-shadow-card">
-          <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+        <Card className="shadow-shadow-card border-2">
+          <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-8">
+            <CardTitle className="flex items-center gap-4 text-4xl font-bold">
+              <Users className="h-10 w-10" />
               Fila Atual
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-2xl font-bold">
               Próximos cidadãos a serem atendidos
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-8">
             {queueCustomers.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Fila vazia</h3>
-                <p className="text-muted-foreground">
+              <div className="text-center py-16">
+                <Users className="h-32 w-32 text-muted-foreground mx-auto mb-8" />
+                <h3 className="text-4xl font-bold mb-4">Fila vazia</h3>
+                <p className="text-2xl text-muted-foreground font-bold">
                   Não há cidadãos aguardando atendimento
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {queueCustomers.map((customer, index) => (
                   <div
                     key={customer.id}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-6 rounded-xl border-4 transition-all hover:shadow-shadow-elevated ${
                       customer.is_priority
-                        ? 'border-destructive bg-destructive/5'
+                        ? 'border-destructive bg-destructive/10 shadow-lg'
                         : 'border-border bg-card'
-                    } ${index < 3 ? 'ring-2 ring-primary/50' : ''}`}
+                    } ${index < 3 ? 'ring-4 ring-primary/50 shadow-xl' : ''}`}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
                         <Badge 
                           variant={customer.is_priority ? "destructive" : "secondary"}
-                          className="text-lg py-1 px-3"
+                          className="text-2xl py-2 px-4 font-black"
                         >
                           #{customer.queue_number}
                         </Badge>
                         {customer.is_priority && (
-                          <AlertTriangle className="h-4 w-4 text-destructive" />
+                          <AlertTriangle className="h-8 w-8 text-destructive" />
                         )}
                         {index < 3 && (
-                          <Badge variant="outline" className="bg-primary text-primary-foreground">
+                          <Badge variant="outline" className="bg-primary text-primary-foreground text-lg py-2 px-3 font-bold">
                             Próximo
                           </Badge>
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4 mr-1" />
+                        <div className="flex items-center text-xl text-muted-foreground font-bold">
+                          <Clock className="h-6 w-6 mr-2" />
                           {getWaitingTime(customer.created_at)} min
                         </div>
                       </div>
                     </div>
                     
-                    <h4 className="font-bold text-lg mb-1">{customer.name}</h4>
-                    <p className="text-sm text-muted-foreground">{customer.services?.name}</p>
+                    <h4 className="font-black text-2xl mb-2">{customer.name}</h4>
+                    <p className="text-xl text-muted-foreground font-bold">{customer.services?.name}</p>
                   </div>
                 ))}
               </div>
