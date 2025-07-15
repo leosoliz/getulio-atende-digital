@@ -226,6 +226,39 @@ export default function SatisfactionSurvey() {
     }
   };
 
+  const handleNoResponse = async (serviceId: string) => {
+    try {
+      const service = completedServices.find(s => s.id === serviceId);
+      if (!service) return;
+
+      const { error } = await supabase
+        .from('satisfaction_surveys')
+        .insert({
+          queue_customer_id: serviceId,
+          attendant_id: service.attendant_id,
+          overall_rating: 'Não respondeu',
+          problem_resolved: 'Não respondeu',
+          improvement_aspect: 'Não respondeu'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Pesquisa marcada como não respondida",
+      });
+
+      fetchData(); // Refresh the list
+    } catch (error) {
+      console.error('Error marking survey as no response:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao marcar pesquisa como não respondida",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getServiceName = (serviceId: string) => {
     return services.find(s => s.id === serviceId)?.name || "Serviço não encontrado";
   };
@@ -287,6 +320,15 @@ export default function SatisfactionSurvey() {
                     ) : (
                       <XCircle className="h-6 w-6 text-muted-foreground" />
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleNoResponse(service.id)}
+                      className="h-6 w-6 p-0 hover:bg-destructive/10"
+                      title="Não responder pesquisa"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
