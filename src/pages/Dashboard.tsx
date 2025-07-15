@@ -392,7 +392,7 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-3xl font-bold">Tempo Médio Espera</CardTitle>
+              <CardTitle className="text-3xl font-bold">Tempo Espera</CardTitle>
               <Clock className="h-12 w-12 text-secondary" />
             </CardHeader>
             <CardContent>
@@ -405,7 +405,7 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-3xl font-bold">Tempo Médio Atendimento</CardTitle>
+              <CardTitle className="text-3xl font-bold">Tempo Atendimento</CardTitle>
               <TrendingUp className="h-12 w-12 text-accent" />
             </CardHeader>
             <CardContent>
