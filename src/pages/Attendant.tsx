@@ -118,26 +118,7 @@ const Attendant: React.FC = () => {
       const serviceIds = attendantServices?.map(as => as.service_id) || [];
       console.log('Service IDs for attendant:', serviceIds);
       
-      if (serviceIds.length === 0) {
-        console.log('Attendant has no services assigned - this may be why queue is empty');
-        // Temporariamente, vamos buscar todos os serviços para debug
-        const { data: allWaitingData } = await supabase
-          .from('queue_customers')
-          .select(`
-            *,
-            services:service_id (name, estimated_time)
-          `)
-          .eq('status', 'waiting')
-          .order('is_priority', { ascending: false })
-          .order('queue_number', { ascending: true })
-          .limit(10);
-        
-        console.log('All waiting customers (debug):', allWaitingData);
-        setWaitingQueue([]);
-        return;
-      }
-
-      // Buscar fila de espera (priorizar urgentes) - apenas serviços que o atendente pode prestar
+      // Buscar fila de espera - Por enquanto, mostrar todos os clientes para debug
       const { data: waitingData, error } = await supabase
         .from('queue_customers')
         .select(`
@@ -145,7 +126,6 @@ const Attendant: React.FC = () => {
           services:service_id (name, estimated_time)
         `)
         .eq('status', 'waiting')
-        .in('service_id', serviceIds)
         .order('is_priority', { ascending: false })
         .order('queue_number', { ascending: true })
         .limit(10);
@@ -155,8 +135,20 @@ const Attendant: React.FC = () => {
         return;
       }
 
-      console.log('Waiting queue updated:', waitingData);
-      setWaitingQueue(waitingData || []);
+      console.log('Raw waiting queue data:', waitingData);
+      
+      // Se o atendente tem serviços específicos, filtrar, senão mostrar todos
+      let filteredData = waitingData || [];
+      if (serviceIds.length > 0) {
+        filteredData = waitingData?.filter(customer => 
+          serviceIds.includes(customer.service_id)
+        ) || [];
+        console.log('Filtered waiting queue for attendant services:', filteredData);
+      } else {
+        console.log('No services assigned to attendant - showing all customers for debug');
+      }
+
+      setWaitingQueue(filteredData);
     } catch (error) {
       console.error('Error in fetchQueues:', error);
     }
