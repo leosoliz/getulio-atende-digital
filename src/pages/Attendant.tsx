@@ -108,15 +108,31 @@ const Attendant: React.FC = () => {
       setCurrentCustomer(currentData || null);
 
       // Buscar serviços que o atendente pode prestar
-      const { data: attendantServices } = await supabase
+      const { data: attendantServices, error: servicesError } = await supabase
         .from('attendant_services')
         .select('service_id')
         .eq('attendant_id', profile.id);
 
+      console.log('Attendant services query result:', { attendantServices, servicesError, attendantId: profile.id });
+
       const serviceIds = attendantServices?.map(as => as.service_id) || [];
+      console.log('Service IDs for attendant:', serviceIds);
       
       if (serviceIds.length === 0) {
-        console.log('Attendant has no services assigned');
+        console.log('Attendant has no services assigned - this may be why queue is empty');
+        // Temporariamente, vamos buscar todos os serviços para debug
+        const { data: allWaitingData } = await supabase
+          .from('queue_customers')
+          .select(`
+            *,
+            services:service_id (name, estimated_time)
+          `)
+          .eq('status', 'waiting')
+          .order('is_priority', { ascending: false })
+          .order('queue_number', { ascending: true })
+          .limit(10);
+        
+        console.log('All waiting customers (debug):', allWaitingData);
         setWaitingQueue([]);
         return;
       }
