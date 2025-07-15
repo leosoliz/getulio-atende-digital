@@ -247,6 +247,41 @@ const Reception: React.FC = () => {
     setLoading(true);
     
     try {
+      // Verificar conflitos de horário com janela de 20 minutos
+      const { data: existingAppointments, error: queryError } = await supabase
+        .from('identity_appointments')
+        .select('appointment_time')
+        .eq('appointment_date', appointmentDate)
+        .neq('status', 'completed');
+
+      if (queryError) {
+        throw queryError;
+      }
+
+      // Converter horário do novo agendamento para minutos
+      const [hours, minutes] = appointmentTime.split(':').map(Number);
+      const newAppointmentMinutes = hours * 60 + minutes;
+
+      // Verificar conflito com janela de 20 minutos (10 minutos antes e depois)
+      const hasConflict = existingAppointments?.some(appointment => {
+        const [existingHours, existingMinutes] = appointment.appointment_time.split(':').map(Number);
+        const existingAppointmentMinutes = existingHours * 60 + existingMinutes;
+        
+        // Verificar se há sobreposição na janela de 20 minutos
+        const timeDifference = Math.abs(newAppointmentMinutes - existingAppointmentMinutes);
+        return timeDifference < 20;
+      });
+
+      if (hasConflict) {
+        toast({
+          title: "Conflito de horário",
+          description: "Já existe um agendamento próximo a este horário. Mantenha pelo menos 20 minutos de intervalo.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('identity_appointments')
         .insert({
