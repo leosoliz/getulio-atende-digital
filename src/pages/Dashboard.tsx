@@ -329,24 +329,24 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center justify-center mb-4">
                       <PhoneCall className="h-12 w-12 text-primary animate-pulse" />
                     </div>
-                    <h2 className="text-3xl font-bold text-primary mb-2">
-                      CHAMANDO CIDADÃO
-                    </h2>
-                     <div className="flex items-center justify-center gap-4 mb-4">
-                       {call.type === 'queue' ? (
-                         <Badge variant="outline" className="text-2xl py-2 px-4 bg-primary text-primary-foreground">
-                           #{call.queue_number}
-                         </Badge>
-                       ) : (
-                         <Badge variant="outline" className="text-xl py-2 px-4 bg-accent text-accent-foreground">
-                           AGENDAMENTO
-                         </Badge>
-                       )}
-                       <div>
-                         <p className="text-xl font-bold">{call.name}</p>
-                         <p className="text-lg text-muted-foreground">{call.services?.name}</p>
-                       </div>
-                     </div>
+                     <h2 className="text-5xl font-bold text-primary mb-4">
+                       CHAMANDO CIDADÃO
+                     </h2>
+                      <div className="flex items-center justify-center gap-6 mb-6">
+                        {call.type === 'queue' ? (
+                          <Badge variant="outline" className="text-4xl py-3 px-6 bg-primary text-primary-foreground">
+                            #{call.queue_number}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-3xl py-3 px-6 bg-accent text-accent-foreground">
+                            AGENDAMENTO
+                          </Badge>
+                        )}
+                        <div>
+                          <p className="text-4xl font-bold">{call.name}</p>
+                          <p className="text-2xl text-muted-foreground">{call.services?.name}</p>
+                        </div>
+                      </div>
                     {call.profiles?.full_name && (
                       <div className="text-lg text-muted-foreground">
                         <p>Atendente: {call.profiles.full_name}</p>
@@ -366,12 +366,12 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="shadow-shadow-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Na Fila</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
+              <CardTitle className="text-lg font-medium">Na Fila</CardTitle>
+              <Users className="h-6 w-6 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{stats.totalInQueue}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-4xl font-bold text-primary">{stats.totalInQueue}</div>
+              <p className="text-sm text-muted-foreground">
                 {stats.priorityInQueue} prioritários
               </p>
             </CardContent>
@@ -379,12 +379,12 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-shadow-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Atendidos Hoje</CardTitle>
-              <CheckCircle className="h-4 w-4 text-success" />
+              <CardTitle className="text-lg font-medium">Atendidos Hoje</CardTitle>
+              <CheckCircle className="h-6 w-6 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.totalServedToday}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-4xl font-bold text-success">{stats.totalServedToday}</div>
+              <p className="text-sm text-muted-foreground">
                 Total do dia
               </p>
             </CardContent>
@@ -392,12 +392,12 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-shadow-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tempo Médio Espera</CardTitle>
-              <Clock className="h-4 w-4 text-secondary" />
+              <CardTitle className="text-lg font-medium">Tempo Médio Espera</CardTitle>
+              <Clock className="h-6 w-6 text-secondary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-secondary">{stats.averageWaitTime} min</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-4xl font-bold text-secondary">{stats.averageWaitTime} min</div>
+              <p className="text-sm text-muted-foreground">
                 Média do dia
               </p>
             </CardContent>
@@ -405,12 +405,12 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-shadow-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tempo Médio Atendimento</CardTitle>
-              <TrendingUp className="h-4 w-4 text-accent" />
+              <CardTitle className="text-lg font-medium">Tempo Médio Atendimento</CardTitle>
+              <TrendingUp className="h-6 w-6 text-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-accent">{stats.averageServiceTime} min</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-4xl font-bold text-accent">{stats.averageServiceTime} min</div>
+              <p className="text-sm text-muted-foreground">
                 Média do dia
               </p>
             </CardContent>
