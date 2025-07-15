@@ -100,7 +100,8 @@ export default function SatisfactionSurvey() {
         const { data: surveysData } = await supabase
           .from('satisfaction_surveys')
           .select('queue_customer_id')
-          .in('queue_customer_id', customerIds);
+          .in('queue_customer_id', customerIds)
+          .not('queue_customer_id', 'is', null);
 
         const surveysSet = new Set(surveysData?.map(s => s.queue_customer_id) || []);
         
@@ -118,10 +119,11 @@ export default function SatisfactionSurvey() {
         const appointmentIds = appointmentData.map(appointment => appointment.id);
         const { data: appointmentSurveysData } = await supabase
           .from('satisfaction_surveys')
-          .select('queue_customer_id')
-          .in('queue_customer_id', appointmentIds);
+          .select('identity_appointment_id')
+          .in('identity_appointment_id', appointmentIds)
+          .not('identity_appointment_id', 'is', null);
 
-        const appointmentSurveysSet = new Set(appointmentSurveysData?.map(s => s.queue_customer_id) || []);
+        const appointmentSurveysSet = new Set(appointmentSurveysData?.map(s => s.identity_appointment_id) || []);
         
         const appointmentsWithSurveys = appointmentData.map(appointment => ({
           ...appointment,
@@ -170,15 +172,19 @@ export default function SatisfactionSurvey() {
     try {
       setSubmitting(true);
       
+      const surveyData = {
+        attendant_id: selectedService.attendant_id,
+        overall_rating: overallRating,
+        problem_resolved: problemResolved,
+        improvement_aspect: improvementAspect,
+        ...(selectedService.type === 'queue' 
+          ? { queue_customer_id: selectedService.id } 
+          : { identity_appointment_id: selectedService.id })
+      };
+
       const { error } = await supabase
         .from('satisfaction_surveys')
-        .insert({
-          queue_customer_id: selectedService.id,
-          attendant_id: selectedService.attendant_id,
-          overall_rating: overallRating,
-          problem_resolved: problemResolved,
-          improvement_aspect: improvementAspect
-        });
+        .insert(surveyData);
 
       if (error) throw error;
 
@@ -201,12 +207,19 @@ export default function SatisfactionSurvey() {
     }
   };
 
-  const cancelSurvey = async (serviceId: string) => {
+  const cancelSurvey = async (serviceId: string, serviceType: 'queue' | 'appointment') => {
     try {
-      const { error } = await supabase
+      const deleteQuery = supabase
         .from('satisfaction_surveys')
-        .delete()
-        .eq('queue_customer_id', serviceId);
+        .delete();
+
+      if (serviceType === 'queue') {
+        deleteQuery.eq('queue_customer_id', serviceId);
+      } else {
+        deleteQuery.eq('identity_appointment_id', serviceId);
+      }
+
+      const { error } = await deleteQuery;
 
       if (error) throw error;
 
@@ -231,15 +244,19 @@ export default function SatisfactionSurvey() {
       const service = completedServices.find(s => s.id === serviceId);
       if (!service) return;
 
+      const surveyData = {
+        attendant_id: service.attendant_id,
+        overall_rating: 'Não respondeu',
+        problem_resolved: 'Não respondeu',
+        improvement_aspect: 'Não respondeu',
+        ...(service.type === 'queue' 
+          ? { queue_customer_id: serviceId } 
+          : { identity_appointment_id: serviceId })
+      };
+
       const { error } = await supabase
         .from('satisfaction_surveys')
-        .insert({
-          queue_customer_id: serviceId,
-          attendant_id: service.attendant_id,
-          overall_rating: 'Não respondeu',
-          problem_resolved: 'Não respondeu',
-          improvement_aspect: 'Não respondeu'
-        });
+        .insert(surveyData);
 
       if (error) throw error;
 

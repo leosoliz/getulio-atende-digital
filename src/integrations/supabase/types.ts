@@ -366,30 +366,33 @@ export type Database = {
           attendant_id: string
           created_at: string
           id: string
+          identity_appointment_id: string | null
           improvement_aspect: string
           overall_rating: string
           problem_resolved: string
-          queue_customer_id: string
+          queue_customer_id: string | null
           updated_at: string
         }
         Insert: {
           attendant_id: string
           created_at?: string
           id?: string
+          identity_appointment_id?: string | null
           improvement_aspect: string
           overall_rating: string
           problem_resolved: string
-          queue_customer_id: string
+          queue_customer_id?: string | null
           updated_at?: string
         }
         Update: {
           attendant_id?: string
           created_at?: string
           id?: string
+          identity_appointment_id?: string | null
           improvement_aspect?: string
           overall_rating?: string
           problem_resolved?: string
-          queue_customer_id?: string
+          queue_customer_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -398,6 +401,13 @@ export type Database = {
             columns: ["attendant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_identity_appointment_id_fkey"
+            columns: ["identity_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "identity_appointments"
             referencedColumns: ["id"]
           },
           {
