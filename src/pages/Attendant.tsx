@@ -26,6 +26,7 @@ interface QueueCustomer {
   created_at: string;
   attendant_id: string | null;
   services: { name: string; estimated_time: number };
+  source?: 'queue' | 'appointment'; // Adicionar source para distinguir origem
 }
 
 interface Service {
@@ -131,7 +132,7 @@ const Attendant: React.FC = () => {
           fetchIdentityAppointments(); 
         }
       )
-      .on('postgres_changes', 
+       .on('postgres_changes', 
         { 
           event: 'UPDATE', 
           schema: 'public', 
@@ -141,7 +142,8 @@ const Attendant: React.FC = () => {
           console.log('🔥 IDENTITY APPOINTMENT UPDATE DETECTED:', payload);
           console.log('🔥 Updated appointment:', payload.new);
           console.log('🔥 Previous state:', payload.old);
-          fetchIdentityAppointments(); 
+          fetchIdentityAppointments();
+          fetchQueues(); // Também atualizar cliente atual caso um agendamento tenha sido chamado
         }
       )
       .on('postgres_changes', 
@@ -191,7 +193,7 @@ const Attendant: React.FC = () => {
     if (!profile?.id) return;
 
     try {
-      // Buscar cliente atual (em atendimento)
+      // Buscar cliente atual (em atendimento) da fila convencional
       const { data: currentData } = await supabase
         .from('queue_customers')
         .select(`
@@ -201,9 +203,32 @@ const Attendant: React.FC = () => {
         .eq('attendant_id', profile.id)
         .in('status', ['calling', 'in_service']);
 
+      // Buscar agendamento atual (em atendimento)
+      const { data: currentAppointment } = await supabase
+        .from('identity_appointments')
+        .select('*')
+        .eq('attendant_id', profile.id)
+        .in('status', ['calling', 'in_service']);
+
       console.log('Current customer data:', currentData);
-      // currentData pode ser um array quando há múltiplos clientes
-      setCurrentCustomer(Array.isArray(currentData) ? currentData[0] || null : currentData || null);
+      console.log('Current appointment data:', currentAppointment);
+      
+      // Priorizar agendamento sobre fila convencional
+      let current = null;
+      if (currentAppointment && currentAppointment.length > 0) {
+        current = {
+          ...currentAppointment[0],
+          services: { name: 'Emissão de Identidade', estimated_time: 30 },
+          source: 'appointment'
+        };
+      } else if (currentData && currentData.length > 0) {
+        current = {
+          ...currentData[0],
+          source: 'queue'
+        };
+      }
+      
+      setCurrentCustomer(current);
 
       // Buscar serviços que o atendente pode prestar
       const { data: attendantServices, error: servicesError } = await supabase
@@ -526,6 +551,38 @@ const Attendant: React.FC = () => {
     setLoading(false);
   };
 
+  const startIdentityAppointment = async (appointmentId: string) => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('identity_appointments')
+        .update({
+          status: 'in_service',
+          started_at: new Date().toISOString()
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Agendamento iniciado",
+        description: "O agendamento foi iniciado com sucesso",
+      });
+      
+      fetchQueues(); // Atualizar cliente atual
+      fetchIdentityAppointments(); // Atualizar lista de agendamentos
+    } catch (error: any) {
+      toast({
+        title: "Erro ao iniciar agendamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
   const completeIdentityAppointment = async (appointmentId: string) => {
     setLoading(true);
     
@@ -661,7 +718,10 @@ const Attendant: React.FC = () => {
                     <div className="flex gap-3">
                       {currentCustomer.status === 'calling' && (
                         <Button 
-                          onClick={() => startService(currentCustomer.id)}
+                          onClick={() => currentCustomer.source === 'appointment' 
+                            ? startIdentityAppointment(currentCustomer.id)
+                            : startService(currentCustomer.id)
+                          }
                           disabled={loading}
                           className="flex-1"
                         >
@@ -672,7 +732,10 @@ const Attendant: React.FC = () => {
                       
                       {currentCustomer.status === 'in_service' && (
                         <Button 
-                          onClick={() => completeService(currentCustomer.id)}
+                          onClick={() => currentCustomer.source === 'appointment' 
+                            ? completeIdentityAppointment(currentCustomer.id)
+                            : completeService(currentCustomer.id)
+                          }
                           disabled={loading}
                           variant="outline"
                           className="flex-1"
