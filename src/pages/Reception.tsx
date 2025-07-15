@@ -330,6 +330,7 @@ const Reception: React.FC = () => {
       .from('identity_appointments')
       .select('id, name, phone, appointment_time, status')
       .eq('appointment_date', today)
+      .neq('status', 'completed') // Excluir agendamentos já finalizados
       .order('appointment_time');
     
     if (error) {
@@ -589,21 +590,21 @@ const Reception: React.FC = () => {
           {/* Lista de Agendamentos */}
           <Card className="shadow-shadow-card">
             <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                 Agendamentos de Hoje ({todayAppointments.length})
-               </CardTitle>
-               <CardDescription>
-                 Lista de agendamentos para emissão de identidade
-               </CardDescription>
+               <CardTitle className="flex items-center gap-2">
+                 <Calendar className="h-5 w-5" />
+                  Agendamentos Pendentes ({todayAppointments.length})
+                </CardTitle>
+                <CardDescription>
+                  Agendamentos de hoje que ainda não foram finalizados
+                </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {todayAppointments.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nenhum agendamento para hoje
-                  </p>
-                ) : (
+                 {todayAppointments.length === 0 ? (
+                   <p className="text-muted-foreground text-center py-8">
+                     Nenhum agendamento pendente para hoje
+                   </p>
+                 ) : (
                   todayAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
