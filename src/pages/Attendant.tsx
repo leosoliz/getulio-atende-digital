@@ -75,7 +75,7 @@ const Attendant: React.FC = () => {
     
     console.log('=== INICIANDO CONFIGURAÇÃO REALTIME ===');
     console.log('Profile ID:', profile.id);
-    console.log('Setting up real-time subscriptions for profile:', profile.id);
+    console.log('Configurando canal realtime...');
     
     // Configurar real-time para a fila
     const channel = supabase
@@ -116,6 +116,7 @@ const Attendant: React.FC = () => {
         console.log('📡 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to queue changes');
+          console.log('📊 Channel state after subscription:', channel.state);
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Channel error in realtime subscription');
         } else if (status === 'TIMED_OUT') {
@@ -129,7 +130,22 @@ const Attendant: React.FC = () => {
     setTimeout(() => {
       console.log('🔍 Testing channel status:', channel.state);
       console.log('🔍 Channel bindings:', channel.bindings);
+      console.log('🔍 Channel topic:', channel.topic);
+      console.log('🔍 Channel socket state:', channel.socket?.connectionState);
     }, 2000);
+
+    // Teste adicional para verificar se a tabela está na publicação
+    setTimeout(() => {
+      console.log('🔍 Testando se a tabela está na publicação realtime...');
+      console.log('🔍 Fazendo uma query para verificar a conexão com a tabela');
+      
+      supabase
+        .from('queue_customers')
+        .select('count')
+        .then(({ data, error }) => {
+          console.log('🔍 Query test result:', { data, error });
+        });
+    }, 3000);
 
     return () => {
       console.log('🧹 Cleaning up real-time subscriptions');
