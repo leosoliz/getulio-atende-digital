@@ -90,40 +90,57 @@ const Attendant: React.FC = () => {
   const fetchQueues = async () => {
     if (!profile?.id) return;
 
-    // Buscar cliente atual (em atendimento)
-    const { data: currentData } = await supabase
-      .from('queue_customers')
-      .select(`
-        *,
-        services:service_id (name, estimated_time)
-      `)
-      .eq('attendant_id', profile.id)
-      .eq('status', 'in_service')
-      .single();
+    try {
+      // Buscar cliente atual (em atendimento)
+      const { data: currentData } = await supabase
+        .from('queue_customers')
+        .select(`
+          *,
+          services:service_id (name, estimated_time)
+        `)
+        .eq('attendant_id', profile.id)
+        .eq('status', 'in_service')
+        .single();
 
-    setCurrentCustomer(currentData || null);
+      setCurrentCustomer(currentData || null);
 
-    // Buscar fila de espera (priorizar urgentes) - apenas serviços que o atendente pode prestar
-    const { data: attendantServices } = await supabase
-      .from('attendant_services')
-      .select('service_id')
-      .eq('attendant_id', profile.id);
+      // Buscar serviços que o atendente pode prestar
+      const { data: attendantServices } = await supabase
+        .from('attendant_services')
+        .select('service_id')
+        .eq('attendant_id', profile.id);
 
-    const serviceIds = attendantServices?.map(as => as.service_id) || [];
-    
-    const { data: waitingData } = await supabase
-      .from('queue_customers')
-      .select(`
-        *,
-        services:service_id (name, estimated_time)
-      `)
-      .eq('status', 'waiting')
-      .in('service_id', serviceIds)
-      .order('is_priority', { ascending: false })
-      .order('queue_number', { ascending: true })
-      .limit(10);
+      const serviceIds = attendantServices?.map(as => as.service_id) || [];
+      
+      if (serviceIds.length === 0) {
+        console.log('Attendant has no services assigned');
+        setWaitingQueue([]);
+        return;
+      }
 
-    setWaitingQueue(waitingData || []);
+      // Buscar fila de espera (priorizar urgentes) - apenas serviços que o atendente pode prestar
+      const { data: waitingData, error } = await supabase
+        .from('queue_customers')
+        .select(`
+          *,
+          services:service_id (name, estimated_time)
+        `)
+        .eq('status', 'waiting')
+        .in('service_id', serviceIds)
+        .order('is_priority', { ascending: false })
+        .order('queue_number', { ascending: true })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching waiting queue:', error);
+        return;
+      }
+
+      console.log('Waiting queue updated:', waitingData);
+      setWaitingQueue(waitingData || []);
+    } catch (error) {
+      console.error('Error in fetchQueues:', error);
+    }
   };
 
   const fetchServices = async () => {
