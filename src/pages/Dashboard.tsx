@@ -227,18 +227,31 @@ const Dashboard: React.FC = () => {
   const calculateStats = async () => {
     const today = new Date().toISOString().split('T')[0];
 
-    // Total na fila
+    // Total na fila (incluindo agendamentos)
     const { count: totalInQueue } = await supabase
       .from('queue_customers')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'waiting');
 
-    // Total atendido hoje
-    const { count: totalServedToday } = await supabase
+    // Total agendamentos hoje
+    const { count: totalAppointmentsToday } = await supabase
+      .from('identity_appointments')
+      .select('*', { count: 'exact', head: true })
+      .eq('appointment_date', today)
+      .eq('status', 'scheduled');
+
+    // Total atendido hoje (fila + agendamentos)
+    const { count: totalServedQueueToday } = await supabase
       .from('queue_customers')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed')
       .gte('created_at', `${today}T00:00:00`);
+
+    const { count: totalServedAppointmentsToday } = await supabase
+      .from('identity_appointments')
+      .select('*', { count: 'exact', head: true })
+      .eq('appointment_date', today)
+      .eq('status', 'completed');
 
     // Cidadãos prioritários na fila
     const { count: priorityInQueue } = await supabase
@@ -278,8 +291,8 @@ const Dashboard: React.FC = () => {
     }
 
     setStats({
-      totalInQueue: totalInQueue || 0,
-      totalServedToday: totalServedToday || 0,
+      totalInQueue: (totalInQueue || 0) + (totalAppointmentsToday || 0),
+      totalServedToday: (totalServedQueueToday || 0) + (totalServedAppointmentsToday || 0),
       averageWaitTime: Math.round(averageWaitTime),
       averageServiceTime: Math.round(averageServiceTime),
       priorityInQueue: priorityInQueue || 0,

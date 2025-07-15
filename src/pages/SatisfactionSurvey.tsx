@@ -13,11 +13,13 @@ interface CompletedService {
   id: string;
   name: string;
   phone: string;
-  queue_number: number;
+  queue_number?: number;
   completed_at: string;
   attendant_id: string;
-  service_id: string;
+  service_id?: string;
   has_survey: boolean;
+  type: 'queue' | 'appointment'; // Adicionar tipo para distinguir
+  appointment_time?: string; // Para agendamentos
 }
 
 interface Service {
@@ -74,6 +76,24 @@ export default function SatisfactionSurvey() {
         .not('completed_at', 'is', null)
         .order('completed_at', { ascending: false });
 
+      // Fetch completed identity appointments
+      const { data: appointmentData } = await supabase
+        .from('identity_appointments')
+        .select(`
+          id,
+          name,
+          phone,
+          completed_at,
+          attendant_id,
+          appointment_time
+        `)
+        .eq('status', 'completed')
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false });
+
+      // Combine both datasets
+      const allCompletedServices = [];
+      
       if (queueData) {
         // Check which customers already have surveys
         const customerIds = queueData.map(customer => customer.id);
@@ -86,11 +106,37 @@ export default function SatisfactionSurvey() {
         
         const completedWithSurveys = queueData.map(customer => ({
           ...customer,
+          type: 'queue' as const,
           has_survey: surveysSet.has(customer.id)
         })).filter(customer => !customer.has_survey);
 
-        setCompletedServices(completedWithSurveys);
+        allCompletedServices.push(...completedWithSurveys);
       }
+
+      if (appointmentData) {
+        // Check which appointments already have surveys
+        const appointmentIds = appointmentData.map(appointment => appointment.id);
+        const { data: appointmentSurveysData } = await supabase
+          .from('satisfaction_surveys')
+          .select('queue_customer_id')
+          .in('queue_customer_id', appointmentIds);
+
+        const appointmentSurveysSet = new Set(appointmentSurveysData?.map(s => s.queue_customer_id) || []);
+        
+        const appointmentsWithSurveys = appointmentData.map(appointment => ({
+          ...appointment,
+          type: 'appointment' as const,
+          service_id: undefined, // Appointments don't have service_id
+          has_survey: appointmentSurveysSet.has(appointment.id)
+        })).filter(appointment => !appointment.has_survey);
+
+        allCompletedServices.push(...appointmentsWithSurveys);
+      }
+
+      // Sort by completion date
+      allCompletedServices.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+
+      setCompletedServices(allCompletedServices);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -228,7 +274,11 @@ export default function SatisfactionSurvey() {
                   <div className="flex-1">
                     <span className="text-lg">Cidadão: {service.name}</span>
                     <div className="text-sm text-muted-foreground">
-                      Senha: {service.queue_number} | Telefone: {service.phone}
+                      {service.type === 'queue' ? (
+                        `Senha: ${service.queue_number} | Telefone: ${service.phone}`
+                      ) : (
+                        `Agendamento: ${service.appointment_time} | Telefone: ${service.phone}`
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -250,7 +300,7 @@ export default function SatisfactionSurvey() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 mb-4">
-                  <p><strong>Serviço:</strong> {getServiceName(service.service_id)}</p>
+                  <p><strong>Serviço:</strong> {service.type === 'appointment' ? 'Emissão de Identidade' : getServiceName(service.service_id || '')}</p>
                   <p><strong>Finalizado em:</strong> {format(new Date(service.completed_at), 'dd/MM/yyyy HH:mm')}</p>
                   <p><strong>Status da Pesquisa:</strong> {service.has_survey ? "Realizada" : "Pendente"}</p>
                 </div>
@@ -282,7 +332,7 @@ export default function SatisfactionSurvey() {
               <div className="p-4 bg-muted rounded-lg">
                 <h3 className="font-semibold mb-2">Atendimento</h3>
                 <p><strong>Cidadão:</strong> {selectedService.name}</p>
-                <p><strong>Serviço:</strong> {getServiceName(selectedService.service_id)}</p>
+                <p><strong>Serviço:</strong> {selectedService.type === 'appointment' ? 'Emissão de Identidade' : getServiceName(selectedService.service_id || '')}</p>
                 <p><strong>Finalizado:</strong> {format(new Date(selectedService.completed_at), 'dd/MM/yyyy HH:mm')}</p>
               </div>
 

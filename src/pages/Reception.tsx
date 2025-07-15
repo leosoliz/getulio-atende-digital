@@ -591,11 +591,11 @@ const Reception: React.FC = () => {
             <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Agendamentos de Hoje
-              </CardTitle>
-              <CardDescription>
-                Lista de agendamentos para emissão de identidade
-              </CardDescription>
+                 Agendamentos de Hoje ({todayAppointments.length})
+               </CardTitle>
+               <CardDescription>
+                 Lista de agendamentos para emissão de identidade
+               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-3 max-h-96 overflow-y-auto">
