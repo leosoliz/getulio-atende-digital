@@ -73,50 +73,66 @@ const Attendant: React.FC = () => {
   useEffect(() => {
     if (!profile?.id) return;
     
+    console.log('=== INICIANDO CONFIGURAÇÃO REALTIME ===');
+    console.log('Profile ID:', profile.id);
     console.log('Setting up real-time subscriptions for profile:', profile.id);
     
     // Configurar real-time para a fila
     const channel = supabase
-      .channel('attendant-queue-changes')
+      .channel('attendant-queue-changes-' + profile.id)
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'queue_customers' },
         (payload) => { 
-          console.log('Queue INSERT detected:', payload);
+          console.log('🔥 Queue INSERT detected:', payload);
+          console.log('New record data:', payload.new);
           fetchQueues(); 
         }
       )
       .on('postgres_changes', 
         { event: 'UPDATE', schema: 'public', table: 'queue_customers' },
         (payload) => { 
-          console.log('Queue UPDATE detected:', payload);
+          console.log('🔥 Queue UPDATE detected:', payload);
+          console.log('Old record:', payload.old);
+          console.log('New record:', payload.new);
           fetchQueues(); 
         }
       )
       .on('postgres_changes', 
         { event: 'DELETE', schema: 'public', table: 'queue_customers' },
         (payload) => { 
-          console.log('Queue DELETE detected:', payload);
+          console.log('🔥 Queue DELETE detected:', payload);
+          console.log('Deleted record:', payload.old);
           fetchQueues(); 
         }
       )
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'identity_appointments' },
         (payload) => { 
-          console.log('Identity appointment change detected:', payload);
+          console.log('🔥 Identity appointment change detected:', payload);
           fetchIdentityAppointments();
         }
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+        console.log('📡 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to queue changes');
+          console.log('✅ Successfully subscribed to queue changes');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('Channel error in realtime subscription');
+          console.error('❌ Channel error in realtime subscription');
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏰ Realtime subscription timed out');
+        } else if (status === 'CLOSED') {
+          console.error('🔒 Realtime subscription closed');
         }
       });
 
+    // Testar se o canal está funcionando
+    setTimeout(() => {
+      console.log('🔍 Testing channel status:', channel.state);
+      console.log('🔍 Channel bindings:', channel.bindings);
+    }, 2000);
+
     return () => {
-      console.log('Cleaning up real-time subscriptions');
+      console.log('🧹 Cleaning up real-time subscriptions');
       supabase.removeChannel(channel);
     };
   }, [profile?.id]); // Depender do profile.id para recriar a subscription quando necessário
