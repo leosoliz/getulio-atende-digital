@@ -170,104 +170,25 @@ const SatisfactionIndicators: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Score Geral */}
-      <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-3xl font-bold flex items-center gap-3">
-            Score de Satisfação
-            {isUpdating && (
-              <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
-            )}
-          </CardTitle>
-          <Heart className="h-10 w-10 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className={`text-8xl font-black mb-4 ${getSatisfactionColor(stats.satisfactionScore)}`}>
-            {stats.satisfactionScore}%
-          </div>
-          <p className="text-2xl text-muted-foreground font-bold">
-            {stats.totalSurveys} pesquisas hoje
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Avaliação Geral */}
-      <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
-        <CardHeader className="pb-6">
-          <CardTitle className="flex items-center gap-3 text-3xl font-bold">
-            <ThumbsUp className="h-10 w-10" />
-            Avaliação Geral
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold">Excelente</span>
-            <Badge variant="secondary" className="bg-success text-success-foreground text-2xl py-3 px-4 font-black">
-              {getPercentage(stats.overallRating.excellent, stats.totalSurveys)}%
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold">Bom</span>
-            <Badge variant="secondary" className="bg-secondary text-secondary-foreground text-2xl py-3 px-4 font-black">
-              {getPercentage(stats.overallRating.good, stats.totalSurveys)}%
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold">Regular</span>
-            <Badge variant="secondary" className="bg-accent text-accent-foreground text-2xl py-3 px-4 font-black">
-              {getPercentage(stats.overallRating.regular, stats.totalSurveys)}%
-            </Badge>
-          </div>
-          {(stats.overallRating.poor > 0 || stats.overallRating.terrible > 0) && (
-            <>
-              <div className="flex justify-between items-center">
-                <span className="text-2xl font-bold">Ruim</span>
-                <Badge variant="destructive" className="text-2xl py-3 px-4 font-black">
-                  {getPercentage(stats.overallRating.poor, stats.totalSurveys)}%
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-2xl font-bold">Péssimo</span>
-                <Badge variant="destructive" className="text-2xl py-3 px-4 font-black">
-                  {getPercentage(stats.overallRating.terrible, stats.totalSurveys)}%
-                </Badge>
-              </div>
-            </>
+    <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-3xl font-bold flex items-center gap-3">
+          Score de Satisfação
+          {isUpdating && (
+            <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Resolução de Problemas */}
-      <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
-        <CardHeader className="pb-6">
-          <CardTitle className="flex items-center gap-3 text-3xl font-bold">
-            <TrendingUp className="h-10 w-10" />
-            Resolução de Problemas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold">Sim</span>
-            <Badge variant="secondary" className="bg-success text-success-foreground text-2xl py-3 px-4 font-black">
-              {getPercentage(stats.problemResolved.yes, stats.totalSurveys)}%
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold">Parcialmente</span>
-            <Badge variant="secondary" className="bg-accent text-accent-foreground text-2xl py-3 px-4 font-black">
-              {getPercentage(stats.problemResolved.partially, stats.totalSurveys)}%
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold">Não</span>
-            <Badge variant="destructive" className="text-2xl py-3 px-4 font-black">
-              {getPercentage(stats.problemResolved.no, stats.totalSurveys)}%
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </CardTitle>
+        <Heart className="h-10 w-10 text-primary" />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-8xl font-black mb-4 ${getSatisfactionColor(stats.satisfactionScore)}`}>
+          {stats.satisfactionScore}%
+        </div>
+        <p className="text-2xl text-muted-foreground font-bold">
+          {stats.totalSurveys} pesquisas hoje
+        </p>
+      </CardContent>
+    </Card>
   );
 };
 

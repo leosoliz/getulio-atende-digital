@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import SatisfactionIndicators from '@/components/SatisfactionIndicators';
+import SatisfactionDetailedIndicators from '@/components/SatisfactionDetailedIndicators';
 
 interface QueueCustomer {
   id: string;
@@ -417,75 +418,81 @@ const Dashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Indicadores de Satisfação */}
-        <div className="mb-8">
+        {/* Primeira linha: Score de Satisfação + Fila Atual */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Score de Satisfação */}
           <SatisfactionIndicators />
-        </div>
-
-        {/* Fila Atual */}
-        <Card className="shadow-shadow-card border-2">
-          <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-8">
-            <CardTitle className="flex items-center gap-4 text-4xl font-bold">
-              <Users className="h-10 w-10" />
-              Fila Atual
-            </CardTitle>
-            <CardDescription className="text-2xl font-bold">
-              Próximos cidadãos a serem atendidos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-8">
-            {queueCustomers.length === 0 ? (
-              <div className="text-center py-16">
-                <Users className="h-32 w-32 text-muted-foreground mx-auto mb-8" />
-                <h3 className="text-4xl font-bold mb-4">Fila vazia</h3>
-                <p className="text-2xl text-muted-foreground font-bold">
-                  Não há cidadãos aguardando atendimento
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {queueCustomers.map((customer, index) => (
-                  <div
-                    key={customer.id}
-                    className={`p-6 rounded-xl border-4 transition-all hover:shadow-shadow-elevated ${
-                      customer.is_priority
-                        ? 'border-destructive bg-destructive/10 shadow-lg'
-                        : 'border-border bg-card'
-                    } ${index < 3 ? 'ring-4 ring-primary/50 shadow-xl' : ''}`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <Badge 
-                          variant={customer.is_priority ? "destructive" : "secondary"}
-                          className="text-2xl py-2 px-4 font-black"
-                        >
-                          #{customer.queue_number}
-                        </Badge>
-                        {customer.is_priority && (
-                          <AlertTriangle className="h-8 w-8 text-destructive" />
-                        )}
-                        {index < 3 && (
-                          <Badge variant="outline" className="bg-primary text-primary-foreground text-lg py-2 px-3 font-bold">
-                            Próximo
+          
+          {/* Fila Atual */}
+          <Card className="shadow-shadow-card border-2">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-8">
+              <CardTitle className="flex items-center gap-4 text-4xl font-bold">
+                <Users className="h-10 w-10" />
+                Fila Atual
+              </CardTitle>
+              <CardDescription className="text-2xl font-bold">
+                Próximos cidadãos a serem atendidos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-8">
+              {queueCustomers.length === 0 ? (
+                <div className="text-center py-16">
+                  <Users className="h-32 w-32 text-muted-foreground mx-auto mb-8" />
+                  <h3 className="text-4xl font-bold mb-4">Fila vazia</h3>
+                  <p className="text-2xl text-muted-foreground font-bold">
+                    Não há cidadãos aguardando atendimento
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {queueCustomers.map((customer, index) => (
+                    <div
+                      key={customer.id}
+                      className={`p-6 rounded-xl border-4 transition-all hover:shadow-shadow-elevated ${
+                        customer.is_priority
+                          ? 'border-destructive bg-destructive/10 shadow-lg'
+                          : 'border-border bg-card'
+                      } ${index < 3 ? 'ring-4 ring-primary/50 shadow-xl' : ''}`}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Badge 
+                            variant={customer.is_priority ? "destructive" : "secondary"}
+                            className="text-2xl py-2 px-4 font-black"
+                          >
+                            #{customer.queue_number}
                           </Badge>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center text-xl text-muted-foreground font-bold">
-                          <Clock className="h-6 w-6 mr-2" />
-                          {getWaitingTime(customer.created_at)} min
+                          {customer.is_priority && (
+                            <AlertTriangle className="h-8 w-8 text-destructive" />
+                          )}
+                          {index < 3 && (
+                            <Badge variant="outline" className="bg-primary text-primary-foreground text-lg py-2 px-3 font-bold">
+                              Próximo
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center text-xl text-muted-foreground font-bold">
+                            <Clock className="h-6 w-6 mr-2" />
+                            {getWaitingTime(customer.created_at)} min
+                          </div>
                         </div>
                       </div>
+                      
+                      <h4 className="font-black text-2xl mb-2">{customer.name}</h4>
+                      <p className="text-xl text-muted-foreground font-bold">{customer.services?.name}</p>
                     </div>
-                    
-                    <h4 className="font-black text-2xl mb-2">{customer.name}</h4>
-                    <p className="text-xl text-muted-foreground font-bold">{customer.services?.name}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Segunda linha: Avaliação Geral + Resolução de Problemas */}
+        <div className="mb-8">
+          <SatisfactionDetailedIndicators />
+        </div>
       </div>
     </div>
   );
