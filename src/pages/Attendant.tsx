@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,9 +100,10 @@ const Attendant: React.FC = () => {
           services:service_id (name, estimated_time)
         `)
         .eq('attendant_id', profile.id)
-        .eq('status', 'in_service')
+        .in('status', ['calling', 'in_service'])
         .single();
 
+      console.log('Current customer data:', currentData);
       setCurrentCustomer(currentData || null);
 
       // Buscar serviços que o atendente pode prestar
@@ -213,7 +215,8 @@ const Attendant: React.FC = () => {
     try {
       const nextCustomer = waitingQueue[0];
       
-      const { error } = await supabase
+      // Primeiro, chamar o cliente
+      const { error: callError } = await supabase
         .from('queue_customers')
         .update({
           status: 'calling',
@@ -222,9 +225,25 @@ const Attendant: React.FC = () => {
         })
         .eq('id', nextCustomer.id);
 
-      if (error) throw error;
+      if (callError) throw callError;
 
-      // Automaticamente iniciar o atendimento após chamar
+      toast({
+        title: "Cidadão chamado",
+        description: `${nextCustomer.name} foi chamado para atendimento`,
+      });
+
+      // Atualizar estado imediatamente para refletir a mudança
+      setCurrentCustomer({
+        ...nextCustomer,
+        status: 'calling',
+        attendant_id: profile?.id,
+        called_at: new Date().toISOString()
+      });
+
+      // Remover da fila de espera
+      setWaitingQueue(prev => prev.filter(customer => customer.id !== nextCustomer.id));
+
+      // Automaticamente iniciar o atendimento após 2 segundos
       setTimeout(async () => {
         const { error: startError } = await supabase
           .from('queue_customers')
@@ -235,17 +254,19 @@ const Attendant: React.FC = () => {
           .eq('id', nextCustomer.id);
 
         if (!startError) {
+          // Atualizar estado local também
+          setCurrentCustomer(prev => prev ? {
+            ...prev,
+            status: 'in_service',
+            started_at: new Date().toISOString()
+          } : null);
+
           toast({
             title: "Atendimento iniciado",
             description: `${nextCustomer.name} está sendo atendido`,
           });
         }
-      }, 2000); // 2 segundos após a chamada
-
-      toast({
-        title: "Cidadão chamado",
-        description: `${nextCustomer.name} foi chamado para atendimento`,
-      });
+      }, 2000);
       
     } catch (error: any) {
       toast({
