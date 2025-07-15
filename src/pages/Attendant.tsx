@@ -71,7 +71,9 @@ const Attendant: React.FC = () => {
   }, [profile?.id]);
 
   useEffect(() => {
-    console.log('Setting up real-time subscriptions');
+    if (!profile?.id) return;
+    
+    console.log('Setting up real-time subscriptions for profile:', profile.id);
     
     // Configurar real-time para a fila
     const channel = supabase
@@ -80,18 +82,14 @@ const Attendant: React.FC = () => {
         { event: '*', schema: 'public', table: 'queue_customers' },
         (payload) => { 
           console.log('Queue change detected:', payload);
-          if (profile?.id) {
-            fetchQueues(); 
-          }
+          fetchQueues(); 
         }
       )
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'identity_appointments' },
         (payload) => { 
           console.log('Identity appointment change detected:', payload);
-          if (profile?.id) {
-            fetchIdentityAppointments();
-          }
+          fetchIdentityAppointments();
         }
       )
       .subscribe((status) => {
@@ -102,7 +100,7 @@ const Attendant: React.FC = () => {
       console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(channel);
     };
-  }, []); // Sem dependências para manter a subscription ativa
+  }, [profile?.id]); // Depender do profile.id para recriar a subscription quando necessário
 
   const fetchQueues = async () => {
     if (!profile?.id) return;
