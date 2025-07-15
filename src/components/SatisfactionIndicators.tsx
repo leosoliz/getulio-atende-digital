@@ -45,6 +45,26 @@ const SatisfactionIndicators: React.FC = () => {
 
   useEffect(() => {
     fetchSatisfactionData();
+    
+    // Configurar real-time para atualizações da tabela satisfaction_surveys
+    const channel = supabase
+      .channel('satisfaction-updates')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'satisfaction_surveys' },
+        (payload) => {
+          console.log('Satisfaction survey changed:', payload);
+          fetchSatisfactionData(); // Refetch data quando há mudanças
+        }
+      )
+      .subscribe();
+
+    // Atualizar a cada 30 segundos como fallback
+    const interval = setInterval(fetchSatisfactionData, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchSatisfactionData = async () => {

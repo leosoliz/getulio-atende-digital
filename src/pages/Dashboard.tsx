@@ -119,6 +119,14 @@ const Dashboard: React.FC = () => {
           }
         }
       )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'satisfaction_surveys' },
+        (payload) => {
+          console.log('Satisfaction survey updated:', payload);
+          // Recalcular estatísticas quando pesquisas de satisfação são atualizadas
+          calculateStats();
+        }
+      )
       .subscribe();
 
     // Limpar fila de chamadas expiradas a cada segundo
