@@ -274,37 +274,50 @@ const Attendant: React.FC = () => {
   const fetchIdentityAppointments = async () => {
     if (!profile?.id) return;
 
-    // Verificar se o atendente tem o serviço de Emissão de Identidade
-    const { data: attendantServices } = await supabase
-      .from('attendant_services')
-      .select('service_id')
-      .eq('attendant_id', profile.id);
+    console.log('📋 Checking identity appointments for attendant:', profile.id);
 
-    const serviceIds = attendantServices?.map(as => as.service_id) || [];
-    
-    // Buscar o ID do serviço de Emissão de Identidade
-    const { data: identityService } = await supabase
-      .from('services')
-      .select('id')
-      .eq('name', 'Emissão de Identidade')
-      .single();
+    try {
+      // Verificar se o atendente tem o serviço de Emissão de Identidade
+      const { data: attendantServices } = await supabase
+        .from('attendant_services')
+        .select('service_id')
+        .eq('attendant_id', profile.id);
 
-    // Só mostrar agendamentos se o atendente presta esse serviço
-    if (!identityService || !serviceIds.includes(identityService.id)) {
+      const serviceIds = attendantServices?.map(as => as.service_id) || [];
+      console.log('📋 Attendant service IDs:', serviceIds);
+      
+      // Buscar o ID do serviço de Emissão de Identidade
+      const { data: identityService } = await supabase
+        .from('services')
+        .select('id')
+        .eq('name', 'Emissão de Identidade')
+        .single();
+
+      console.log('📋 Identity service:', identityService);
+
+      // Só mostrar agendamentos se o atendente presta esse serviço
+      if (!identityService || !serviceIds.includes(identityService.id)) {
+        console.log('📋 Attendant does not provide identity service - clearing appointments');
+        setIdentityAppointments([]);
+        return;
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      console.log('📋 Fetching appointments for date:', today);
+      
+      const { data } = await supabase
+        .from('identity_appointments')
+        .select('*')
+        .eq('appointment_date', today)
+        .eq('status', 'scheduled')
+        .order('appointment_time');
+
+      console.log('📋 Identity appointments found:', data?.length || 0);
+      setIdentityAppointments(data || []);
+    } catch (error) {
+      console.error('📋 Error fetching identity appointments:', error);
       setIdentityAppointments([]);
-      return;
     }
-    
-    const today = new Date().toISOString().split('T')[0];
-    
-    const { data } = await supabase
-      .from('identity_appointments')
-      .select('*')
-      .eq('appointment_date', today)
-      .eq('status', 'scheduled')
-      .order('appointment_time');
-
-    setIdentityAppointments(data || []);
   };
 
   const callNextCustomer = async () => {
