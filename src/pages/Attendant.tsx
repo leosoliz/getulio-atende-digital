@@ -66,13 +66,21 @@ const Attendant: React.FC = () => {
       .channel('attendant-queue-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
-        () => { fetchQueues(); }
+        (payload) => { 
+          console.log('Queue change detected:', payload);
+          fetchQueues(); 
+        }
       )
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'identity_appointments' },
-        () => { fetchIdentityAppointments(); }
+        (payload) => { 
+          console.log('Identity appointment change detected:', payload);
+          fetchIdentityAppointments(); 
+        }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
