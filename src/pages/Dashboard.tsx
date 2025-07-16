@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
   // Text-to-speech em português
   const speakName = (name: string) => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(`Chamando ${name}`);
+      const utterance = new SpeechSynthesisUtterance(`Chamando ${name}, ${name}`);
       utterance.lang = 'pt-BR';
       utterance.rate = 0.8;
       utterance.pitch = 1;
