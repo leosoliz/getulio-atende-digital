@@ -443,43 +443,43 @@ const Dashboard: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {queueCustomers.map((customer, index) => (
                     <div
                       key={customer.id}
-                      className={`p-6 rounded-xl border-4 transition-all hover:shadow-shadow-elevated ${
+                      className={`p-4 rounded-xl border-4 transition-all hover:shadow-shadow-elevated ${
                         customer.is_priority
                           ? 'border-destructive bg-destructive/10 shadow-lg'
                           : 'border-border bg-card'
                       } ${index < 3 ? 'ring-4 ring-primary/50 shadow-xl' : ''}`}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <Badge 
                             variant={customer.is_priority ? "destructive" : "secondary"}
-                            className="text-2xl py-2 px-4 font-black"
+                            className="text-lg py-1 px-2 font-black shrink-0"
                           >
                             #{customer.queue_number}
                           </Badge>
                           {customer.is_priority && (
-                            <AlertTriangle className="h-8 w-8 text-destructive" />
+                            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
                           )}
                           {index < 3 && (
-                            <Badge variant="outline" className="bg-primary text-primary-foreground text-lg py-2 px-3 font-bold">
+                            <Badge variant="outline" className="bg-primary text-primary-foreground text-sm py-1 px-2 font-bold shrink-0">
                               Próximo
                             </Badge>
                           )}
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center text-xl text-muted-foreground font-bold">
-                            <Clock className="h-6 w-6 mr-2" />
+                        <div className="text-right shrink-0">
+                          <div className="flex items-center text-sm text-muted-foreground font-bold">
+                            <Clock className="h-4 w-4 mr-1" />
                             {getWaitingTime(customer.created_at)} min
                           </div>
                         </div>
                       </div>
                       
-                      <h4 className="font-black text-2xl mb-2">{customer.name}</h4>
-                      <p className="text-xl text-muted-foreground font-bold">{customer.services?.name}</p>
+                      <h4 className="font-black text-lg mb-2 truncate" title={customer.name}>{customer.name}</h4>
+                      <p className="text-sm text-muted-foreground font-bold truncate" title={customer.services?.name}>{customer.services?.name}</p>
                     </div>
                   ))}
                 </div>
