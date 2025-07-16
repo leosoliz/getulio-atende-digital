@@ -43,13 +43,13 @@ const Header: React.FC = () => {
             <img 
               src="/lovable-uploads/ef74e05b-9b97-42ff-8531-33a04a68fd63.png" 
               alt="Brasão Presidente Getúlio" 
-              className="h-12 w-12 object-contain"
+              className="h-16 w-16 object-contain"
             />
             <div>
-              <h1 className="text-xl font-bold text-primary-foreground">
+              <h1 className="text-3xl font-bold text-primary-foreground">
                 Sistema de Atendimento
               </h1>
-              <p className="text-sm text-primary-foreground/80">
+              <p className="text-base text-primary-foreground/80">
                 Prefeitura de Presidente Getúlio
               </p>
             </div>
