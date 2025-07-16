@@ -32,10 +32,7 @@ const Auth: React.FC = () => {
     
     const { error } = await signIn(loginEmail, loginPassword);
     
-    if (!error) {
-      navigate('/');
-    }
-    
+    // Não navegue aqui - deixe o AuthContext e RoleBasedRedirect handlearem
     setLoading(false);
   };
 

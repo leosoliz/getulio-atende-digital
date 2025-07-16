@@ -43,7 +43,7 @@ const ProtectedRoute: React.FC<{
 
 // Componente para redirecionar baseado no tipo de usuário
 const RoleBasedRedirect: React.FC = () => {
-  const { profile, loading } = useAuth();
+  const { profile, loading, user } = useAuth();
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -54,7 +54,7 @@ const RoleBasedRedirect: React.FC = () => {
     </div>;
   }
 
-  if (!profile) {
+  if (!user || !profile) {
     return <Navigate to="/auth" replace />;
   }
 
