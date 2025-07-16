@@ -1,10 +1,14 @@
 import React from 'react';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  showDashboardButton?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ showDashboardButton = false }) => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -32,6 +36,11 @@ const Header: React.FC = () => {
 
   const handleSatisfactionClick = () => {
     navigate('/satisfaction');
+  };
+
+  const openDashboard = () => {
+    const dashboardUrl = `${window.location.origin}/dashboard`;
+    window.open(dashboardUrl, '_blank', 'fullscreen=yes,scrollbars=yes,resizable=yes');
   };
 
   return (
@@ -91,6 +100,17 @@ const Header: React.FC = () => {
                 >
                   Satisfação
                 </Button>
+                {showDashboardButton && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={openDashboard}
+                    className="text-primary-foreground hover:bg-primary-foreground/10"
+                  >
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"

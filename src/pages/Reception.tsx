@@ -378,7 +378,7 @@ const Reception: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header showDashboardButton={true} />
       
       <div className="container mx-auto px-6 py-8">
         <Tabs defaultValue="queue" className="w-full">
