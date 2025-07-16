@@ -453,27 +453,27 @@ const Dashboard: React.FC = () => {
                           : 'border-border bg-card'
                       } ${index < 3 ? 'ring-4 ring-primary/50 shadow-xl' : ''}`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="flex items-start justify-between mb-3 min-w-0">
+                        <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
                           <Badge 
                             variant={customer.is_priority ? "destructive" : "secondary"}
-                            className="text-lg py-1 px-2 font-black shrink-0"
+                            className="text-sm py-1 px-2 font-bold shrink-0"
                           >
                             #{customer.queue_number}
                           </Badge>
                           {customer.is_priority && (
-                            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                            <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                           )}
                           {index < 3 && (
-                            <Badge variant="outline" className="bg-primary text-primary-foreground text-sm py-1 px-2 font-bold shrink-0">
-                              Próximo
+                            <Badge variant="outline" className="bg-primary text-primary-foreground text-xs py-1 px-1 font-bold shrink-0">
+                              Próx
                             </Badge>
                           )}
                         </div>
-                        <div className="text-right shrink-0">
-                          <div className="flex items-center text-sm text-muted-foreground font-bold">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {getWaitingTime(customer.created_at)} min
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="flex items-center text-xs text-muted-foreground font-bold">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {getWaitingTime(customer.created_at)}min
                           </div>
                         </div>
                       </div>
