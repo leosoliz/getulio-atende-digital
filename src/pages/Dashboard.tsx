@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users, Clock, TrendingUp, AlertTriangle, CheckCircle, PhoneCall } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -57,54 +57,127 @@ const Dashboard: React.FC = () => {
     priorityInQueue: 0,
   });
 
-  // Som da campainha
+  // Refs para controle de conectividade
+  const channelRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastDataFetchRef = useRef<Date>(new Date());
+  const connectionHealthRef = useRef<boolean>(true);
+
+  // Som da campainha com tratamento de erro
   const playBell = () => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const playTone = (frequency: number, duration: number, delay: number) => {
-      setTimeout(() => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + duration);
-      }, delay);
-    };
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const playTone = (frequency: number, duration: number, delay: number) => {
+        setTimeout(() => {
+          try {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+          } catch (error) {
+            console.warn('Erro ao reproduzir tom:', error);
+          }
+        }, delay);
+      };
 
-    // 3 toques de campainha em 5 segundos
-    playTone(800, 0.3, 0);      // Primeiro toque
-    playTone(800, 0.3, 1500);   // Segundo toque
-    playTone(800, 0.3, 3000);   // Terceiro toque
-  };
-
-  // Text-to-speech em português
-  const speakName = (name: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(`Chamando ${name}, ${name}`);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      speechSynthesis.speak(utterance);
+      // 3 toques de campainha em 5 segundos
+      playTone(800, 0.3, 0);      // Primeiro toque
+      playTone(800, 0.3, 1500);   // Segundo toque
+      playTone(800, 0.3, 3000);   // Terceiro toque
+    } catch (error) {
+      console.warn('Erro ao inicializar AudioContext:', error);
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
+  // Text-to-speech em português com tratamento de erro
+  const speakName = (name: string) => {
+    try {
+      if ('speechSynthesis' in window) {
+        // Cancelar qualquer fala em andamento
+        speechSynthesis.cancel();
+        
+        setTimeout(() => {
+          const utterance = new SpeechSynthesisUtterance(`Chamando ${name}, ${name}`);
+          utterance.lang = 'pt-BR';
+          utterance.rate = 0.8;
+          utterance.pitch = 1;
+          
+          utterance.onerror = (event) => {
+            console.warn('Erro no text-to-speech:', event);
+          };
+          
+          speechSynthesis.speak(utterance);
+        }, 100);
+      }
+    } catch (error) {
+      console.warn('Erro no text-to-speech:', error);
+    }
+  };
+
+  // Função para verificar saúde da conexão
+  const checkConnectionHealth = () => {
+    const now = new Date();
+    const timeSinceLastFetch = now.getTime() - lastDataFetchRef.current.getTime();
     
-    // Configurar real-time para atualizações
+    // Se passou mais de 2 minutos sem atualizações, reconectar
+    if (timeSinceLastFetch > 120000) {
+      console.warn('🔄 Conexão pode estar inativa, reconectando...');
+      connectionHealthRef.current = false;
+      setupRealTimeSubscription();
+    }
+  };
+
+  // Configurar monitoramento de saúde da conexão
+  useEffect(() => {
+    const healthCheckInterval = setInterval(checkConnectionHealth, 30000); // Verificar a cada 30 segundos
+    
+    return () => {
+      clearInterval(healthCheckInterval);
+    };
+  }, []);
+
+  // Função melhorada para configurar real-time
+  const setupRealTimeSubscription = () => {
+    // Limpar canal existente
+    if (channelRef.current) {
+      console.log('🧹 Removendo canal anterior...');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Limpar timeout de reconexão se existir
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    console.log('🔄 Configurando nova conexão realtime...');
+
+    // Criar novo canal com configurações otimizadas
     const channel = supabase
-      .channel('dashboard-updates')
+      .channel(`dashboard-updates-${Date.now()}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: `dashboard-${Date.now()}` }
+        }
+      })
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
         (payload) => {
+          console.log('📥 Queue customer change:', payload.eventType, payload.new?.id);
+          lastDataFetchRef.current = new Date();
+          connectionHealthRef.current = true;
+          
           if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
             handleNewCall(payload.new as QueueCustomer, 'queue');
           }
@@ -114,6 +187,10 @@ const Dashboard: React.FC = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'identity_appointments' },
         (payload) => {
+          console.log('📥 Identity appointment change:', payload.eventType, payload.new?.id);
+          lastDataFetchRef.current = new Date();
+          connectionHealthRef.current = true;
+          
           if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
             handleNewAppointmentCall(payload.new as IdentityAppointment);
           }
@@ -122,96 +199,190 @@ const Dashboard: React.FC = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'satisfaction_surveys' },
         (payload) => {
-          console.log('Satisfaction survey updated:', payload);
-          // Recalcular estatísticas quando pesquisas de satisfação são atualizadas
+          console.log('📥 Satisfaction survey change:', payload.eventType);
+          lastDataFetchRef.current = new Date();
+          connectionHealthRef.current = true;
           calculateStats();
         }
       )
-      .subscribe();
+      .on('subscribe', (status) => {
+        console.log('📡 Status da conexão:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Dashboard conectado ao realtime!');
+          connectionHealthRef.current = true;
+          lastDataFetchRef.current = new Date();
+        }
+      })
+      .on('error', (error) => {
+        console.error('❌ Erro no canal realtime:', error);
+        connectionHealthRef.current = false;
+        
+        // Tentar reconectar após 5 segundos
+        reconnectTimeoutRef.current = setTimeout(() => {
+          console.log('🔄 Tentando reconectar...');
+          setupRealTimeSubscription();
+        }, 5000);
+      });
+
+    // Subscrever ao canal
+    channel.subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('❌ Falha na conexão realtime:', status);
+        connectionHealthRef.current = false;
+        
+        // Tentar reconectar após 3 segundos
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setupRealTimeSubscription();
+        }, 3000);
+      }
+    });
+
+    channelRef.current = channel;
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+    setupRealTimeSubscription();
 
     // Limpar fila de chamadas expiradas a cada segundo
     const cleanupInterval = setInterval(() => {
       const now = new Date();
-      setCallQueue(prev => prev.filter(call => call.showUntil > now));
+      setCallQueue(prev => {
+        const filtered = prev.filter(call => call.showUntil > now);
+        if (filtered.length !== prev.length) {
+          console.log('🧹 Removendo chamadas expiradas:', prev.length - filtered.length);
+        }
+        return filtered;
+      });
     }, 1000);
 
-    // Atualizar a cada 10 segundos
-    const interval = setInterval(fetchDashboardData, 10000);
+    // Atualizar dados a cada 15 segundos (aumentado para reduzir carga)
+    const dataInterval = setInterval(() => {
+      if (connectionHealthRef.current) {
+        fetchDashboardData();
+      }
+    }, 15000);
 
     return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
+      console.log('🧹 Limpando recursos do Dashboard...');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       clearInterval(cleanupInterval);
+      clearInterval(dataInterval);
     };
   }, []);
 
   const handleNewCall = async (newCall: QueueCustomer, type: 'queue' | 'appointment' = 'queue') => {
-    // Buscar dados completos do cidadão com perfil do atendente
-    const { data: fullCall } = await supabase
-      .from('queue_customers')
-      .select(`
-        *,
-        services:service_id (name),
-        profiles:attendant_id (full_name, location)
-      `)
-      .eq('id', newCall.id)
-      .single();
+    try {
+      console.log('🔔 Nova chamada recebida:', newCall.id, newCall.name);
+      
+      // Buscar dados completos do cidadão com perfil do atendente
+      const { data: fullCall, error } = await supabase
+        .from('queue_customers')
+        .select(`
+          *,
+          services:service_id (name),
+          profiles:attendant_id (full_name, location)
+        `)
+        .eq('id', newCall.id)
+        .single();
 
-    if (fullCall) {
-      const callWithTimer: CallQueueItem = {
-        ...fullCall,
-        showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
-        type
-      };
+      if (error) {
+        console.error('Erro ao buscar dados completos da chamada:', error);
+        return;
+      }
 
-      setCallQueue(prev => [...prev, callWithTimer]);
-      playBell(); // Tocar campainha
-      speakName(fullCall.name); // Text-to-speech
+      if (fullCall) {
+        const callWithTimer: CallQueueItem = {
+          ...fullCall,
+          showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
+          type
+        };
+
+        setCallQueue(prev => {
+          // Evitar duplicatas
+          const exists = prev.some(call => call.id === fullCall.id);
+          if (exists) {
+            console.log('⚠️ Chamada já existe na fila, ignorando duplicata');
+            return prev;
+          }
+          console.log('✅ Adicionando nova chamada à fila');
+          return [...prev, callWithTimer];
+        });
+        
+        playBell(); // Tocar campainha
+        speakName(fullCall.name); // Text-to-speech
+      }
+    } catch (error) {
+      console.error('Erro ao processar nova chamada:', error);
     }
   };
 
   const handleNewAppointmentCall = async (newAppointment: IdentityAppointment) => {
-    // Buscar dados completos do agendamento com perfil do atendente
-    const { data: fullAppointment } = await supabase
-      .from('identity_appointments')
-      .select(`
-        *,
-        profiles:attendant_id (full_name, location)
-      `)
-      .eq('id', newAppointment.id)
-      .single();
+    try {
+      console.log('🔔 Nova chamada de agendamento recebida:', newAppointment.id, newAppointment.name);
+      
+      // Buscar dados completos do agendamento com perfil do atendente
+      const { data: fullAppointment, error } = await supabase
+        .from('identity_appointments')
+        .select(`
+          *,
+          profiles:attendant_id (full_name, location)
+        `)
+        .eq('id', newAppointment.id)
+        .single();
 
-    if (fullAppointment) {
-      // Converter agendamento para formato similar ao queue_customers
-      const appointmentAsCall: CallQueueItem = {
-        id: fullAppointment.id,
-        name: fullAppointment.name,
-        phone: fullAppointment.phone,
-        queue_number: 0, // Agendamentos não têm número na fila
-        service_id: '', // Para agendamentos de identidade
-        is_priority: false,
-        status: 'calling',
-        called_at: fullAppointment.called_at,
-        created_at: fullAppointment.appointment_date,
-        services: { name: 'Emissão de Identidade' },
-        attendant_id: fullAppointment.attendant_id,
-        profiles: fullAppointment.profiles,
-        showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
-        type: 'appointment'
-      };
+      if (error) {
+        console.error('Erro ao buscar dados completos do agendamento:', error);
+        return;
+      }
 
-      setCallQueue(prev => [...prev, appointmentAsCall]);
-      playBell(); // Tocar campainha
-      speakName(fullAppointment.name); // Text-to-speech
+      if (fullAppointment) {
+        // Converter agendamento para formato similar ao queue_customers
+        const appointmentAsCall: CallQueueItem = {
+          id: fullAppointment.id,
+          name: fullAppointment.name,
+          phone: fullAppointment.phone,
+          queue_number: 0, // Agendamentos não têm número na fila
+          service_id: '', // Para agendamentos de identidade
+          is_priority: false,
+          status: 'calling',
+          called_at: fullAppointment.called_at,
+          created_at: fullAppointment.appointment_date,
+          services: { name: 'Emissão de Identidade' },
+          attendant_id: fullAppointment.attendant_id,
+          profiles: fullAppointment.profiles,
+          showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
+          type: 'appointment'
+        };
+
+        setCallQueue(prev => {
+          // Evitar duplicatas
+          const exists = prev.some(call => call.id === fullAppointment.id);
+          if (exists) {
+            console.log('⚠️ Chamada de agendamento já existe na fila, ignorando duplicata');
+            return prev;
+          }
+          console.log('✅ Adicionando nova chamada de agendamento à fila');
+          return [...prev, appointmentAsCall];
+        });
+
+        playBell(); // Tocar campainha
+        speakName(fullAppointment.name); // Text-to-speech
+      }
+    } catch (error) {
+      console.error('Erro ao processar nova chamada de agendamento:', error);
     }
   };
 
   const fetchDashboardData = async () => {
     try {
-      // Não buscar chamada atual aqui, usar a fila de chamadas
-
       // Buscar fila atual
-      const { data: queueData } = await supabase
+      const { data: queueData, error: queueError } = await supabase
         .from('queue_customers')
         .select(`
           *,
@@ -222,13 +393,20 @@ const Dashboard: React.FC = () => {
         .order('queue_number', { ascending: true })
         .limit(15);
 
-      setQueueCustomers(queueData || []);
+      if (queueError) {
+        console.error('Erro ao buscar fila:', queueError);
+      } else {
+        setQueueCustomers(queueData || []);
+        lastDataFetchRef.current = new Date();
+        console.log('📊 Dados da fila atualizados:', queueData?.length || 0, 'clientes');
+      }
 
       // Calcular estatísticas
       await calculateStats();
 
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
+      connectionHealthRef.current = false;
     }
   };
 
@@ -319,6 +497,16 @@ const Dashboard: React.FC = () => {
       <Header />
       
       <div className="container mx-auto px-8 py-6 max-w-[1920px]">
+        {/* Indicador de status da conexão */}
+        <div className="fixed top-4 right-4 z-50">
+          <Badge 
+            variant={connectionHealthRef.current ? "default" : "destructive"}
+            className={connectionHealthRef.current ? "bg-green-100 text-green-800 border-green-200" : ""}
+          >
+            {connectionHealthRef.current ? '🟢 Online' : '🔴 Reconectando...'}
+          </Badge>
+        </div>
+
         {/* Chamadas Ativas */}
         {callQueue.length > 0 && (
           <div className="mb-12 space-y-6">
