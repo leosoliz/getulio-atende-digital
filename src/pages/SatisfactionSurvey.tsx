@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart, Star, CheckCircle } from 'lucide-react';
+import { Heart, Star, CheckCircle, AlertCircle } from 'lucide-react';
 
 const SatisfactionSurvey: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -19,6 +19,7 @@ const SatisfactionSurvey: React.FC = () => {
   const [overallRating, setOverallRating] = useState('');
   const [problemResolved, setProblemResolved] = useState('');
   const [improvementAspect, setImprovementAspect] = useState('');
+  const [linkExpired, setLinkExpired] = useState(false);
   
   // Get parameters from URL
   const attendantId = searchParams.get('attendant_id');
@@ -27,15 +28,57 @@ const SatisfactionSurvey: React.FC = () => {
   const whatsappServiceId = searchParams.get('whatsapp_service_id');
 
   useEffect(() => {
-    if (!attendantId) {
-      toast({
-        title: "Link inválido",
-        description: "Este link de pesquisa não é válido",
-        variant: "destructive",
-      });
-      navigate('/');
-    }
-  }, [attendantId, navigate, toast]);
+    const validateLink = async () => {
+      if (!attendantId) {
+        toast({
+          title: "Link inválido",
+          description: "Este link de pesquisa não é válido",
+          variant: "destructive",
+        });
+        navigate('/');
+        return;
+      }
+
+      // Verificar se já existe uma pesquisa respondida para este link
+      try {
+        let query = supabase
+          .from('satisfaction_surveys')
+          .select('id')
+          .eq('attendant_id', attendantId);
+
+        // Adicionar filtro específico baseado no tipo de atendimento
+        if (queueCustomerId) {
+          query = query.eq('queue_customer_id', queueCustomerId);
+        } else if (identityAppointmentId) {
+          query = query.eq('identity_appointment_id', identityAppointmentId);
+        } else if (whatsappServiceId) {
+          query = query.eq('whatsapp_service_id', whatsappServiceId);
+        }
+
+        const { data: existingSurvey, error } = await query.single();
+
+        if (error && error.code !== 'PGRST116') {
+          // Erro diferente de "não encontrado"
+          console.error('Erro ao verificar pesquisa existente:', error);
+          return;
+        }
+
+        if (existingSurvey) {
+          // Pesquisa já foi respondida
+          setLinkExpired(true);
+          toast({
+            title: "Link expirado",
+            description: "Esta pesquisa já foi respondida anteriormente",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao validar link:', error);
+      }
+    };
+
+    validateLink();
+  }, [attendantId, queueCustomerId, identityAppointmentId, whatsappServiceId, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +137,26 @@ const SatisfactionSurvey: React.FC = () => {
             <h2 className="text-2xl font-bold mb-2">Pesquisa Enviada!</h2>
             <p className="text-muted-foreground mb-6">
               Obrigado por avaliar nosso atendimento. Sua opinião é muito importante para nós!
+            </p>
+            <Button onClick={() => navigate('/')} className="w-full">
+              Fechar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (linkExpired) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-lg">
+          <CardContent className="pt-8 text-center">
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Link Expirado</h2>
+            <p className="text-muted-foreground mb-6">
+              Esta pesquisa de satisfação já foi respondida anteriormente. 
+              Cada link pode ser usado apenas uma vez.
             </p>
             <Button onClick={() => navigate('/')} className="w-full">
               Fechar
