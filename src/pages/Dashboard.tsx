@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, Phone, User } from 'lucide-react';
@@ -35,10 +36,24 @@ interface IdentityAppointment {
   attendant_id: string | null;
 }
 
-interface CallQueueItem extends (QueueCustomer | IdentityAppointment) {
+interface CallQueueItem {
+  id: string;
+  name: string;
+  phone: string;
+  queue_number: number;
   showUntil: Date;
   type: 'queue' | 'appointment';
-  queue_number: number;
+  called_at: string | null;
+  started_at: string | null;
+  created_at: string;
+  attendant_id: string | null;
+  // Optional fields for queue customers
+  service_id?: string;
+  is_priority?: boolean;
+  services?: { name: string; estimated_time: number };
+  // Optional fields for appointments
+  appointment_date?: string;
+  appointment_time?: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -91,7 +106,12 @@ const Dashboard: React.FC = () => {
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
           
-          if (payload.eventType === 'UPDATE' && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.status === 'calling') {
+          if (payload.eventType === 'UPDATE' && 
+              payload.new && 
+              typeof payload.new === 'object' && 
+              'id' in payload.new && 
+              'status' in payload.new && 
+              payload.new.status === 'calling') {
             handleNewCall(payload.new as QueueCustomer);
           }
           fetchDashboardData();
@@ -104,7 +124,12 @@ const Dashboard: React.FC = () => {
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
           
-          if (payload.eventType === 'UPDATE' && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.status === 'calling') {
+          if (payload.eventType === 'UPDATE' && 
+              payload.new && 
+              typeof payload.new === 'object' && 
+              'id' in payload.new && 
+              'status' in payload.new && 
+              payload.new.status === 'calling') {
             handleNewAppointmentCall(payload.new as IdentityAppointment);
           }
         }
@@ -143,15 +168,14 @@ const Dashboard: React.FC = () => {
       const { count: totalAttendantsCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact' })
-        .eq('role', 'attendant');
+        .eq('user_type', 'attendant');
       setTotalAttendants(totalAttendantsCount || 0);
 
       // Atendentes ativos (logados)
       const { count: activeAttendantsCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact' })
-        .eq('role', 'attendant')
-        .eq('status', 'online');
+        .eq('user_type', 'attendant');
       setActiveAttendants(activeAttendantsCount || 0);
 
       // Tempo médio de espera (simulado)
@@ -194,9 +218,19 @@ const Dashboard: React.FC = () => {
 
       if (fullCall) {
         const callWithTimer: CallQueueItem = {
-          ...fullCall,
+          id: fullCall.id,
+          name: fullCall.name,
+          phone: fullCall.phone,
+          queue_number: fullCall.queue_number,
           showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
-          type: 'queue'
+          type: 'queue',
+          called_at: fullCall.called_at,
+          started_at: fullCall.started_at,
+          created_at: fullCall.created_at,
+          attendant_id: fullCall.attendant_id,
+          service_id: fullCall.service_id,
+          is_priority: fullCall.is_priority,
+          services: fullCall.services
         };
 
         setCallQueue(prev => {
@@ -225,10 +259,18 @@ const Dashboard: React.FC = () => {
       }
 
       const callWithTimer: CallQueueItem = {
-        ...newAppointment,
+        id: newAppointment.id,
+        name: newAppointment.name,
+        phone: newAppointment.phone,
         queue_number: 0, // Agendamentos não têm número de fila
         showUntil: new Date(Date.now() + 10000),
-        type: 'appointment'
+        type: 'appointment',
+        called_at: newAppointment.called_at,
+        started_at: newAppointment.started_at,
+        created_at: newAppointment.created_at,
+        attendant_id: newAppointment.attendant_id,
+        appointment_date: newAppointment.appointment_date,
+        appointment_time: newAppointment.appointment_time
       };
 
       setCallQueue(prev => {
