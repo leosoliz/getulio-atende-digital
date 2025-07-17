@@ -1,185 +1,65 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { CheckCircle, XCircle, Clock, X } from "lucide-react";
 
-interface CompletedService {
-  id: string;
-  name: string;
-  phone: string;
-  queue_number?: number;
-  completed_at: string;
-  attendant_id: string;
-  service_id?: string;
-  has_survey: boolean;
-  type: 'queue' | 'appointment'; // Adicionar tipo para distinguir
-  appointment_time?: string; // Para agendamentos
-}
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Heart, Star, CheckCircle } from 'lucide-react';
 
-interface Service {
-  id: string;
-  name: string;
-}
-
-export default function SatisfactionSurvey() {
-  const [completedServices, setCompletedServices] = useState<CompletedService[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [selectedService, setSelectedService] = useState<CompletedService | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [dismissedServices, setDismissedServices] = useState<Set<string>>(new Set());
-  
-  // Form state
-  const [overallRating, setOverallRating] = useState("");
-  const [problemResolved, setProblemResolved] = useState("");
-  const [improvementAspect, setImprovementAspect] = useState("");
-  
+const SatisfactionSurvey: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [overallRating, setOverallRating] = useState('');
+  const [problemResolved, setProblemResolved] = useState('');
+  const [improvementAspect, setImprovementAspect] = useState('');
+  
+  // Get parameters from URL
+  const attendantId = searchParams.get('attendant_id');
+  const queueCustomerId = searchParams.get('queue_customer_id');
+  const identityAppointmentId = searchParams.get('identity_appointment_id');
+  const whatsappServiceId = searchParams.get('whatsapp_service_id');
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch services
-      const { data: servicesData } = await supabase
-        .from('services')
-        .select('id, name');
-      
-      if (servicesData) {
-        setServices(servicesData);
-      }
-
-      // Fetch completed queue customers with surveys info
-      const { data: queueData } = await supabase
-        .from('queue_customers')
-        .select(`
-          id,
-          name,
-          phone,
-          queue_number,
-          completed_at,
-          attendant_id,
-          service_id
-        `)
-        .eq('status', 'completed')
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: false });
-
-      // Fetch completed identity appointments
-      const { data: appointmentData } = await supabase
-        .from('identity_appointments')
-        .select(`
-          id,
-          name,
-          phone,
-          completed_at,
-          attendant_id,
-          appointment_time
-        `)
-        .eq('status', 'completed')
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: false });
-
-      // Combine both datasets
-      const allCompletedServices = [];
-      
-      if (queueData) {
-        // Check which customers already have surveys
-        const customerIds = queueData.map(customer => customer.id);
-        const { data: surveysData } = await supabase
-          .from('satisfaction_surveys')
-          .select('queue_customer_id')
-          .in('queue_customer_id', customerIds)
-          .not('queue_customer_id', 'is', null);
-
-        const surveysSet = new Set(surveysData?.map(s => s.queue_customer_id) || []);
-        
-        const completedWithSurveys = queueData.map(customer => ({
-          ...customer,
-          type: 'queue' as const,
-          has_survey: surveysSet.has(customer.id)
-        })).filter(customer => !customer.has_survey);
-
-        allCompletedServices.push(...completedWithSurveys);
-      }
-
-      if (appointmentData) {
-        // Check which appointments already have surveys
-        const appointmentIds = appointmentData.map(appointment => appointment.id);
-        const { data: appointmentSurveysData } = await supabase
-          .from('satisfaction_surveys')
-          .select('identity_appointment_id')
-          .in('identity_appointment_id', appointmentIds)
-          .not('identity_appointment_id', 'is', null);
-
-        const appointmentSurveysSet = new Set(appointmentSurveysData?.map(s => s.identity_appointment_id) || []);
-        
-        const appointmentsWithSurveys = appointmentData.map(appointment => ({
-          ...appointment,
-          type: 'appointment' as const,
-          service_id: undefined, // Appointments don't have service_id
-          has_survey: appointmentSurveysSet.has(appointment.id)
-        })).filter(appointment => !appointment.has_survey);
-
-        allCompletedServices.push(...appointmentsWithSurveys);
-      }
-
-      // Sort by completion date
-      allCompletedServices.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
-
-      setCompletedServices(allCompletedServices);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    if (!attendantId) {
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados",
+        title: "Link inválido",
+        description: "Este link de pesquisa não é válido",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      navigate('/');
     }
-  };
+  }, [attendantId, navigate, toast]);
 
-  const openSurveyDialog = (service: CompletedService) => {
-    setSelectedService(service);
-    setOverallRating("");
-    setProblemResolved("");
-    setImprovementAspect("");
-    setIsDialogOpen(true);
-  };
-
-  const handleSubmitSurvey = async () => {
-    if (!selectedService || !overallRating || !problemResolved || !improvementAspect) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!overallRating || !problemResolved || !improvementAspect) {
       toast({
-        title: "Erro",
+        title: "Campos obrigatórios",
         description: "Por favor, responda todas as perguntas",
         variant: "destructive",
       });
       return;
     }
-
+    
+    setLoading(true);
+    
     try {
-      setSubmitting(true);
-      
       const surveyData = {
-        attendant_id: selectedService.attendant_id,
+        attendant_id: attendantId,
         overall_rating: overallRating,
         problem_resolved: problemResolved,
         improvement_aspect: improvementAspect,
-        ...(selectedService.type === 'queue' 
-          ? { queue_customer_id: selectedService.id } 
-          : { identity_appointment_id: selectedService.id })
+        queue_customer_id: queueCustomerId,
+        identity_appointment_id: identityAppointmentId,
+        whatsapp_service_id: whatsappServiceId
       };
 
       const { error } = await supabase
@@ -188,275 +68,152 @@ export default function SatisfactionSurvey() {
 
       if (error) throw error;
 
+      setSubmitted(true);
       toast({
-        title: "Sucesso",
-        description: "Pesquisa de satisfação registrada com sucesso!",
+        title: "Pesquisa enviada!",
+        description: "Obrigado pela sua avaliação!",
       });
-
-      setIsDialogOpen(false);
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error submitting survey:', error);
+      
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Erro ao registrar pesquisa de satisfação",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const cancelSurvey = async (serviceId: string, serviceType: 'queue' | 'appointment') => {
-    try {
-      const deleteQuery = supabase
-        .from('satisfaction_surveys')
-        .delete();
-
-      if (serviceType === 'queue') {
-        deleteQuery.eq('queue_customer_id', serviceId);
-      } else {
-        deleteQuery.eq('identity_appointment_id', serviceId);
-      }
-
-      const { error } = await deleteQuery;
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Pesquisa de satisfação cancelada",
-      });
-
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error canceling survey:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao cancelar pesquisa de satisfação",
+        title: "Erro ao enviar pesquisa",
+        description: error.message,
         variant: "destructive",
       });
     }
+    
+    setLoading(false);
   };
 
-  const handleNoResponse = async (serviceId: string) => {
-    try {
-      const service = completedServices.find(s => s.id === serviceId);
-      if (!service) return;
-
-      const surveyData = {
-        attendant_id: service.attendant_id,
-        overall_rating: 'Não respondeu',
-        problem_resolved: 'Não respondeu',
-        improvement_aspect: 'Não respondeu',
-        ...(service.type === 'queue' 
-          ? { queue_customer_id: serviceId } 
-          : { identity_appointment_id: serviceId })
-      };
-
-      const { error } = await supabase
-        .from('satisfaction_surveys')
-        .insert(surveyData);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Pesquisa marcada como não respondida",
-      });
-
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error marking survey as no response:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao marcar pesquisa como não respondida",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getServiceName = (serviceId: string) => {
-    return services.find(s => s.id === serviceId)?.name || "Serviço não encontrado";
-  };
-
-  const dismissService = (serviceId: string) => {
-    setDismissedServices(prev => new Set([...prev, serviceId]));
-  };
-
-  const filteredServices = completedServices.filter(service => !dismissedServices.has(service.id));
-
-  if (loading) {
+  if (submitted) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Carregando atendimentos...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-lg">
+          <CardContent className="pt-8 text-center">
+            <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Pesquisa Enviada!</h2>
+            <p className="text-muted-foreground mb-6">
+              Obrigado por avaliar nosso atendimento. Sua opinião é muito importante para nós!
+            </p>
+            <Button onClick={() => navigate('/')} className="w-full">
+              Fechar
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Pesquisa de Satisfação</h1>
-        <p className="text-muted-foreground">
-          Gerencie as pesquisas de satisfação dos atendimentos realizados
-        </p>
-      </div>
-
-      <div className="grid gap-4">
-        {filteredServices.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">
-                {completedServices.length === 0 
-                  ? "Nenhum atendimento finalizado encontrado"
-                  : "Todos os cards foram removidos da visualização"
-                }
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredServices.map((service) => (
-            <Card key={service.id} className="w-full">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <span className="text-lg">Cidadão: {service.name}</span>
-                    <div className="text-sm text-muted-foreground">
-                      {service.type === 'queue' ? (
-                        `Senha: ${service.queue_number} | Telefone: ${service.phone}`
-                      ) : (
-                        `Agendamento: ${service.appointment_time} | Telefone: ${service.phone}`
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {service.has_survey ? (
-                      <CheckCircle className="h-6 w-6 text-success" />
-                    ) : (
-                      <XCircle className="h-6 w-6 text-muted-foreground" />
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleNoResponse(service.id)}
-                      className="h-6 w-6 p-0 hover:bg-destructive/10"
-                      title="Não responder pesquisa"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 mb-4">
-                  <p><strong>Serviço:</strong> {service.type === 'appointment' ? 'Emissão de Identidade' : getServiceName(service.service_id || '')}</p>
-                  <p><strong>Finalizado em:</strong> {format(new Date(service.completed_at), 'dd/MM/yyyy HH:mm')}</p>
-                  <p><strong>Status da Pesquisa:</strong> {service.has_survey ? "Realizada" : "Pendente"}</p>
-                </div>
-                
-                <div className="flex gap-2">
-                  {!service.has_survey && (
-                    <Button 
-                      onClick={() => openSurveyDialog(service)}
-                      className="flex-1"
-                    >
-                      Realizar Pesquisa
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Pesquisa de Satisfação</DialogTitle>
-          </DialogHeader>
-          
-          {selectedService && (
-            <div className="space-y-6">
-              <div className="p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold mb-2">Atendimento</h3>
-                <p><strong>Cidadão:</strong> {selectedService.name}</p>
-                <p><strong>Serviço:</strong> {selectedService.type === 'appointment' ? 'Emissão de Identidade' : getServiceName(selectedService.service_id || '')}</p>
-                <p><strong>Finalizado:</strong> {format(new Date(selectedService.completed_at), 'dd/MM/yyyy HH:mm')}</p>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-medium mb-4 block">
-                    1. Como você avalia o atendimento recebido hoje?
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <Card className="w-full max-w-2xl">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Heart className="h-12 w-12 text-primary" />
+          </div>
+          <CardTitle className="text-2xl">Pesquisa de Satisfação</CardTitle>
+          <p className="text-muted-foreground">
+            Sua opinião é muito importante para melhorarmos nosso atendimento
+          </p>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Avaliação Geral */}
+            <div className="space-y-4">
+              <Label className="text-lg font-semibold">
+                1. Como você avalia o atendimento de forma geral?
+              </Label>
+              <RadioGroup value={overallRating} onValueChange={setOverallRating}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Excelente" id="excellent" />
+                  <Label htmlFor="excellent" className="flex items-center gap-2">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    Excelente
                   </Label>
-                  <RadioGroup value={overallRating} onValueChange={setOverallRating}>
-                    {['Excelente', 'Bom', 'Regular', 'Ruim', 'Péssimo'].map((option) => (
-                      <div key={option} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option} id={`rating-${option}`} />
-                        <Label htmlFor={`rating-${option}`}>{option}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
                 </div>
-
-                <div>
-                  <Label className="text-base font-medium mb-4 block">
-                    2. O seu problema ou solicitação foi resolvido?
-                  </Label>
-                  <RadioGroup value={problemResolved} onValueChange={setProblemResolved}>
-                    {['Sim', 'Parcialmente', 'Não'].map((option) => (
-                      <div key={option} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option} id={`resolved-${option}`} />
-                        <Label htmlFor={`resolved-${option}`}>{option}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Bom" id="good" />
+                  <Label htmlFor="good">Bom</Label>
                 </div>
-
-                <div>
-                  <Label className="text-base font-medium mb-4 block">
-                    3. Em qual aspecto o atendimento poderia melhorar?
-                  </Label>
-                  <RadioGroup value={improvementAspect} onValueChange={setImprovementAspect}>
-                    {[
-                      'Tempo de espera',
-                      'Clareza das informações',
-                      'Educação e cordialidade',
-                      'Resolução do problema',
-                      'Nenhuma melhoria necessária'
-                    ].map((option) => (
-                      <div key={option} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option} id={`improvement-${option}`} />
-                        <Label htmlFor={`improvement-${option}`}>{option}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Regular" id="regular" />
+                  <Label htmlFor="regular">Regular</Label>
                 </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  onClick={handleSubmitSurvey} 
-                  disabled={submitting || !overallRating || !problemResolved || !improvementAspect}
-                  className="flex-1"
-                >
-                  {submitting ? "Salvando..." : "Salvar Pesquisa"}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Ruim" id="bad" />
+                  <Label htmlFor="bad">Ruim</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Péssimo" id="terrible" />
+                  <Label htmlFor="terrible">Péssimo</Label>
+                </div>
+              </RadioGroup>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            {/* Resolução do Problema */}
+            <div className="space-y-4">
+              <Label className="text-lg font-semibold">
+                2. Seu problema/solicitação foi resolvido?
+              </Label>
+              <RadioGroup value={problemResolved} onValueChange={setProblemResolved}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Sim" id="yes" />
+                  <Label htmlFor="yes">Sim, completamente</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Parcialmente" id="partially" />
+                  <Label htmlFor="partially">Parcialmente</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Não" id="no" />
+                  <Label htmlFor="no">Não foi resolvido</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Aspecto de Melhoria */}
+            <div className="space-y-4">
+              <Label className="text-lg font-semibold">
+                3. Qual aspecto mais precisa ser melhorado?
+              </Label>
+              <RadioGroup value={improvementAspect} onValueChange={setImprovementAspect}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Tempo de espera" id="wait-time" />
+                  <Label htmlFor="wait-time">Tempo de espera</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Clareza das informações" id="information" />
+                  <Label htmlFor="information">Clareza das informações</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Educação e cordialidade" id="politeness" />
+                  <Label htmlFor="politeness">Educação e cordialidade</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Resolução do problema" id="resolution" />
+                  <Label htmlFor="resolution">Resolução do problema</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Nenhuma melhoria necessária" id="none" />
+                  <Label htmlFor="none">Nenhuma melhoria necessária</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full"
+              size="lg"
+            >
+              {loading ? 'Enviando...' : 'Enviar Pesquisa'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default SatisfactionSurvey;

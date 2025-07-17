@@ -56,6 +56,7 @@ const Attendant: React.FC = () => {
   const [whatsappPhone, setWhatsappPhone] = useState('');
   const [whatsappService, setWhatsappService] = useState('');
   const [whatsappNotes, setWhatsappNotes] = useState('');
+  const [surveyLink, setSurveyLink] = useState('');
   
   const { toast } = useToast();
   const { profile } = useAuth();
@@ -630,7 +631,7 @@ const Attendant: React.FC = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase
+      const { data: whatsappServiceRecord, error } = await supabase
         .from('whatsapp_services')
         .insert({
           name: whatsappName,
@@ -638,16 +639,22 @@ const Attendant: React.FC = () => {
           service_id: whatsappService,
           attendant_id: profile?.id,
           notes: whatsappNotes
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Gerar link da pesquisa de satisfação
+      const surveyUrl = `${window.location.origin}/satisfaction-survey?attendant_id=${profile?.id}&whatsapp_service_id=${whatsappServiceRecord.id}`;
+      setSurveyLink(surveyUrl);
+
       toast({
         title: "Atendimento registrado",
-        description: `Atendimento por WhatsApp de ${whatsappName} foi registrado`,
+        description: `Atendimento por WhatsApp de ${whatsappName} foi registrado. Link da pesquisa gerado!`,
       });
 
-      // Limpar formulário
+      // Limpar formulário (exceto link da pesquisa)
       setWhatsappName('');
       setWhatsappPhone('');
       setWhatsappService('');
@@ -662,6 +669,22 @@ const Attendant: React.FC = () => {
     }
     
     setLoading(false);
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copiado!",
+        description: "Link copiado para a área de transferência",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -984,6 +1007,36 @@ const Attendant: React.FC = () => {
                   </Button>
                 </div>
               </form>
+
+              {/* Link da Pesquisa de Satisfação */}
+              {surveyLink && (
+                <div className="mt-6 p-4 bg-success/10 border border-success/20 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2 text-success">
+                    Link da Pesquisa de Satisfação Gerado!
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Envie este link para o cidadão avaliar o atendimento:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={surveyLink}
+                      readOnly
+                      className="flex-1 bg-background"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => copyToClipboard(surveyLink)}
+                      className="shrink-0"
+                    >
+                      Copiar Link
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 Dica: Copie este link e envie via WhatsApp para o cidadão
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
