@@ -174,12 +174,12 @@ const Dashboard: React.FC = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
         (payload) => {
-          console.log('📥 Queue customer change:', payload.eventType, payload.new?.id);
+          console.log('📥 Queue customer change:', payload.eventType, payload.new);
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
           
-          if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
-            handleNewCall(payload.new as QueueCustomer, 'queue');
+          if (payload.eventType === 'UPDATE' && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.status === 'calling') {
+            handleNewCall(payload.new as QueueCustomer);
           }
           fetchDashboardData();
         }
@@ -187,11 +187,11 @@ const Dashboard: React.FC = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'identity_appointments' },
         (payload) => {
-          console.log('📥 Identity appointment change:', payload.eventType, payload.new?.id);
+          console.log('📥 Identity appointment change:', payload.eventType, payload.new);
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
           
-          if (payload.eventType === 'UPDATE' && payload.new?.status === 'calling') {
+          if (payload.eventType === 'UPDATE' && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.status === 'calling') {
             handleNewAppointmentCall(payload.new as IdentityAppointment);
           }
         }
@@ -276,7 +276,7 @@ const Dashboard: React.FC = () => {
     };
   }, []);
 
-  const handleNewCall = async (newCall: QueueCustomer, type: 'queue' | 'appointment' = 'queue') => {
+  const handleNewCall = async (newCall: QueueCustomer) => {
     try {
       console.log('🔔 Nova chamada recebida:', newCall.id, newCall.name);
       
@@ -300,7 +300,7 @@ const Dashboard: React.FC = () => {
         const callWithTimer: CallQueueItem = {
           ...fullCall,
           showUntil: new Date(Date.now() + 10000), // Mostrar por 10 segundos
-          type
+          type: 'queue'
         };
 
         setCallQueue(prev => {
