@@ -227,7 +227,7 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
       case 'appointment':
         return <Badge variant="outline">Agendamento</Badge>;
       case 'whatsapp':
-        return <Badge variant="success">WhatsApp</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">WhatsApp</Badge>;
       default:
         return <Badge variant="secondary">-</Badge>;
     }
@@ -361,7 +361,8 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
                             {item.duration ? `${item.duration} min` : '-'}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={item.status === 'completed' ? 'success' : 'secondary'}>
+                            <Badge variant={item.status === 'completed' ? 'default' : 'secondary'} 
+                                   className={item.status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' : ''}>
                               {item.status === 'completed' ? 'Concluído' : item.status}
                             </Badge>
                           </TableCell>
