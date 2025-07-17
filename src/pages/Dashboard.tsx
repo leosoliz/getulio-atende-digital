@@ -50,7 +50,7 @@ interface CallQueueItem {
   // Optional fields for queue customers
   service_id?: string;
   is_priority?: boolean;
-  services?: { name: string; estimated_time: number };
+  services?: { name: string; estimated_time?: number };
   // Optional fields for appointments
   appointment_date?: string;
   appointment_time?: string;
@@ -211,7 +211,7 @@ const Dashboard: React.FC = () => {
         .from('queue_customers')
         .select(`
           *,
-          services:service_id (name)
+          services:service_id (name, estimated_time)
         `)
         .eq('id', newCall.id)
         .single();
