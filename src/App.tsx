@@ -97,11 +97,7 @@ const App = () => (
                 <Admin />
               </ProtectedRoute>
             } />
-            <Route path="/satisfaction" element={
-              <ProtectedRoute>
-                <SatisfactionSurvey />
-              </ProtectedRoute>
-            } />
+            <Route path="/satisfaction" element={<SatisfactionSurvey />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
