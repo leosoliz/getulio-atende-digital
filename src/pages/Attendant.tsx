@@ -645,8 +645,8 @@ const Attendant: React.FC = () => {
 
       if (error) throw error;
 
-      // Gerar link da pesquisa de satisfação
-      const surveyUrl = `${window.location.origin}/satisfaction-survey?attendant_id=${profile?.id}&whatsapp_service_id=${whatsappServiceRecord.id}`;
+      // Gerar link da pesquisa de satisfação - corrigido para rota /satisfaction
+      const surveyUrl = `${window.location.origin}/satisfaction?attendant_id=${profile?.id}&whatsapp_service_id=${whatsappServiceRecord.id}`;
       setSurveyLink(surveyUrl);
 
       toast({
