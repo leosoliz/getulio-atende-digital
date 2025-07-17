@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
+import AttendantPerformanceModal from '@/components/AttendantPerformanceModal';
 
 interface QueueCustomer {
   id: string;
@@ -49,6 +49,7 @@ const Attendant: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [identityAppointments, setIdentityAppointments] = useState<IdentityAppointment[]>([]);
+  const [performanceModalOpen, setPerformanceModalOpen] = useState(false);
   
   // WhatsApp service form states
   const [whatsappName, setWhatsappName] = useState('');
@@ -668,6 +669,18 @@ const Attendant: React.FC = () => {
       <Header />
       
       <div className="container mx-auto px-6 py-8">
+        {/* Botão de Performance */}
+        <div className="mb-6 flex justify-end">
+          <Button 
+            onClick={() => setPerformanceModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
+            Minha Performance
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cliente Atual */}
           <Card className="shadow-shadow-card">
@@ -974,6 +987,12 @@ const Attendant: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Performance Modal */}
+        <AttendantPerformanceModal
+          open={performanceModalOpen}
+          onOpenChange={setPerformanceModalOpen}
+        />
       </div>
     </div>
   );
