@@ -372,6 +372,7 @@ export type Database = {
           problem_resolved: string
           queue_customer_id: string | null
           updated_at: string
+          whatsapp_service_id: string | null
         }
         Insert: {
           attendant_id: string
@@ -383,6 +384,7 @@ export type Database = {
           problem_resolved: string
           queue_customer_id?: string | null
           updated_at?: string
+          whatsapp_service_id?: string | null
         }
         Update: {
           attendant_id?: string
@@ -394,6 +396,7 @@ export type Database = {
           problem_resolved?: string
           queue_customer_id?: string | null
           updated_at?: string
+          whatsapp_service_id?: string | null
         }
         Relationships: [
           {
@@ -415,6 +418,13 @@ export type Database = {
             columns: ["queue_customer_id"]
             isOneToOne: false
             referencedRelation: "queue_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_whatsapp_service_id_fkey"
+            columns: ["whatsapp_service_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_services"
             referencedColumns: ["id"]
           },
         ]
