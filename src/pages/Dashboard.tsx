@@ -324,67 +324,68 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in">
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-center mb-8">Painel de Atendimento</h1>
+        <h1 className="text-3xl font-bold text-center mb-8 text-foreground">Painel de Atendimento</h1>
 
         {/* Indicadores */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-shadow-card">
+          <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle>Cidadãos na Fila</CardTitle>
+              <CardTitle className="text-card-foreground">Cidadãos na Fila</CardTitle>
               <CardDescription>Total de cidadãos aguardando atendimento</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{queueSize}</div>
+              <div className="text-3xl font-bold text-primary">{queueSize}</div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-shadow-card">
+          <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle>Total de Atendentes</CardTitle>
+              <CardTitle className="text-card-foreground">Total de Atendentes</CardTitle>
               <CardDescription>Número total de atendentes cadastrados</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{totalAttendants}</div>
+              <div className="text-3xl font-bold text-secondary">{totalAttendants}</div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-shadow-card">
+          <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle>Atendentes Online</CardTitle>
+              <CardTitle className="text-card-foreground">Atendentes Online</CardTitle>
               <CardDescription>Atendentes atualmente conectados</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{activeAttendants}</div>
+              <div className="text-3xl font-bold text-success">{activeAttendants}</div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-shadow-card">
+          <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle>Tempo Médio de Espera</CardTitle>
+              <CardTitle className="text-card-foreground">Tempo Médio de Espera</CardTitle>
               <CardDescription>Tempo médio que um cidadão espera na fila</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{averageWaitTime} minutos</div>
+              <div className="text-3xl font-bold text-accent">{averageWaitTime} minutos</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Chamados Ativos */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Chamados Ativos</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-foreground">Chamados Ativos</h2>
           {callQueue.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              Nenhum chamado ativo no momento
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
+              <p>Nenhum chamado ativo no momento</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {callQueue.map((call) => (
-                <Card key={call.id} className="shadow-shadow-card">
+                <Card key={call.id} className="shadow-card animate-scale-in">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                    <CardTitle className="flex items-center gap-2 text-card-foreground">
+                      <User className="h-4 w-4 text-primary" />
                       {call.name}
                     </CardTitle>
                     <CardDescription>
@@ -395,17 +396,17 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-4 mb-2">
                       <Avatar>
                         <AvatarImage src={`https://avatar.vercel.sh/${call.name}.png`} />
-                        <AvatarFallback>{call.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="bg-primary text-primary-foreground">{call.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{call.name}</p>
+                        <p className="font-medium text-card-foreground">{call.name}</p>
                         <p className="text-sm text-muted-foreground">{call.phone}</p>
                       </div>
                     </div>
                     <Separator className="my-2" />
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-4 w-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
                           Chamado há {Math.floor((Date.now() - new Date(call.called_at || call.created_at).getTime()) / 60000)} minutos
                         </p>
@@ -423,7 +424,8 @@ const Dashboard: React.FC = () => {
 
         {/* Status da Conexão */}
         <div className="text-center">
-          <Badge variant={connectionHealth ? 'secondary' : 'destructive'}>
+          <Badge variant={connectionHealth ? 'secondary' : 'destructive'} className="animate-pulse">
+            <div className={`w-2 h-2 rounded-full mr-2 ${connectionHealth ? 'bg-success' : 'bg-destructive'}`} />
             Status da Conexão: {connectionHealth ? 'Online' : 'Offline'}
           </Badge>
         </div>
