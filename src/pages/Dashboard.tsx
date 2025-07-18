@@ -80,8 +80,8 @@ const Dashboard: React.FC = () => {
     // Buscar dados iniciais
     fetchDashboardData();
 
-    // Monitorar saúde da conexão a cada 5 segundos
-    setInterval(() => {
+    // Monitorar saúde da conexão e limpar chamadas expiradas
+    const healthInterval = setInterval(() => {
       const now = new Date();
       const diff = now.getTime() - lastDataFetchRef.current.getTime();
       const minutesSinceLastFetch = Math.floor(diff / 60000);
@@ -94,6 +94,9 @@ const Dashboard: React.FC = () => {
         connectionHealthRef.current = true;
         setConnectionHealth(true);
       }
+
+      // Limpar chamadas expiradas
+      setCallQueue(prev => prev.filter(call => call.showUntil > now));
     }, 5000);
 
     // Configure realtime subscription
@@ -152,6 +155,7 @@ const Dashboard: React.FC = () => {
       if (speechSynthRef.current) {
         speechSynthRef.current.cancel();
       }
+      clearInterval(healthInterval);
     };
   }, []);
 
@@ -171,15 +175,30 @@ const Dashboard: React.FC = () => {
         .eq('user_type', 'attendant');
       setTotalAttendants(totalAttendantsCount || 0);
 
-      // Atendentes ativos (logados)
+      // Atendentes ativos (com atendimentos em andamento)
       const { count: activeAttendantsCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact' })
-        .eq('user_type', 'attendant');
+        .from('queue_customers')
+        .select('attendant_id', { count: 'exact' })
+        .not('attendant_id', 'is', null)
+        .in('status', ['calling', 'in_service']);
       setActiveAttendants(activeAttendantsCount || 0);
 
-      // Tempo médio de espera (simulado)
-      setAverageWaitTime(Math.floor(Math.random() * 25));
+      // Tempo médio de espera (baseado em dados reais)
+      const { data: waitingCustomers } = await supabase
+        .from('queue_customers')
+        .select('created_at')
+        .eq('status', 'waiting')
+        .limit(10);
+      
+      if (waitingCustomers && waitingCustomers.length > 0) {
+        const avgWait = waitingCustomers.reduce((sum, customer) => {
+          const waitTime = (new Date().getTime() - new Date(customer.created_at).getTime()) / 60000;
+          return sum + waitTime;
+        }, 0) / waitingCustomers.length;
+        setAverageWaitTime(Math.round(avgWait));
+      } else {
+        setAverageWaitTime(0);
+      }
 
       lastDataFetchRef.current = new Date();
       connectionHealthRef.current = true;
