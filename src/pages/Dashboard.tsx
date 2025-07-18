@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Header from '@/components/Header';
 
 interface QueueCustomer {
   id: string;
@@ -325,6 +326,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background animate-fade-in">
+      <Header />
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-foreground">Painel de Atendimento</h1>
 
