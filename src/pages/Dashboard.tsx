@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Header from '@/components/Header';
+import SatisfactionIndicators from '@/components/SatisfactionIndicators';
 
 interface QueueCustomer {
   id: string;
@@ -64,6 +65,7 @@ const Dashboard: React.FC = () => {
   const [averageWaitTime, setAverageWaitTime] = useState(0);
   const [connectionHealth, setConnectionHealth] = useState(true);
   const [callQueue, setCallQueue] = useState<CallQueueItem[]>([]);
+  const [waitingQueue, setWaitingQueue] = useState<QueueCustomer[]>([]);
 
   const lastDataFetchRef = useRef(new Date());
   const connectionHealthRef = useRef(true);
@@ -168,6 +170,18 @@ const Dashboard: React.FC = () => {
         .select('*', { count: 'exact' })
         .eq('status', 'waiting');
       setQueueSize(queueCount || 0);
+
+      // Buscar fila de espera completa para exibir
+      const { data: waitingData } = await supabase
+        .from('queue_customers')
+        .select(`
+          *,
+          services:service_id (name, estimated_time)
+        `)
+        .eq('status', 'waiting')
+        .order('is_priority', { ascending: false })
+        .order('created_at', { ascending: true });
+      setWaitingQueue(waitingData || []);
 
       // Total de atendentes
       const { count: totalAttendantsCount } = await supabase
@@ -422,6 +436,80 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Indicadores de Satisfação */}
+        <div className="mb-8">
+          <SatisfactionIndicators />
+        </div>
+
+        {/* Fila de Espera */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4 text-foreground">Fila de Espera ({waitingQueue.length} pessoas)</h2>
+          <Card className="shadow-card">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
+              <CardTitle className="flex items-center gap-2 text-card-foreground">
+                <User className="h-5 w-5 text-primary" />
+                Cidadãos Aguardando Atendimento
+              </CardTitle>
+              <CardDescription>
+                Lista completa dos cidadãos na fila por ordem de prioridade
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {waitingQueue.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <p>Nenhum cidadão aguardando na fila</p>
+                  </div>
+                ) : (
+                  waitingQueue.map((customer, index) => (
+                    <div
+                      key={customer.id}
+                      className={`p-4 rounded-lg border ${
+                        customer.is_priority
+                          ? 'bg-destructive/5 border-destructive/20'
+                          : 'bg-card border-border'
+                      } animate-fade-in`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarImage src={`https://avatar.vercel.sh/${customer.name}.png`} />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {customer.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-card-foreground">{customer.name}</p>
+                            <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {customer.services?.name || 'Serviço não especificado'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {customer.is_priority && (
+                            <Badge variant="destructive" className="animate-pulse">
+                              Prioridade
+                            </Badge>
+                          )}
+                          <Badge variant="secondary">#{customer.queue_number}</Badge>
+                          <div className="text-right text-sm">
+                            <p className="text-muted-foreground">Na fila há</p>
+                            <p className="font-medium">
+                              {Math.floor((Date.now() - new Date(customer.created_at).getTime()) / 60000)} min
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Status da Conexão */}
