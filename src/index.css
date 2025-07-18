@@ -119,7 +119,6 @@ Baseada no brasão: laranja, azul claro, amarelo, verde, cinza
   body {
     @apply bg-background text-foreground;
   }
-  }
 }
 
 @layer components {
