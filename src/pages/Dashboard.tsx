@@ -407,10 +407,6 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 space-y-4">
           {/* Chamados Ativos */}
           <div>
-            <h2 className="text-xl font-bold mb-4 text-foreground flex items-center gap-3">
-              <Phone className="h-6 w-6 text-primary" />
-              Chamados Ativos
-            </h2>
             {callQueue.length === 0 ? (
               <Card className="shadow-card">
                 <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/20 pb-3">
