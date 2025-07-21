@@ -56,10 +56,10 @@ const Header: React.FC<HeaderProps> = ({ showDashboardButton = false }) => {
             <img 
               src="/lovable-uploads/ef74e05b-9b97-42ff-8531-33a04a68fd63.png" 
               alt="Brasão Presidente Getúlio" 
-              className="h-16 w-16 object-contain"
+              className="h-20 w-20 object-contain"
             />
             <div>
-              <h1 className="text-3xl font-bold text-primary-foreground">
+              <h1 className="text-4xl font-bold text-primary-foreground">
                 Sistema de Atendimento
               </h1>
               <p className="text-base text-primary-foreground/80">
