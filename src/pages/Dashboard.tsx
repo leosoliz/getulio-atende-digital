@@ -59,9 +59,8 @@ interface CallQueueItem {
 }
 
 const Dashboard: React.FC = () => {
-  const [queueSize, setQueueSize] = useState(0);
-  const [totalAttendants, setTotalAttendants] = useState(0);
-  const [activeAttendants, setActiveAttendants] = useState(0);
+  const [totalAttendances, setTotalAttendances] = useState(0);
+  const [averageServiceTime, setAverageServiceTime] = useState(0);
   const [averageWaitTime, setAverageWaitTime] = useState(0);
   const [connectionHealth, setConnectionHealth] = useState(true);
   const [callQueue, setCallQueue] = useState<CallQueueItem[]>([]);
@@ -164,12 +163,27 @@ const Dashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Tamanho da fila
-      const { count: queueCount } = await supabase
-        .from('queue_customers')
-        .select('*', { count: 'exact' })
-        .eq('status', 'waiting');
-      setQueueSize(queueCount || 0);
+      // Total de atendimentos realizados no dia (queue_customers + whatsapp + agendamentos)
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [{ count: queueCount }, { count: whatsappCount }, { count: appointmentCount }] = await Promise.all([
+        supabase
+          .from('queue_customers')
+          .select('*', { count: 'exact' })
+          .eq('status', 'completed')
+          .gte('created_at', today + 'T00:00:00.000Z'),
+        supabase
+          .from('whatsapp_services')
+          .select('*', { count: 'exact' })
+          .gte('created_at', today + 'T00:00:00.000Z'),
+        supabase
+          .from('identity_appointments')
+          .select('*', { count: 'exact' })
+          .eq('status', 'completed')
+          .gte('created_at', today + 'T00:00:00.000Z')
+      ]);
+      
+      setTotalAttendances((queueCount || 0) + (whatsappCount || 0) + (appointmentCount || 0));
 
       // Buscar fila de espera completa para exibir
       const { data: waitingData } = await supabase
@@ -183,20 +197,24 @@ const Dashboard: React.FC = () => {
         .order('created_at', { ascending: true });
       setWaitingQueue(waitingData || []);
 
-      // Total de atendentes
-      const { count: totalAttendantsCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact' })
-        .eq('user_type', 'attendant');
-      setTotalAttendants(totalAttendantsCount || 0);
-
-      // Atendentes ativos (com atendimentos em andamento)
-      const { count: activeAttendantsCount } = await supabase
+      // Tempo médio de atendimento (atendimentos finalizados hoje)
+      const { data: completedAttendances } = await supabase
         .from('queue_customers')
-        .select('attendant_id', { count: 'exact' })
-        .not('attendant_id', 'is', null)
-        .in('status', ['calling', 'in_service']);
-      setActiveAttendants(activeAttendantsCount || 0);
+        .select('started_at, completed_at')
+        .eq('status', 'completed')
+        .not('started_at', 'is', null)
+        .not('completed_at', 'is', null)
+        .gte('created_at', today + 'T00:00:00.000Z');
+
+      if (completedAttendances && completedAttendances.length > 0) {
+        const avgService = completedAttendances.reduce((sum, attendance) => {
+          const serviceTime = (new Date(attendance.completed_at!).getTime() - new Date(attendance.started_at!).getTime()) / 60000;
+          return sum + serviceTime;
+        }, 0) / completedAttendances.length;
+        setAverageServiceTime(Math.round(avgService));
+      } else {
+        setAverageServiceTime(0);
+      }
 
       // Tempo médio de espera (baseado em dados reais)
       const { data: waitingCustomers } = await supabase
@@ -345,34 +363,24 @@ const Dashboard: React.FC = () => {
         <h1 className="text-3xl font-bold text-center mb-8 text-foreground">Painel de Atendimento</h1>
 
         {/* Indicadores */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Cidadãos na Fila</CardTitle>
-              <CardDescription>Total de cidadãos aguardando atendimento</CardDescription>
+              <CardTitle className="text-card-foreground">Total de Atendimentos no Dia</CardTitle>
+              <CardDescription>Fila + WhatsApp + Agendamentos</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{queueSize}</div>
+              <div className="text-3xl font-bold text-primary">{totalAttendances}</div>
             </CardContent>
           </Card>
 
           <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Total de Atendentes</CardTitle>
-              <CardDescription>Número total de atendentes cadastrados</CardDescription>
+              <CardTitle className="text-card-foreground">Tempo Médio de Atendimento</CardTitle>
+              <CardDescription>Duração média de um atendimento</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-secondary">{totalAttendants}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover-scale">
-            <CardHeader>
-              <CardTitle className="text-card-foreground">Atendentes Online</CardTitle>
-              <CardDescription>Atendentes atualmente conectados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success">{activeAttendants}</div>
+              <div className="text-3xl font-bold text-secondary">{averageServiceTime} minutos</div>
             </CardContent>
           </Card>
 
