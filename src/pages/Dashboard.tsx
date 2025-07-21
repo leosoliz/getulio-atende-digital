@@ -404,7 +404,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Restante do conteúdo em scroll */}
-        <div className="flex-1 overflow-y-auto space-y-4">
+        <div className="flex-1 space-y-4">
           {/* Chamados Ativos */}
           <div>
             <h2 className="text-xl font-bold mb-4 text-foreground flex items-center gap-3">
