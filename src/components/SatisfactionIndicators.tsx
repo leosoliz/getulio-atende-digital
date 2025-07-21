@@ -180,7 +180,7 @@ const SatisfactionIndicators: React.FC = () => {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-8">
+      <CardContent className="space-y-6 h-72 overflow-y-auto">
         {/* Score de Satisfação */}
         <div className="text-center bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl p-6">
           <div className={`text-6xl font-black mb-2 ${getSatisfactionColor(stats.satisfactionScore)}`}>
