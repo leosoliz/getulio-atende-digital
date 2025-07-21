@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, Phone, User } from 'lucide-react';
+import { Clock, Phone, User, Users, Timer, Hourglass } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from "@/components/ui/separator"
 import { supabase } from '@/integrations/supabase/client';
@@ -364,32 +364,41 @@ const Dashboard: React.FC = () => {
         {/* Indicadores */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-shrink-0">
           <Card className="shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-card-foreground">Total de Atendimentos no Dia</CardTitle>
-              <CardDescription className="text-sm">Fila + WhatsApp + Agendamentos</CardDescription>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                <Users className="h-8 w-8 text-primary" />
+                Total de Atendimentos no Dia
+              </CardTitle>
+              <CardDescription className="text-base">Fila + WhatsApp + Agendamentos</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-4xl font-bold text-primary">{totalAttendances}</div>
+              <div className="text-6xl font-bold text-primary">{totalAttendances}</div>
             </CardContent>
           </Card>
 
           <Card className="shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-card-foreground">Tempo Médio de Atendimento</CardTitle>
-              <CardDescription className="text-sm">Duração média de um atendimento</CardDescription>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                <Timer className="h-8 w-8 text-secondary" />
+                Tempo Médio de Atendimento
+              </CardTitle>
+              <CardDescription className="text-base">Duração média de um atendimento</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-4xl font-bold text-secondary">{averageServiceTime} <span className="text-lg">min</span></div>
+              <div className="text-6xl font-bold text-secondary">{averageServiceTime} <span className="text-2xl">min</span></div>
             </CardContent>
           </Card>
 
           <Card className="shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-card-foreground">Tempo Médio de Espera</CardTitle>
-              <CardDescription className="text-sm">Tempo médio que um cidadão espera na fila</CardDescription>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                <Hourglass className="h-8 w-8 text-accent" />
+                Tempo Médio de Espera
+              </CardTitle>
+              <CardDescription className="text-base">Tempo médio que um cidadão espera na fila</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-4xl font-bold text-accent">{averageWaitTime} <span className="text-lg">min</span></div>
+              <div className="text-6xl font-bold text-accent">{averageWaitTime} <span className="text-2xl">min</span></div>
             </CardContent>
           </Card>
         </div>
