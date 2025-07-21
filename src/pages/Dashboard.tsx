@@ -216,18 +216,18 @@ const Dashboard: React.FC = () => {
         setAverageServiceTime(0);
       }
 
-      // Tempo médio de espera (baseado em dados reais)
-      const { data: waitingCustomers } = await supabase
+      // Tempo médio de espera (desde cadastro até chamado)
+      const { data: calledCustomers } = await supabase
         .from('queue_customers')
-        .select('created_at')
-        .eq('status', 'waiting')
-        .limit(10);
+        .select('created_at, called_at')
+        .not('called_at', 'is', null)
+        .gte('created_at', today + 'T00:00:00.000Z');
       
-      if (waitingCustomers && waitingCustomers.length > 0) {
-        const avgWait = waitingCustomers.reduce((sum, customer) => {
-          const waitTime = (new Date().getTime() - new Date(customer.created_at).getTime()) / 60000;
+      if (calledCustomers && calledCustomers.length > 0) {
+        const avgWait = calledCustomers.reduce((sum, customer) => {
+          const waitTime = (new Date(customer.called_at!).getTime() - new Date(customer.created_at).getTime()) / 60000;
           return sum + waitTime;
-        }, 0) / waitingCustomers.length;
+        }, 0) / calledCustomers.length;
         setAverageWaitTime(Math.round(avgWait));
       } else {
         setAverageWaitTime(0);
