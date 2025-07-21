@@ -410,7 +410,7 @@ const Dashboard: React.FC = () => {
             {callQueue.length === 0 ? (
               <Card className="shadow-card">
                 <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/20 pb-3">
-                  <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
+                <CardTitle className="flex items-center gap-3 text-3xl font-bold text-card-foreground">
                     <Clock className="h-6 w-6 text-primary" />
                     Nenhum chamado ativo
                   </CardTitle>
@@ -487,7 +487,7 @@ const Dashboard: React.FC = () => {
             <div>
               <Card className="shadow-card h-full">
                 <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/5 pb-3">
-                  <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
+              <CardTitle className="flex items-center gap-3 text-3xl font-bold text-card-foreground">
                     <User className="h-6 w-6 text-primary" />
                     Fila de Espera ({waitingQueue.length} pessoas)
                   </CardTitle>
