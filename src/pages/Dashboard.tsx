@@ -357,176 +357,185 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="h-screen bg-background animate-fade-in flex flex-col">
       <Header />
-      <div className="max-w-none mx-auto py-4 px-6">
+      <div className="flex-1 max-w-none mx-auto py-4 px-6 overflow-hidden flex flex-col">
 
         {/* Indicadores */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
-          <Card className="shadow-card hover-scale">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-card-foreground">Total de Atendimentos no Dia</CardTitle>
-              <CardDescription className="text-lg">Fila + WhatsApp + Agendamentos</CardDescription>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-shrink-0">
+          <Card className="shadow-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-card-foreground">Total de Atendimentos no Dia</CardTitle>
+              <CardDescription className="text-sm">Fila + WhatsApp + Agendamentos</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-6xl font-bold text-primary">{totalAttendances}</div>
+            <CardContent className="pt-0">
+              <div className="text-4xl font-bold text-primary">{totalAttendances}</div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-card hover-scale">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-card-foreground">Tempo Médio de Atendimento</CardTitle>
-              <CardDescription className="text-lg">Duração média de um atendimento</CardDescription>
+          <Card className="shadow-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-card-foreground">Tempo Médio de Atendimento</CardTitle>
+              <CardDescription className="text-sm">Duração média de um atendimento</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-6xl font-bold text-secondary">{averageServiceTime} <span className="text-2xl">minutos</span></div>
+            <CardContent className="pt-0">
+              <div className="text-4xl font-bold text-secondary">{averageServiceTime} <span className="text-lg">min</span></div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-card hover-scale">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-card-foreground">Tempo Médio de Espera</CardTitle>
-              <CardDescription className="text-lg">Tempo médio que um cidadão espera na fila</CardDescription>
+          <Card className="shadow-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-card-foreground">Tempo Médio de Espera</CardTitle>
+              <CardDescription className="text-sm">Tempo médio que um cidadão espera na fila</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-6xl font-bold text-accent">{averageWaitTime} <span className="text-2xl">minutos</span></div>
+            <CardContent className="pt-0">
+              <div className="text-4xl font-bold text-accent">{averageWaitTime} <span className="text-lg">min</span></div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Chamados Ativos */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-6 text-foreground">Chamados Ativos</h2>
-          {callQueue.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Nenhum chamado ativo no momento</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {callQueue.map((call) => (
-                <Card key={call.id} className="shadow-card animate-scale-in">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-card-foreground">
-                      <User className="h-4 w-4 text-primary" />
-                      {call.name}
-                    </CardTitle>
-                    <CardDescription>
-                      {call.type === 'queue' ? 'Fila Geral' : 'Agendamento'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 mb-2">
-                      <Avatar>
-                        <AvatarImage src={`https://avatar.vercel.sh/${call.name}.png`} />
-                        <AvatarFallback className="bg-primary text-primary-foreground">{call.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-card-foreground">{call.name}</p>
-                        <p className="text-sm text-muted-foreground">{call.phone}</p>
-                      </div>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Chamado há {Math.floor((Date.now() - new Date(call.called_at || call.created_at).getTime()) / 60000)} minutos
-                        </p>
-                      </div>
-                      {call.type === 'queue' && (
-                        <Badge variant="secondary">#{call.queue_number}</Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Indicadores de Satisfação e Fila de Espera */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Indicadores de Satisfação */}
+        {/* Restante do conteúdo em scroll */}
+        <div className="flex-1 overflow-y-auto space-y-4">
+          {/* Chamados Ativos */}
           <div>
-            <SatisfactionIndicators />
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Chamados Ativos</h2>
+            {callQueue.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm">Nenhum chamado ativo no momento</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {callQueue.map((call) => (
+                  <Card key={call.id} className="shadow-card animate-scale-in">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-card-foreground text-base">
+                        <User className="h-4 w-4 text-primary" />
+                        {call.name}
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        {call.type === 'queue' ? 'Fila Geral' : 'Agendamento'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={`https://avatar.vercel.sh/${call.name}.png`} />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">{call.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-card-foreground text-sm">{call.name}</p>
+                          <p className="text-xs text-muted-foreground">{call.phone}</p>
+                        </div>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            Há {Math.floor((Date.now() - new Date(call.called_at || call.created_at).getTime()) / 60000)}min
+                          </p>
+                        </div>
+                        {call.type === 'queue' && (
+                          <Badge variant="secondary" className="text-xs">#{call.queue_number}</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Fila de Espera */}
-          <div>
-            <Card className="shadow-card">
-              <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
-                <CardTitle className="flex items-center gap-2 text-card-foreground text-3xl font-bold">
-                  <User className="h-6 w-6 text-primary" />
-                  Fila de Espera ({waitingQueue.length} pessoas)
-                </CardTitle>
-                <CardDescription>
-                  Lista completa dos cidadãos na fila por ordem de prioridade
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+          {/* Indicadores de Satisfação e Fila de Espera */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Indicadores de Satisfação */}
+            <div>
+              <SatisfactionIndicators />
+            </div>
+
+            {/* Fila de Espera */}
+            <div>
+              <Card className="shadow-card h-full">
+                <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10 pb-3">
+                  <CardTitle className="flex items-center gap-2 text-card-foreground text-xl font-bold">
+                    <User className="h-5 w-5 text-primary" />
+                    Fila de Espera ({waitingQueue.length} pessoas)
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Lista completa dos cidadãos na fila por ordem de prioridade
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-3 h-80 overflow-y-auto">
                   {waitingQueue.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                      <p>Nenhum cidadão aguardando na fila</p>
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                      <p className="text-sm">Nenhum cidadão na fila no momento</p>
                     </div>
                   ) : (
-                    waitingQueue.map((customer, index) => (
-                      <div
-                        key={customer.id}
-                        className={`p-4 rounded-lg border ${
-                          customer.is_priority
-                            ? 'bg-destructive/5 border-destructive/20'
-                            : 'bg-card border-border'
-                        } animate-fade-in`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Avatar>
-                              <AvatarImage src={`https://avatar.vercel.sh/${customer.name}.png`} />
-                              <AvatarFallback className="bg-primary text-primary-foreground">
-                                {customer.name.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-card-foreground">{customer.name}</p>
-                              <p className="text-sm text-muted-foreground">{customer.phone}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {customer.services?.name || 'Serviço não especificado'}
-                              </p>
+                    <div className="space-y-3">
+                      {waitingQueue.map((customer, index) => (
+                        <div
+                          key={customer.id}
+                          className={`p-3 rounded-lg border ${
+                            customer.is_priority
+                              ? 'bg-destructive/5 border-destructive/20'
+                              : 'bg-card border-border'
+                          } animate-fade-in`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={`https://avatar.vercel.sh/${customer.name}.png`} />
+                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                  {customer.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-grow min-w-0">
+                                <p className="font-medium text-card-foreground text-sm truncate">{customer.name}</p>
+                                <p className="text-xs text-muted-foreground">{customer.phone}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {customer.services?.name || 'Serviço não especificado'}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {customer.is_priority && (
-                              <Badge variant="destructive" className="animate-pulse">
-                                Prioridade
-                              </Badge>
-                            )}
-                            <Badge variant="secondary">#{customer.queue_number}</Badge>
-                            <div className="text-right text-sm">
-                              <p className="text-muted-foreground">Na fila há</p>
-                              <p className="font-medium">
-                                {Math.floor((Date.now() - new Date(customer.created_at).getTime()) / 60000)} min
-                              </p>
+                            <div className="flex items-center gap-2">
+                              {customer.is_priority && (
+                                <Badge variant="destructive" className="text-xs animate-pulse">
+                                  Prioridade
+                                </Badge>
+                              )}
+                              <Badge variant="secondary" className="text-xs">#{customer.queue_number}</Badge>
+                              <div className="text-right text-xs">
+                                <p className="text-muted-foreground">Há</p>
+                                <p className="font-medium">
+                                  {Math.floor((Date.now() - new Date(customer.created_at).getTime()) / 60000)}min
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
-        {/* Status da Conexão */}
-        <div className="text-center">
-          <Badge variant={connectionHealth ? 'secondary' : 'destructive'} className="animate-pulse">
-            <div className={`w-2 h-2 rounded-full mr-2 ${connectionHealth ? 'bg-success' : 'bg-destructive'}`} />
-            Status da Conexão: {connectionHealth ? 'Online' : 'Offline'}
-          </Badge>
+        {/* Status de Conexão */}
+        <div className="fixed bottom-4 right-4">
+          <Card className={`shadow-card ${connectionHealth ? 'border-success' : 'border-destructive'}`}>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${connectionHealth ? 'bg-success animate-pulse' : 'bg-destructive'}`}></div>
+                <span className="text-xs font-medium text-card-foreground">
+                  {connectionHealth ? 'Conectado' : 'Desconectado'}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
