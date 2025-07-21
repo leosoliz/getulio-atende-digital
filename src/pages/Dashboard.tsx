@@ -407,7 +407,10 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 overflow-y-auto space-y-4">
           {/* Chamados Ativos */}
           <div>
-            <h2 className="text-2xl font-bold mb-4 text-foreground">Chamados Ativos</h2>
+            <h2 className="text-xl font-bold mb-4 text-foreground flex items-center gap-3">
+              <Phone className="h-6 w-6 text-primary" />
+              Chamados Ativos
+            </h2>
             {callQueue.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
                 <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
@@ -467,11 +470,11 @@ const Dashboard: React.FC = () => {
             <div>
               <Card className="shadow-card h-full">
                 <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-card-foreground text-xl font-bold">
-                    <User className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                    <User className="h-6 w-6 text-primary" />
                     Fila de Espera ({waitingQueue.length} pessoas)
                   </CardTitle>
-                  <CardDescription className="text-sm">
+                  <CardDescription className="text-base">
                     Lista completa dos cidadãos na fila por ordem de prioridade
                   </CardDescription>
                 </CardHeader>
