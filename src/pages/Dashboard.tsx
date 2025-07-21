@@ -454,12 +454,11 @@ const Dashboard: React.FC = () => {
 
           {/* Fila de Espera */}
           <div>
-            <h2 className="text-3xl font-bold mb-6 text-foreground">Fila de Espera ({waitingQueue.length} pessoas)</h2>
             <Card className="shadow-card">
               <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
-                <CardTitle className="flex items-center gap-2 text-card-foreground">
-                  <User className="h-5 w-5 text-primary" />
-                  Cidadãos Aguardando Atendimento
+                <CardTitle className="flex items-center gap-2 text-card-foreground text-3xl font-bold">
+                  <User className="h-6 w-6 text-primary" />
+                  Fila de Espera ({waitingQueue.length} pessoas)
                 </CardTitle>
                 <CardDescription>
                   Lista completa dos cidadãos na fila por ordem de prioridade
