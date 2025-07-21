@@ -499,7 +499,7 @@ const Dashboard: React.FC = () => {
                     Lista completa dos cidadãos na fila por ordem de prioridade
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-3 h-72 overflow-y-auto">
+                <CardContent className="pt-3 h-76 overflow-y-auto">
                   {waitingQueue.length === 0 ? (
                     <div className="text-center py-6 text-muted-foreground">
                       <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
