@@ -359,45 +359,44 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background animate-fade-in">
       <Header />
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-foreground">Painel de Atendimento</h1>
+      <div className="max-w-none mx-auto py-4 px-6">
 
         {/* Indicadores */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
           <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Total de Atendimentos no Dia</CardTitle>
-              <CardDescription>Fila + WhatsApp + Agendamentos</CardDescription>
+              <CardTitle className="text-2xl font-bold text-card-foreground">Total de Atendimentos no Dia</CardTitle>
+              <CardDescription className="text-lg">Fila + WhatsApp + Agendamentos</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{totalAttendances}</div>
+              <div className="text-6xl font-bold text-primary">{totalAttendances}</div>
             </CardContent>
           </Card>
 
           <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Tempo Médio de Atendimento</CardTitle>
-              <CardDescription>Duração média de um atendimento</CardDescription>
+              <CardTitle className="text-2xl font-bold text-card-foreground">Tempo Médio de Atendimento</CardTitle>
+              <CardDescription className="text-lg">Duração média de um atendimento</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-secondary">{averageServiceTime} minutos</div>
+              <div className="text-6xl font-bold text-secondary">{averageServiceTime} <span className="text-2xl">minutos</span></div>
             </CardContent>
           </Card>
 
           <Card className="shadow-card hover-scale">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Tempo Médio de Espera</CardTitle>
-              <CardDescription>Tempo médio que um cidadão espera na fila</CardDescription>
+              <CardTitle className="text-2xl font-bold text-card-foreground">Tempo Médio de Espera</CardTitle>
+              <CardDescription className="text-lg">Tempo médio que um cidadão espera na fila</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-accent">{averageWaitTime} minutos</div>
+              <div className="text-6xl font-bold text-accent">{averageWaitTime} <span className="text-2xl">minutos</span></div>
             </CardContent>
           </Card>
         </div>
 
         {/* Chamados Ativos */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-foreground">Chamados Ativos</h2>
+          <h2 className="text-3xl font-bold mb-6 text-foreground">Chamados Ativos</h2>
           {callQueue.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
@@ -455,7 +454,7 @@ const Dashboard: React.FC = () => {
 
           {/* Fila de Espera */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">Fila de Espera ({waitingQueue.length} pessoas)</h2>
+            <h2 className="text-3xl font-bold mb-6 text-foreground">Fila de Espera ({waitingQueue.length} pessoas)</h2>
             <Card className="shadow-card">
               <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
                 <CardTitle className="flex items-center gap-2 text-card-foreground">
