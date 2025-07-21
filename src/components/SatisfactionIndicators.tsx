@@ -172,7 +172,7 @@ const SatisfactionIndicators: React.FC = () => {
   return (
     <Card className="shadow-card h-full">
       <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
-        <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+        <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
           <Heart className="h-6 w-6 text-primary" />
           Indicadores de Satisfação
           {isUpdating && (

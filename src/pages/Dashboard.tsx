@@ -365,7 +365,7 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-shrink-0">
           <Card className="shadow-card">
             <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-3">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+              <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
                 <Users className="h-6 w-6 text-primary" />
                 Total de Atendimentos no Dia
               </CardTitle>
@@ -378,7 +378,7 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-card">
             <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/5 pb-3">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+              <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
                 <Timer className="h-6 w-6 text-secondary" />
                 Tempo Médio de Atendimento
               </CardTitle>
@@ -391,7 +391,7 @@ const Dashboard: React.FC = () => {
 
           <Card className="shadow-card">
             <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+              <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
                 <Hourglass className="h-6 w-6 text-accent" />
                 Tempo Médio de Espera
               </CardTitle>
@@ -414,7 +414,7 @@ const Dashboard: React.FC = () => {
             {callQueue.length === 0 ? (
               <Card className="shadow-card">
                 <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/20 pb-3">
-                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                  <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
                     <Clock className="h-6 w-6 text-primary" />
                     Nenhum chamado ativo
                   </CardTitle>
@@ -432,7 +432,7 @@ const Dashboard: React.FC = () => {
                 {callQueue.map((call) => (
                   <Card key={call.id} className="shadow-card animate-scale-in">
                     <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-3">
-                      <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                      <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
                         <User className="h-6 w-6 text-primary" />
                         {call.name}
                       </CardTitle>
@@ -491,7 +491,7 @@ const Dashboard: React.FC = () => {
             <div>
               <Card className="shadow-card h-full">
                 <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/5 pb-3">
-                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                  <CardTitle className="flex items-center gap-3 text-2xl font-bold text-card-foreground">
                     <User className="h-6 w-6 text-primary" />
                     Fila de Espera ({waitingQueue.length} pessoas)
                   </CardTitle>
