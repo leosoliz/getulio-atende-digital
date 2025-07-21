@@ -150,11 +150,11 @@ const SatisfactionIndicators: React.FC = () => {
 
   if (stats.totalSurveys === 0) {
     return (
-      <Card className="shadow-shadow-card border-2">
-        <CardHeader className="pb-8">
-          <CardTitle className="flex items-center gap-4 text-4xl font-bold">
-            <Heart className="h-10 w-10" />
-            Satisfação do Atendimento
+      <Card className="shadow-card h-full">
+        <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+            <Heart className="h-6 w-6 text-primary" />
+            Indicadores de Satisfação
             {isUpdating && (
               <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
             )}
@@ -162,7 +162,7 @@ const SatisfactionIndicators: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <p className="text-2xl text-muted-foreground font-bold">Nenhuma pesquisa respondida hoje</p>
+            <p className="text-base text-muted-foreground">Nenhuma pesquisa respondida hoje</p>
           </div>
         </CardContent>
       </Card>
@@ -170,13 +170,13 @@ const SatisfactionIndicators: React.FC = () => {
   }
 
   return (
-    <Card className="shadow-shadow-card border-2 hover:shadow-shadow-elevated transition-all duration-300">
-      <CardHeader className="pb-6">
-        <CardTitle className="flex items-center gap-4 text-4xl font-bold">
-          <Heart className="h-12 w-12 text-primary" />
-          Satisfação do Atendimento
+    <Card className="shadow-card h-full">
+      <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
+        <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+          <Heart className="h-6 w-6 text-primary" />
+          Indicadores de Satisfação
           {isUpdating && (
-            <div className="h-6 w-6 bg-primary rounded-full animate-pulse"></div>
+            <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
           )}
         </CardTitle>
       </CardHeader>

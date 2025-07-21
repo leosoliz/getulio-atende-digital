@@ -364,9 +364,9 @@ const Dashboard: React.FC = () => {
         {/* Indicadores */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-shrink-0">
           <Card className="shadow-card">
-            <CardHeader className="pb-4">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-3">
               <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
-                <Users className="h-8 w-8 text-primary" />
+                <Users className="h-6 w-6 text-primary" />
                 Total de Atendimentos no Dia
               </CardTitle>
               <CardDescription className="text-base">Fila + WhatsApp + Agendamentos</CardDescription>
@@ -377,9 +377,9 @@ const Dashboard: React.FC = () => {
           </Card>
 
           <Card className="shadow-card">
-            <CardHeader className="pb-4">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/5 pb-3">
               <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
-                <Timer className="h-8 w-8 text-secondary" />
+                <Timer className="h-6 w-6 text-secondary" />
                 Tempo Médio de Atendimento
               </CardTitle>
               <CardDescription className="text-base">Duração média de um atendimento</CardDescription>
@@ -390,9 +390,9 @@ const Dashboard: React.FC = () => {
           </Card>
 
           <Card className="shadow-card">
-            <CardHeader className="pb-4">
+            <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
               <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
-                <Hourglass className="h-8 w-8 text-accent" />
+                <Hourglass className="h-6 w-6 text-accent" />
                 Tempo Médio de Espera
               </CardTitle>
               <CardDescription className="text-base">Tempo médio que um cidadão espera na fila</CardDescription>
@@ -412,20 +412,31 @@ const Dashboard: React.FC = () => {
               Chamados Ativos
             </h2>
             {callQueue.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                <p className="text-sm">Nenhum chamado ativo no momento</p>
-              </div>
+              <Card className="shadow-card">
+                <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/20 pb-3">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                    <Clock className="h-6 w-6 text-primary" />
+                    Nenhum chamado ativo
+                  </CardTitle>
+                  <CardDescription className="text-base">Aguardando próximas chamadas</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">Nenhum chamado ativo no momento</p>
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {callQueue.map((call) => (
                   <Card key={call.id} className="shadow-card animate-scale-in">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-card-foreground text-base">
-                        <User className="h-4 w-4 text-primary" />
+                    <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-3">
+                      <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
+                        <User className="h-6 w-6 text-primary" />
                         {call.name}
                       </CardTitle>
-                      <CardDescription className="text-sm">
+                      <CardDescription className="text-base">
                         {call.type === 'queue' ? 'Fila Geral' : 'Agendamento'}
                       </CardDescription>
                     </CardHeader>
@@ -449,9 +460,19 @@ const Dashboard: React.FC = () => {
                           </p>
                         </div>
                         {call.type === 'queue' && (
-                          <Badge variant="secondary" className="text-xs">#{call.queue_number}</Badge>
+                          <Badge variant={call.is_priority ? "destructive" : "secondary"} className="text-xs">
+                            {call.is_priority ? "Prioridade" : "Normal"}
+                          </Badge>
                         )}
                       </div>
+                      {call.type === 'queue' && call.services && (
+                        <p className="text-xs text-muted-foreground mt-2">Serviço: {call.services.name}</p>
+                      )}
+                      {call.type === 'appointment' && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Agendamento: {call.appointment_date} às {call.appointment_time}
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -469,7 +490,7 @@ const Dashboard: React.FC = () => {
             {/* Fila de Espera */}
             <div>
               <Card className="shadow-card h-full">
-                <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10 pb-3">
+                <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/5 pb-3">
                   <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
                     <User className="h-6 w-6 text-primary" />
                     Fila de Espera ({waitingQueue.length} pessoas)
