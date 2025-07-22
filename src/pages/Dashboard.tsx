@@ -507,10 +507,10 @@ const Dashboard = () => {
   const statLabelClass = "text-lg font-medium text-muted-foreground";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <DashboardHeader />
       
-      <div className="p-6 space-y-6 flex-1">
+      <div className="p-4 space-y-4 flex-1 overflow-hidden">
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className={cardClass}>
