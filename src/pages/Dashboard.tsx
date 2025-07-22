@@ -612,7 +612,7 @@ const Dashboard = () => {
         {/* Fila de Espera e Indicadores de Satisfação (lado a lado) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Fila de Espera */}
-          <Card className={cardClass}>
+          <Card className={`${cardClass} h-[calc(100%-5px)]`}>
             <CardHeader className={cardHeaderClass}>
               <CardTitle className={cardTitleClass}>
                 <Users className={iconClass} />
@@ -670,7 +670,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Indicadores de Satisfação */}
-          <div className={cardClass}>
+          <div className={`${cardClass} h-[calc(100%-5px)]`}>
             <SatisfactionIndicators />
           </div>
         </div>
