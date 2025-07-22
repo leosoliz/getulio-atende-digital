@@ -596,63 +596,66 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Indicadores de Satisfação */}
-      <SatisfactionIndicators />
-
-      {/* Fila de Espera */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Fila de Espera ({waitingQueue.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {waitingQueue.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              Nenhuma pessoa na fila de espera
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {waitingQueue.slice(0, 10).map((customer, index) => (
-                <div key={customer.id} className="flex items-center justify-between p-3 bg-card rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
-                      <span className="text-sm font-semibold text-primary">
-                        {customer.queue_number}
-                      </span>
+      {/* Fila de Espera e Indicadores de Satisfação (lado a lado) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Fila de Espera */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Fila de Espera ({waitingQueue.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {waitingQueue.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                Nenhuma pessoa na fila de espera
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {waitingQueue.slice(0, 10).map((customer, index) => (
+                  <div key={customer.id} className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <span className="text-sm font-semibold text-primary">
+                          {customer.queue_number}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{customer.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {customer.services?.name || 'Serviço não identificado'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{customer.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {customer.services?.name || 'Serviço não identificado'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {customer.is_priority && (
-                      <Badge variant="destructive" className="text-xs">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Prioritário
+                    
+                    <div className="flex items-center gap-2">
+                      {customer.is_priority && (
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Prioritário
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {index + 1}º na fila
                       </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs">
-                      {index + 1}º na fila
-                    </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
-              
-              {waitingQueue.length > 10 && (
-                <p className="text-center text-sm text-muted-foreground pt-3">
-                  ... e mais {waitingQueue.length - 10} pessoas na fila
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+                
+                {waitingQueue.length > 10 && (
+                  <p className="text-center text-sm text-muted-foreground pt-3">
+                    ... e mais {waitingQueue.length - 10} pessoas na fila
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Indicadores de Satisfação */}
+        <SatisfactionIndicators />
+      </div>
 
       {/* Status da conexão fixo no canto */}
       <div className="fixed bottom-4 right-4">
