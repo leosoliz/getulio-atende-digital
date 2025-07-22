@@ -487,14 +487,8 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard de Atendimento</h1>
-          <p className="text-muted-foreground">Monitoramento em tempo real</p>
-        </div>
-        
-        {/* Status da conexão */}
+      {/* Status da conexão */}
+      <div className="flex justify-end">
         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
           connectionHealth ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
         }`}>
