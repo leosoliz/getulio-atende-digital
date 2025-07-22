@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Heart, ThumbsUp, TrendingUp } from 'lucide-react';
@@ -148,45 +148,47 @@ const SatisfactionIndicators: React.FC = () => {
     return 'text-destructive';
   };
 
+  // Content section for no data
   if (stats.totalSurveys === 0) {
     return (
-      <Card className="shadow-card h-full">
-        <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
-          <CardTitle className="flex items-center gap-3 text-xl font-bold text-card-foreground">
-            <Heart className="h-6 w-6 text-primary" />
+      <div>
+        <div className="px-6 py-5 border-b bg-muted/50">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary" />
             Indicadores de Satisfação
             {isUpdating && (
               <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
             )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h3>
+        </div>
+        <div className="p-6">
           <div className="text-center py-8">
             <p className="text-base text-muted-foreground">Nenhuma pesquisa respondida hoje</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
+  // Content section with data
   return (
-    <Card className="shadow-card h-full">
-      <CardHeader className="bg-gradient-to-r from-accent/10 to-accent/5 pb-3">
-        <CardTitle className="flex items-center gap-3 text-3xl font-bold text-card-foreground">
-          <Heart className="h-6 w-6 text-primary" />
+    <div>
+      <div className="px-6 py-5 border-b bg-muted/50">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Heart className="h-5 w-5 text-primary" />
           Indicadores de Satisfação
           {isUpdating && (
             <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6 h-76 overflow-y-auto">
+        </h3>
+      </div>
+      <div className="p-6 space-y-6 overflow-y-auto">
         {/* Score de Satisfação */}
-        <div className="text-center bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl p-6">
-          <div className={`text-6xl font-black mb-2 ${getSatisfactionColor(stats.satisfactionScore)}`}>
+        <div className="text-center bg-primary/5 rounded-xl p-6">
+          <div className={`text-5xl font-black mb-2 ${getSatisfactionColor(stats.satisfactionScore)}`}>
             {stats.satisfactionScore}%
           </div>
-          <p className="text-xl font-bold text-muted-foreground">
+          <p className="text-lg font-bold text-muted-foreground">
             Score Geral ({stats.totalSurveys} pesquisas)
           </p>
         </div>
@@ -195,40 +197,40 @@ const SatisfactionIndicators: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Avaliação Geral */}
           <div className="space-y-4">
-            <h3 className="flex items-center gap-2 text-2xl font-bold">
-              <ThumbsUp className="h-6 w-6" />
+            <h3 className="flex items-center gap-2 text-xl font-semibold">
+              <ThumbsUp className="h-5 w-5 text-primary" />
               Avaliação Geral
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Excelente</span>
-                <Badge variant="secondary" className="bg-success text-success-foreground text-xl py-2 px-3 font-black">
+                <span className="font-medium">Excelente</span>
+                <Badge variant="secondary" className="bg-success text-success-foreground py-1 px-2 font-bold">
                   {getPercentage(stats.overallRating.excellent, stats.totalSurveys)}%
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Bom</span>
-                <Badge variant="secondary" className="bg-secondary text-secondary-foreground text-xl py-2 px-3 font-black">
+                <span className="font-medium">Bom</span>
+                <Badge variant="secondary" className="bg-secondary text-secondary-foreground py-1 px-2 font-bold">
                   {getPercentage(stats.overallRating.good, stats.totalSurveys)}%
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Regular</span>
-                <Badge variant="secondary" className="bg-accent text-accent-foreground text-xl py-2 px-3 font-black">
+                <span className="font-medium">Regular</span>
+                <Badge variant="secondary" className="bg-accent text-accent-foreground py-1 px-2 font-bold">
                   {getPercentage(stats.overallRating.regular, stats.totalSurveys)}%
                 </Badge>
               </div>
               {(stats.overallRating.poor > 0 || stats.overallRating.terrible > 0) && (
                 <>
                   <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold">Ruim</span>
-                    <Badge variant="destructive" className="text-xl py-2 px-3 font-black">
+                    <span className="font-medium">Ruim</span>
+                    <Badge variant="destructive" className="py-1 px-2 font-bold">
                       {getPercentage(stats.overallRating.poor, stats.totalSurveys)}%
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold">Péssimo</span>
-                    <Badge variant="destructive" className="text-xl py-2 px-3 font-black">
+                    <span className="font-medium">Péssimo</span>
+                    <Badge variant="destructive" className="py-1 px-2 font-bold">
                       {getPercentage(stats.overallRating.terrible, stats.totalSurveys)}%
                     </Badge>
                   </div>
@@ -239,34 +241,34 @@ const SatisfactionIndicators: React.FC = () => {
 
           {/* Resolução de Problemas */}
           <div className="space-y-4">
-            <h3 className="flex items-center gap-2 text-2xl font-bold">
-              <TrendingUp className="h-6 w-6" />
+            <h3 className="flex items-center gap-2 text-xl font-semibold">
+              <TrendingUp className="h-5 w-5 text-primary" />
               Resolução de Problemas
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Sim</span>
-                <Badge variant="secondary" className="bg-success text-success-foreground text-xl py-2 px-3 font-black">
+                <span className="font-medium">Sim</span>
+                <Badge variant="secondary" className="bg-success text-success-foreground py-1 px-2 font-bold">
                   {getPercentage(stats.problemResolved.yes, stats.totalSurveys)}%
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Parcialmente</span>
-                <Badge variant="secondary" className="bg-accent text-accent-foreground text-xl py-2 px-3 font-black">
+                <span className="font-medium">Parcialmente</span>
+                <Badge variant="secondary" className="bg-accent text-accent-foreground py-1 px-2 font-bold">
                   {getPercentage(stats.problemResolved.partially, stats.totalSurveys)}%
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Não</span>
-                <Badge variant="destructive" className="text-xl py-2 px-3 font-black">
+                <span className="font-medium">Não</span>
+                <Badge variant="destructive" className="py-1 px-2 font-bold">
                   {getPercentage(stats.problemResolved.no, stats.totalSurveys)}%
                 </Badge>
               </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

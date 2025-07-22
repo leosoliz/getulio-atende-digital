@@ -497,16 +497,17 @@ const Dashboard = () => {
   };
 
   // Classes padrão para todos os cards
-  const cardClass = "bg-white dark:bg-gray-950 shadow-sm border border-gray-100 dark:border-gray-800 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md";
-  const cardHeaderClass = "px-6 py-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50";
-  const cardTitleClass = "text-base font-medium flex items-center gap-2";
+  // Classes padrão para todos os cards, usando o mesmo estilo do componente da tela de Atendente
+  const cardClass = "bg-card text-card-foreground border rounded-lg shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md";
+  const cardHeaderClass = "px-6 py-5 border-b bg-muted/50";
+  const cardTitleClass = "text-lg font-semibold flex items-center gap-2";
   const cardContentClass = "p-6";
   const iconClass = "h-5 w-5 text-primary";
-  const statValueClass = "text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-50 mt-2";
-  const statLabelClass = "text-sm font-medium text-gray-500 dark:text-gray-400";
+  const statValueClass = "text-3xl font-semibold tracking-tight mt-2";
+  const statLabelClass = "text-sm font-medium text-muted-foreground";
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <DashboardHeader />
       
       <div className="p-6 space-y-6 flex-1">
@@ -562,15 +563,15 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className={cardContentClass}>
             {callQueue.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                Nenhuma chamada ativa no momento
-              </p>
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhuma chamada ativa no momento
+                </p>
             ) : (
               <div className="space-y-3">
                 {callQueue.map((call) => (
                   <div 
                     key={call.id} 
-                    className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/10 animate-fade-in"
+                    className="flex items-center justify-between p-4 bg-accent/5 rounded-lg border border-accent/10 animate-fade-in"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
@@ -581,8 +582,8 @@ const Dashboard = () => {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-50">{call.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="font-medium">{call.name}</p>
+                        <p className="text-sm text-muted-foreground">
                           {call.type === 'appointment' 
                             ? call.service_name 
                             : `${call.service_name} - Senha ${call.queue_number}`
@@ -620,7 +621,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className={cardContentClass}>
               {waitingQueue.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                <p className="text-muted-foreground text-center py-8">
                   Nenhuma pessoa na fila de espera
                 </p>
               ) : (
@@ -628,7 +629,7 @@ const Dashboard = () => {
                   {waitingQueue.slice(0, 10).map((customer, index) => (
                     <div 
                       key={customer.id} 
-                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
+                      className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
@@ -637,8 +638,8 @@ const Dashboard = () => {
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-50">{customer.name}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="font-medium">{customer.name}</p>
+                          <p className="text-sm text-muted-foreground">
                             {customer.services?.name || 'Serviço não identificado'}
                           </p>
                         </div>
@@ -659,7 +660,7 @@ const Dashboard = () => {
                   ))}
                   
                   {waitingQueue.length > 10 && (
-                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-3">
+                    <p className="text-center text-sm text-muted-foreground pt-3">
                       ... e mais {waitingQueue.length - 10} pessoas na fila
                     </p>
                   )}
@@ -670,15 +671,7 @@ const Dashboard = () => {
 
           {/* Indicadores de Satisfação */}
           <div className={cardClass}>
-            <div className={cardHeaderClass}>
-              <h3 className={cardTitleClass}>
-                <Sparkles className={iconClass} />
-                Satisfação do Cidadão
-              </h3>
-            </div>
-            <div className={cardContentClass}>
-              <SatisfactionIndicators />
-            </div>
+            <SatisfactionIndicators />
           </div>
         </div>
 
@@ -686,12 +679,12 @@ const Dashboard = () => {
         <div className="fixed bottom-4 right-4">
           <div className={`px-3 py-2 rounded-full text-sm font-medium shadow-lg border ${
             connectionHealth 
-              ? 'bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20' 
-              : 'bg-red-500/10 text-red-600 dark:text-red-500 border-red-500/20'
+              ? 'bg-success/10 text-success border-success/20' 
+              : 'bg-destructive/10 text-destructive border-destructive/20'
           }`}>
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${
-                connectionHealth ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                connectionHealth ? 'bg-success animate-pulse' : 'bg-destructive'
               }`} />
               {connectionHealth ? 'Online' : 'Offline'}
             </div>
