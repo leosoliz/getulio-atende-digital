@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SatisfactionIndicators from '@/components/SatisfactionIndicators';
+import serviceLogoSrc from '@/assets/service-logo.png';
 
 // Interfaces para tipagem
 interface QueueCustomer {
@@ -507,8 +508,17 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50/50 dark:bg-gray-950/50 min-h-screen">
-      {/* Status da conexão */}
-      <div className="flex justify-end">
+      {/* Header */}
+      <div className="flex justify-between items-center pb-4 mb-2 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <img src={serviceLogoSrc} alt="Sistema de Atendimento" className="w-12 h-12 object-contain" />
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">Sistema de Atendimento</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Dashboard em tempo real</p>
+          </div>
+        </div>
+
+        {/* Status da conexão */}
         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
           connectionHealth ? 'bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-red-500/10 text-red-600 dark:text-red-500'
         } shadow-sm border border-transparent`}>
