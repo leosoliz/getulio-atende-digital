@@ -103,9 +103,12 @@ const Dashboard: React.FC = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
         async (payload) => {
-          console.log('📥 Queue customer change:', payload.eventType, payload.new);
+          console.log('📥 [DASHBOARD] Queue customer change:', payload.eventType);
+          if (payload.new && typeof payload.new === 'object') {
+            console.log('📥 [DASHBOARD] Status e nome:', (payload.new as any).status, (payload.new as any).name);
+          }
+          console.log('📥 [DASHBOARD] Full payload:', payload);
           lastDataFetchRef.current = new Date();
-          connectionHealthRef.current = true;
           
           if (payload.eventType === 'UPDATE' && 
               payload.new && 
