@@ -1,5 +1,5 @@
-import React from 'react';
-import { LogOut, User, Monitor } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LogOut, User, Monitor, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +11,15 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ showDashboardButton = false }) => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,6 +74,28 @@ const Header: React.FC<HeaderProps> = ({ showDashboardButton = false }) => {
               <p className="text-base text-primary-foreground/80">
                 Prefeitura de Presidente Getúlio
               </p>
+            </div>
+          </div>
+
+          {/* Relógio */}
+          <div className="flex items-center bg-primary-foreground/10 px-4 py-3 rounded-lg">
+            <Clock className="h-6 w-6 text-primary-foreground mr-3" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary-foreground font-mono">
+                {currentTime.toLocaleTimeString('pt-BR', { 
+                  hour: '2-digit', 
+                  minute: '2-digit', 
+                  second: '2-digit' 
+                })}
+              </div>
+              <div className="text-sm text-primary-foreground/80">
+                {currentTime.toLocaleDateString('pt-BR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </div>
             </div>
           </div>
 
