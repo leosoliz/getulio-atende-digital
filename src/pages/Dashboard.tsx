@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
       .channel('dashboard-realtime')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
-        (payload) => {
+        async (payload) => {
           console.log('📥 Queue customer change:', payload.eventType, payload.new);
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
@@ -115,6 +115,20 @@ const Dashboard: React.FC = () => {
               payload.new.status === 'calling') {
             handleNewCall(payload.new as QueueCustomer);
           }
+          
+          // Atualizar fila de espera imediatamente
+          const { data: waitingData } = await supabase
+            .from('queue_customers')
+            .select(`
+              *,
+              services:service_id (name, estimated_time)
+            `)
+            .eq('status', 'waiting')
+            .order('is_priority', { ascending: false })
+            .order('created_at', { ascending: true });
+          console.log('📊 Fila de espera atualizada:', waitingData?.length);
+          setWaitingQueue(waitingData || []);
+          
           fetchDashboardData();
         }
       )
