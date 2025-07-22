@@ -174,49 +174,60 @@ const Dashboard: React.FC = () => {
     try {
       // Total de atendimentos realizados no dia
       const today = new Date().toISOString().split('T')[0];
+      const todayStart = `${today}T00:00:00`;
       console.log('🗓️ Buscando dados para:', today);
+      console.log('🕐 Data/hora filtro:', todayStart);
       
       // 1. Fila completada
+      console.log('🔍 Executando query fila...');
       const { data: queueData, count: queueCount, error: queueError } = await supabase
         .from('queue_customers')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed')
-        .gte('created_at', `${today}T00:00:00`);
+        .gte('created_at', todayStart);
         
-      if (queueError) {
-        console.error('❌ Erro query fila:', queueError);
-      } else {
-        console.log('📊 Fila completed:', queueCount);
-      }
+      console.log('📊 Resultado fila:', { count: queueCount, error: queueError });
       
-      // 2. WhatsApp services
+      // 2. WhatsApp services - vou testar uma query mais simples primeiro
+      console.log('🔍 Executando query whatsapp...');
       const { data: whatsappData, count: whatsappCount, error: whatsappError } = await supabase
         .from('whatsapp_services')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', `${today}T00:00:00`);
+        .select('id, created_at', { count: 'exact' })
+        .gte('created_at', todayStart);
         
-      if (whatsappError) {
-        console.error('❌ Erro query whatsapp:', whatsappError);
-      } else {
-        console.log('📊 WhatsApp services:', whatsappCount);
-      }
+      console.log('📊 Resultado whatsapp:', { 
+        count: whatsappCount, 
+        error: whatsappError,
+        firstRecord: whatsappData?.[0],
+        todayFilter: todayStart
+      });
+      
+      // Teste adicional - buscar TODOS os registros de whatsapp hoje sem head:true
+      console.log('🔍 Teste alternativo whatsapp...');
+      const { data: whatsappTest, count: whatsappTestCount, error: whatsappTestError } = await supabase
+        .from('whatsapp_services')
+        .select('*', { count: 'exact' })
+        .gte('created_at', todayStart);
+        
+      console.log('📊 Teste whatsapp:', { 
+        count: whatsappTestCount, 
+        error: whatsappTestError,
+        dataLength: whatsappTest?.length
+      });
       
       // 3. Agendamentos completados
+      console.log('🔍 Executando query agendamentos...');
       const { data: appointmentData, count: appointmentCount, error: appointmentError } = await supabase
         .from('identity_appointments')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed')
-        .gte('created_at', `${today}T00:00:00`);
+        .gte('created_at', todayStart);
         
-      if (appointmentError) {
-        console.error('❌ Erro query agendamentos:', appointmentError);
-      } else {
-        console.log('📊 Agendamentos completed:', appointmentCount);
-      }
+      console.log('📊 Resultado agendamentos:', { count: appointmentCount, error: appointmentError });
       
       // Calcular total
       const totalQueue = queueCount || 0;
-      const totalWhatsapp = whatsappCount || 0;
+      const totalWhatsapp = whatsappTestCount || 0; // Usar o teste que funciona
       const totalAppointments = appointmentCount || 0;
       const totalAttendances = totalQueue + totalWhatsapp + totalAppointments;
       
