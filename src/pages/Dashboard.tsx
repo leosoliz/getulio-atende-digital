@@ -175,27 +175,29 @@ const Dashboard: React.FC = () => {
       // Total de atendimentos realizados no dia (queue_customers + whatsapp + agendamentos)
       const today = new Date().toISOString().split('T')[0];
       
-      const [{ count: queueCount }, { count: whatsappCount }, { count: appointmentCount }] = await Promise.all([
+      const [queueResult, whatsappResult, appointmentResult] = await Promise.all([
         supabase
           .from('queue_customers')
           .select('*', { count: 'exact' })
           .eq('status', 'completed')
-          .gte('created_at', today + 'T00:00:00.000Z')
-          .lt('created_at', today + 'T23:59:59.999Z'),
+          .gte('created_at', today + 'T00:00:00'),
         supabase
           .from('whatsapp_services')
           .select('*', { count: 'exact' })
-          .gte('created_at', today + 'T00:00:00.000Z')
-          .lt('created_at', today + 'T23:59:59.999Z'),
+          .gte('created_at', today + 'T00:00:00'),
         supabase
           .from('identity_appointments')
           .select('*', { count: 'exact' })
           .eq('status', 'completed')
-          .gte('created_at', today + 'T00:00:00.000Z')
-          .lt('created_at', today + 'T23:59:59.999Z')
+          .gte('created_at', today + 'T00:00:00')
       ]);
       
-      setTotalAttendances((queueCount || 0) + (whatsappCount || 0) + (appointmentCount || 0));
+      const queueCount = queueResult.count || 0;
+      const whatsappCount = whatsappResult.count || 0;
+      const appointmentCount = appointmentResult.count || 0;
+      
+      console.log('📊 Contagem de atendimentos:', { queueCount, whatsappCount, appointmentCount });
+      setTotalAttendances(queueCount + whatsappCount + appointmentCount);
 
       // Buscar fila de espera completa para exibir
       const { data: waitingData } = await supabase
