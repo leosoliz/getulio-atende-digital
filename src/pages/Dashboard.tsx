@@ -68,38 +68,22 @@ const Dashboard = () => {
   const lastDataFetchRef = useRef(new Date());
   const connectionHealthRef = useRef(true);
   const speechSynthRef = useRef<SpeechSynthesis | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Inicializar SpeechSynthesis
-    speechSynthRef.current = window.speechSynthesis;
-
-    // Buscar dados iniciais
-    fetchDashboardData();
-
-    // Monitorar saúde da conexão
-    const healthInterval = setInterval(() => {
-      const now = new Date();
-      const timeSinceLastFetch = now.getTime() - lastDataFetchRef.current.getTime();
-      
-      // Se passou mais de 30 segundos sem receber dados, considerar desconectado
-      if (timeSinceLastFetch > 30000) {
-        console.log('⚠️ Conexão pode estar com problemas - sem dados há', timeSinceLastFetch, 'ms');
-        connectionHealthRef.current = false;
-        setConnectionHealth(false);
-      } else {
-        connectionHealthRef.current = true;
-        setConnectionHealth(true);
-      }
-
-      // Limpar chamadas expiradas
-      setCallQueue(prev => prev.filter(call => call.showUntil > now));
-    }, 5000);
-
-    // Configure realtime subscription com canal único para dashboard
+  // Função para configurar o canal de realtime
+  const setupRealtimeChannel = () => {
     console.log('🔌 Configurando realtime para dashboard...');
+    
+    // Remover canal anterior se existir
+    if (channelRef.current) {
+      console.log('🔌 Removendo canal anterior...');
+      supabase.removeChannel(channelRef.current);
+    }
+    
+    // Criar novo canal com timestamp único para evitar conflitos
     const channel = supabase
-      .channel('dashboard-queue-updates')
+      .channel('dashboard-queue-updates-' + Date.now()) 
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'queue_customers' },
         async (payload) => {
@@ -107,9 +91,9 @@ const Dashboard = () => {
           if (payload.new && typeof payload.new === 'object') {
             console.log('📥 [DASHBOARD] Status e nome:', (payload.new as any).status, (payload.new as any).name);
           }
-          console.log('📥 [DASHBOARD] Full payload:', payload);
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
+          setConnectionHealth(true);
           
           if (payload.eventType === 'UPDATE' && 
               payload.new && 
@@ -133,6 +117,7 @@ const Dashboard = () => {
           console.log('📥 [DASHBOARD] Identity appointment change:', payload.eventType, payload.new);
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
+          setConnectionHealth(true);
           
           if (payload.eventType === 'UPDATE' && 
               payload.new && 
@@ -142,9 +127,6 @@ const Dashboard = () => {
               payload.new.status === 'calling') {
             handleNewAppointmentCall(payload.new as IdentityAppointment);
           }
-          
-          // Atualizar estatísticas
-          fetchDashboardData();
         }
       )
       .on('postgres_changes', 
@@ -153,9 +135,7 @@ const Dashboard = () => {
           console.log('📥 [DASHBOARD] WhatsApp service change:', payload.eventType, payload.new);
           lastDataFetchRef.current = new Date();
           connectionHealthRef.current = true;
-          
-          // Atualizar estatísticas
-          fetchDashboardData();
+          setConnectionHealth(true);
         }
       )
       .subscribe((status) => {
@@ -164,21 +144,98 @@ const Dashboard = () => {
           console.log('✅ Dashboard connected to realtime');
           connectionHealthRef.current = true;
           setConnectionHealth(true);
+          toast({
+            title: "Conexão estabelecida",
+            description: "O dashboard está conectado em tempo real",
+            duration: 3000,
+          });
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Dashboard realtime error');
           connectionHealthRef.current = false;
           setConnectionHealth(false);
+          toast({
+            title: "Erro de conexão",
+            description: "Não foi possível conectar ao serviço em tempo real",
+            variant: "destructive",
+            duration: 5000,
+          });
         }
       });
+      
+    // Guardar referência ao canal
+    channelRef.current = channel;
+    return channel;
+  };
+
+  useEffect(() => {
+    // Inicializar SpeechSynthesis
+    speechSynthRef.current = window.speechSynthesis;
+
+    // Buscar dados iniciais
+    fetchDashboardData();
+
+    // Configurar canal realtime
+    setupRealtimeChannel();
+
+    // Enviar heartbeat periódico para verificar status da conexão
+    const pingInterval = setInterval(async () => {
+      try {
+        // Ping simples para verificar conectividade
+        const { count } = await supabase
+          .from('queue_customers')
+          .select('count', { count: 'exact', head: true });
+          
+        console.log('💓 Heartbeat OK - ' + new Date().toLocaleTimeString());
+        lastDataFetchRef.current = new Date();
+        connectionHealthRef.current = true;
+        setConnectionHealth(true);
+      } catch (err) {
+        console.error('💔 Heartbeat falhou:', err);
+      }
+    }, 45000); // Ping a cada 45 segundos
+
+    // Monitorar saúde da conexão
+    const healthInterval = setInterval(() => {
+      const now = new Date();
+      const timeSinceLastFetch = now.getTime() - lastDataFetchRef.current.getTime();
+      
+      // Se passou mais de 30 segundos sem receber dados, considerar desconectado
+      if (timeSinceLastFetch > 30000) {
+        console.log('⚠️ Conexão pode estar com problemas - sem dados há', timeSinceLastFetch, 'ms');
+        connectionHealthRef.current = false;
+        setConnectionHealth(false);
+        
+        // Após 1 minuto sem conexão, tentar reconectar
+        if (timeSinceLastFetch > 60000) {
+          console.log('🔄 Tentando reconectar automaticamente...');
+          setupRealtimeChannel();
+          lastDataFetchRef.current = new Date();
+          toast({
+            title: "Reconectando...",
+            description: "Tentando restabelecer a conexão",
+            duration: 3000,
+          });
+        }
+      } else {
+        connectionHealthRef.current = true;
+        setConnectionHealth(true);
+      }
+
+      // Limpar chamadas expiradas
+      setCallQueue(prev => prev.filter(call => call.showUntil > now));
+    }, 5000);
 
     // Cleanup ao desmontar
     return () => {
       console.log('🧹 Limpando subscriptions realtime...');
       clearInterval(healthInterval);
+      clearInterval(pingInterval);
       if (speechSynthRef.current) {
         speechSynthRef.current.cancel();
       }
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
   }, []);
 
@@ -208,11 +265,9 @@ const Dashboard = () => {
       const today = new Date().toISOString().split('T')[0];
       const todayStart = `${today}T00:00:00`;
       console.log('🗓️ Buscando dados para:', today);
-      console.log('🕐 Data/hora filtro:', todayStart);
       
       // 1. Fila completada
-      console.log('🔍 Executando query fila...');
-      const { data: queueData, count: queueCount, error: queueError } = await supabase
+      const { count: queueCount, error: queueError } = await supabase
         .from('queue_customers')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed')
@@ -220,36 +275,16 @@ const Dashboard = () => {
         
       console.log('📊 Resultado fila:', { count: queueCount, error: queueError });
       
-      // 2. WhatsApp services - vou testar uma query mais simples primeiro
-      console.log('🔍 Executando query whatsapp...');
-      const { data: whatsappData, count: whatsappCount, error: whatsappError } = await supabase
+      // 2. WhatsApp services
+      const { count: whatsappCount, error: whatsappError } = await supabase
         .from('whatsapp_services')
-        .select('id, created_at', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', todayStart);
         
-      console.log('📊 Resultado whatsapp:', { 
-        count: whatsappCount, 
-        error: whatsappError,
-        firstRecord: whatsappData?.[0],
-        todayFilter: todayStart
-      });
-      
-      // Teste adicional - buscar TODOS os registros de whatsapp hoje sem head:true
-      console.log('🔍 Teste alternativo whatsapp...');
-      const { data: whatsappTest, count: whatsappTestCount, error: whatsappTestError } = await supabase
-        .from('whatsapp_services')
-        .select('*', { count: 'exact' })
-        .gte('created_at', todayStart);
-        
-      console.log('📊 Teste whatsapp:', { 
-        count: whatsappTestCount, 
-        error: whatsappTestError,
-        dataLength: whatsappTest?.length
-      });
+      console.log('📊 Resultado whatsapp:', { count: whatsappCount, error: whatsappError });
       
       // 3. Agendamentos completados
-      console.log('🔍 Executando query agendamentos...');
-      const { data: appointmentData, count: appointmentCount, error: appointmentError } = await supabase
+      const { count: appointmentCount, error: appointmentError } = await supabase
         .from('identity_appointments')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed')
@@ -259,7 +294,7 @@ const Dashboard = () => {
       
       // Calcular total
       const totalQueue = queueCount || 0;
-      const totalWhatsapp = whatsappTestCount || 0; // Usar o teste que funciona
+      const totalWhatsapp = whatsappCount || 0;
       const totalAppointments = appointmentCount || 0;
       const totalAttendances = totalQueue + totalWhatsapp + totalAppointments;
       
