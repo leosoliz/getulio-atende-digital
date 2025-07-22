@@ -2,7 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, Timer, Activity, Bell, Zap, CheckCircle, AlertCircle } from 'lucide-react';
+import { 
+  Clock, 
+  Users, 
+  Timer, 
+  Activity, 
+  Bell, 
+  CheckCircle, 
+  AlertCircle, 
+  BarChart3, 
+  PieChart,
+  Sparkles
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SatisfactionIndicators from '@/components/SatisfactionIndicators';
 
@@ -485,13 +496,22 @@ const Dashboard = () => {
     }
   };
 
+  // Classes padrão para todos os cards
+  const cardClass = "bg-white dark:bg-gray-950 shadow-sm border border-gray-100 dark:border-gray-800 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md";
+  const cardHeaderClass = "px-6 py-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50";
+  const cardTitleClass = "text-base font-medium flex items-center gap-2";
+  const cardContentClass = "p-6";
+  const iconClass = "h-5 w-5 text-primary";
+  const statValueClass = "text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-50 mt-2";
+  const statLabelClass = "text-sm font-medium text-gray-500 dark:text-gray-400";
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50/50 dark:bg-gray-950/50 min-h-screen">
       {/* Status da conexão */}
       <div className="flex justify-end">
         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-          connectionHealth ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
-        }`}>
+          connectionHealth ? 'bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-red-500/10 text-red-600 dark:text-red-500'
+        } shadow-sm border border-transparent`}>
           <div className={`w-2 h-2 rounded-full ${
             connectionHealth ? 'bg-green-500 animate-pulse' : 'bg-red-500'
           }`} />
@@ -503,83 +523,92 @@ const Dashboard = () => {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>
+              <BarChart3 className={iconClass} />
+              Total de Atendimentos
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalAttendances}</div>
-            <p className="text-xs text-muted-foreground">Hoje</p>
+          <CardContent className={cardContentClass}>
+            <div className={statValueClass}>{totalAttendances}</div>
+            <p className={statLabelClass}>Hoje</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tempo Médio de Atendimento</CardTitle>
-            <Timer className="h-4 w-4 text-muted-foreground" />
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>
+              <Timer className={iconClass} />
+              Tempo Médio de Atendimento
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageServiceTime}</div>
-            <p className="text-xs text-muted-foreground">minutos</p>
+          <CardContent className={cardContentClass}>
+            <div className={statValueClass}>{averageServiceTime}</div>
+            <p className={statLabelClass}>minutos</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tempo Médio de Espera</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>
+              <Clock className={iconClass} />
+              Tempo Médio de Espera
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageWaitTime}</div>
-            <p className="text-xs text-muted-foreground">minutos</p>
+          <CardContent className={cardContentClass}>
+            <div className={statValueClass}>{averageWaitTime}</div>
+            <p className={statLabelClass}>minutos</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Chamadas Ativas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+      <Card className={cardClass}>
+        <CardHeader className={cardHeaderClass}>
+          <CardTitle className={cardTitleClass}>
+            <Bell className={iconClass} />
             Chamadas Ativas
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className={cardContentClass}>
           {callQueue.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               Nenhuma chamada ativa no momento
             </p>
           ) : (
             <div className="space-y-3">
               {callQueue.map((call) => (
-                <div key={call.id} className="flex items-center justify-between p-4 bg-primary/10 rounded-lg border-l-4 border-primary">
+                <div 
+                  key={call.id} 
+                  className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/10 animate-fade-in"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
                       {call.type === 'appointment' ? (
-                        <CheckCircle className="h-5 w-5 text-blue-500" />
+                        <CheckCircle className="h-5 w-5 text-primary" />
                       ) : (
                         <Activity className="h-5 w-5 text-primary" />
                       )}
-                      <div>
-                        <p className="font-semibold text-foreground">{call.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {call.type === 'appointment' 
-                            ? call.service_name 
-                            : `${call.service_name} - Senha ${call.queue_number}`
-                          }
-                        </p>
-                      </div>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-50">{call.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {call.type === 'appointment' 
+                          ? call.service_name 
+                          : `${call.service_name} - Senha ${call.queue_number}`
+                        }
+                      </p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2">
                     {call.is_priority && (
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge variant="destructive" className="text-xs font-medium py-1">
                         Prioritário
                       </Badge>
                     )}
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant={call.type === 'appointment' ? "outline" : "secondary"} className="text-xs font-medium py-1">
                       {call.type === 'appointment' ? 'Agendamento' : 'Fila'}
                     </Badge>
                   </div>
@@ -593,22 +622,25 @@ const Dashboard = () => {
       {/* Fila de Espera e Indicadores de Satisfação (lado a lado) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fila de Espera */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>
+              <Users className={iconClass} />
               Fila de Espera ({waitingQueue.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className={cardContentClass}>
             {waitingQueue.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
                 Nenhuma pessoa na fila de espera
               </p>
             ) : (
               <div className="space-y-3">
                 {waitingQueue.slice(0, 10).map((customer, index) => (
-                  <div key={customer.id} className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                  <div 
+                    key={customer.id} 
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
                         <span className="text-sm font-semibold text-primary">
@@ -616,8 +648,8 @@ const Dashboard = () => {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{customer.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-gray-900 dark:text-gray-50">{customer.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {customer.services?.name || 'Serviço não identificado'}
                         </p>
                       </div>
@@ -625,12 +657,12 @@ const Dashboard = () => {
                     
                     <div className="flex items-center gap-2">
                       {customer.is_priority && (
-                        <Badge variant="destructive" className="text-xs">
+                        <Badge variant="destructive" className="text-xs font-medium py-1">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           Prioritário
                         </Badge>
                       )}
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs font-medium py-1">
                         {index + 1}º na fila
                       </Badge>
                     </div>
@@ -638,7 +670,7 @@ const Dashboard = () => {
                 ))}
                 
                 {waitingQueue.length > 10 && (
-                  <p className="text-center text-sm text-muted-foreground pt-3">
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-3">
                     ... e mais {waitingQueue.length - 10} pessoas na fila
                   </p>
                 )}
@@ -648,15 +680,25 @@ const Dashboard = () => {
         </Card>
 
         {/* Indicadores de Satisfação */}
-        <SatisfactionIndicators />
+        <div className={cardClass}>
+          <div className={cardHeaderClass}>
+            <h3 className={cardTitleClass}>
+              <Sparkles className={iconClass} />
+              Satisfação do Cidadão
+            </h3>
+          </div>
+          <div className={cardContentClass}>
+            <SatisfactionIndicators />
+          </div>
+        </div>
       </div>
 
       {/* Status da conexão fixo no canto */}
       <div className="fixed bottom-4 right-4">
-        <div className={`px-3 py-2 rounded-full text-sm font-medium ${
+        <div className={`px-3 py-2 rounded-full text-sm font-medium shadow-lg border ${
           connectionHealth 
-            ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
-            : 'bg-red-500/10 text-red-600 border border-red-500/20'
+            ? 'bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20' 
+            : 'bg-red-500/10 text-red-600 dark:text-red-500 border-red-500/20'
         }`}>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${
