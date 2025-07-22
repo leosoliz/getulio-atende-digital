@@ -153,8 +153,8 @@ const SatisfactionIndicators: React.FC = () => {
     return (
       <div>
         <div className="px-6 py-5 border-b bg-muted/50">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Heart className="h-5 w-5 text-primary" />
+          <h3 className="text-2xl font-bold flex items-center gap-2">
+            <Heart className="h-6 w-6 text-primary" />
             Indicadores de Satisfação
             {isUpdating && (
               <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
@@ -174,8 +174,8 @@ const SatisfactionIndicators: React.FC = () => {
   return (
     <div>
       <div className="px-6 py-5 border-b bg-muted/50">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Heart className="h-5 w-5 text-primary" />
+        <h3 className="text-2xl font-bold flex items-center gap-2">
+          <Heart className="h-6 w-6 text-primary" />
           Indicadores de Satisfação
           {isUpdating && (
             <div className="h-4 w-4 bg-primary rounded-full animate-pulse"></div>
@@ -185,10 +185,10 @@ const SatisfactionIndicators: React.FC = () => {
       <div className="p-6 space-y-6 overflow-y-auto">
         {/* Score de Satisfação */}
         <div className="text-center bg-primary/5 rounded-xl p-6">
-          <div className={`text-5xl font-black mb-2 ${getSatisfactionColor(stats.satisfactionScore)}`}>
+          <div className={`text-8xl font-black mb-2 ${getSatisfactionColor(stats.satisfactionScore)}`}>
             {stats.satisfactionScore}%
           </div>
-          <p className="text-lg font-bold text-muted-foreground">
+          <p className="text-2xl font-bold text-muted-foreground">
             Score Geral ({stats.totalSurveys} pesquisas)
           </p>
         </div>

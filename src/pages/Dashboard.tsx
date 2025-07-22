@@ -500,11 +500,11 @@ const Dashboard = () => {
   // Classes padrão para todos os cards, usando o mesmo estilo do componente da tela de Atendente
   const cardClass = "bg-card text-card-foreground border rounded-lg shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md";
   const cardHeaderClass = "px-6 py-5 border-b bg-muted/50";
-  const cardTitleClass = "text-lg font-semibold flex items-center gap-2";
+  const cardTitleClass = "text-2xl font-bold flex items-center gap-2";
   const cardContentClass = "p-6";
-  const iconClass = "h-5 w-5 text-primary";
-  const statValueClass = "text-3xl font-semibold tracking-tight mt-2";
-  const statLabelClass = "text-sm font-medium text-muted-foreground";
+  const iconClass = "h-6 w-6 text-primary";
+  const statValueClass = "text-5xl font-black tracking-tight mt-2";
+  const statLabelClass = "text-lg font-medium text-muted-foreground";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
