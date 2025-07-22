@@ -139,6 +139,15 @@ const Dashboard: React.FC = () => {
           }
         }
       )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'whatsapp_services' },
+        (payload) => {
+          console.log('📥 WhatsApp service change:', payload.eventType, payload.new);
+          lastDataFetchRef.current = new Date();
+          connectionHealthRef.current = true;
+          fetchDashboardData();
+        }
+      )
       .subscribe((status) => {
         console.log('📡 Realtime status:', status);
         if (status === 'SUBSCRIBED') {
@@ -170,7 +179,7 @@ const Dashboard: React.FC = () => {
         supabase
           .from('queue_customers')
           .select('*', { count: 'exact' })
-          .eq('status', 'completed')
+          .not('completed_at', 'is', null)
           .gte('created_at', today + 'T00:00:00.000Z'),
         supabase
           .from('whatsapp_services')
@@ -179,7 +188,7 @@ const Dashboard: React.FC = () => {
         supabase
           .from('identity_appointments')
           .select('*', { count: 'exact' })
-          .eq('status', 'completed')
+          .not('completed_at', 'is', null)
           .gte('created_at', today + 'T00:00:00.000Z')
       ]);
       
@@ -201,9 +210,8 @@ const Dashboard: React.FC = () => {
       const { data: completedAttendances } = await supabase
         .from('queue_customers')
         .select('started_at, completed_at')
-        .eq('status', 'completed')
-        .not('started_at', 'is', null)
         .not('completed_at', 'is', null)
+        .not('started_at', 'is', null)
         .gte('created_at', today + 'T00:00:00.000Z');
 
       if (completedAttendances && completedAttendances.length > 0) {
