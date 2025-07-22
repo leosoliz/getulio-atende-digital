@@ -68,16 +68,12 @@ const Dashboard: React.FC = () => {
 
   const lastDataFetchRef = useRef(new Date());
   const connectionHealthRef = useRef(true);
-  const bellAudioRef = useRef<HTMLAudioElement>(null);
   const speechSynthRef = useRef<SpeechSynthesis | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     // Inicializar SpeechSynthesis
     speechSynthRef.current = window.speechSynthesis;
-
-    // Carregar áudio da campainha
-    bellAudioRef.current = new Audio('/sounds/bell.mp3');
 
     // Buscar dados iniciais
     fetchDashboardData();
@@ -396,8 +392,22 @@ const Dashboard: React.FC = () => {
   };
 
   const playBell = (name: string, queueNumber: number, queueType: string) => {
-    if (bellAudioRef.current) {
-      bellAudioRef.current.play();
+    try {
+      // Criar um beep usando Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Frequência do beep
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.3); // Beep por 300ms
+    } catch (error) {
+      console.log('🔇 Som não disponível:', error);
     }
   };
 
