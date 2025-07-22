@@ -172,32 +172,62 @@ const Dashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Total de atendimentos realizados no dia (queue_customers + whatsapp + agendamentos)
+      // Total de atendimentos realizados no dia
       const today = new Date().toISOString().split('T')[0];
+      console.log('🗓️ Buscando dados para:', today);
       
-      const [queueResult, whatsappResult, appointmentResult] = await Promise.all([
-        supabase
-          .from('queue_customers')
-          .select('*', { count: 'exact' })
-          .eq('status', 'completed')
-          .gte('created_at', today + 'T00:00:00'),
-        supabase
-          .from('whatsapp_services')
-          .select('*', { count: 'exact' })
-          .gte('created_at', today + 'T00:00:00'),
-        supabase
-          .from('identity_appointments')
-          .select('*', { count: 'exact' })
-          .eq('status', 'completed')
-          .gte('created_at', today + 'T00:00:00')
-      ]);
+      // 1. Fila completada
+      const { data: queueData, count: queueCount, error: queueError } = await supabase
+        .from('queue_customers')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('created_at', `${today}T00:00:00`);
+        
+      if (queueError) {
+        console.error('❌ Erro query fila:', queueError);
+      } else {
+        console.log('📊 Fila completed:', queueCount);
+      }
       
-      const queueCount = queueResult.count || 0;
-      const whatsappCount = whatsappResult.count || 0;
-      const appointmentCount = appointmentResult.count || 0;
+      // 2. WhatsApp services
+      const { data: whatsappData, count: whatsappCount, error: whatsappError } = await supabase
+        .from('whatsapp_services')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', `${today}T00:00:00`);
+        
+      if (whatsappError) {
+        console.error('❌ Erro query whatsapp:', whatsappError);
+      } else {
+        console.log('📊 WhatsApp services:', whatsappCount);
+      }
       
-      console.log('📊 Contagem de atendimentos:', { queueCount, whatsappCount, appointmentCount });
-      setTotalAttendances(queueCount + whatsappCount + appointmentCount);
+      // 3. Agendamentos completados
+      const { data: appointmentData, count: appointmentCount, error: appointmentError } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('created_at', `${today}T00:00:00`);
+        
+      if (appointmentError) {
+        console.error('❌ Erro query agendamentos:', appointmentError);
+      } else {
+        console.log('📊 Agendamentos completed:', appointmentCount);
+      }
+      
+      // Calcular total
+      const totalQueue = queueCount || 0;
+      const totalWhatsapp = whatsappCount || 0;
+      const totalAppointments = appointmentCount || 0;
+      const totalAttendances = totalQueue + totalWhatsapp + totalAppointments;
+      
+      console.log('📈 TOTAL FINAL:', {
+        fila: totalQueue,
+        whatsapp: totalWhatsapp, 
+        agendamentos: totalAppointments,
+        TOTAL: totalAttendances
+      });
+      
+      setTotalAttendances(totalAttendances);
 
       // Buscar fila de espera completa para exibir
       const { data: waitingData } = await supabase
