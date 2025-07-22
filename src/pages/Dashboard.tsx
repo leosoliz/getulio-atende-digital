@@ -179,17 +179,20 @@ const Dashboard: React.FC = () => {
         supabase
           .from('queue_customers')
           .select('*', { count: 'exact' })
-          .not('completed_at', 'is', null)
-          .gte('created_at', today + 'T00:00:00.000Z'),
+          .eq('status', 'completed')
+          .gte('created_at', today + 'T00:00:00.000Z')
+          .lt('created_at', today + 'T23:59:59.999Z'),
         supabase
           .from('whatsapp_services')
           .select('*', { count: 'exact' })
-          .gte('created_at', today + 'T00:00:00.000Z'),
+          .gte('created_at', today + 'T00:00:00.000Z')
+          .lt('created_at', today + 'T23:59:59.999Z'),
         supabase
           .from('identity_appointments')
           .select('*', { count: 'exact' })
-          .not('completed_at', 'is', null)
+          .eq('status', 'completed')
           .gte('created_at', today + 'T00:00:00.000Z')
+          .lt('created_at', today + 'T23:59:59.999Z')
       ]);
       
       setTotalAttendances((queueCount || 0) + (whatsappCount || 0) + (appointmentCount || 0));
@@ -210,9 +213,11 @@ const Dashboard: React.FC = () => {
       const { data: completedAttendances } = await supabase
         .from('queue_customers')
         .select('started_at, completed_at')
-        .not('completed_at', 'is', null)
+        .eq('status', 'completed')
         .not('started_at', 'is', null)
-        .gte('created_at', today + 'T00:00:00.000Z');
+        .not('completed_at', 'is', null)
+        .gte('created_at', today + 'T00:00:00.000Z')
+        .lt('created_at', today + 'T23:59:59.999Z');
 
       if (completedAttendances && completedAttendances.length > 0) {
         const avgService = completedAttendances.reduce((sum, attendance) => {
@@ -229,7 +234,8 @@ const Dashboard: React.FC = () => {
         .from('queue_customers')
         .select('created_at, called_at')
         .not('called_at', 'is', null)
-        .gte('created_at', today + 'T00:00:00.000Z');
+        .gte('created_at', today + 'T00:00:00.000Z')
+        .lt('created_at', today + 'T23:59:59.999Z');
       
       if (calledCustomers && calledCustomers.length > 0) {
         const avgWait = calledCustomers.reduce((sum, customer) => {
