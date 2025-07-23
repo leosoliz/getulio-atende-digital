@@ -49,11 +49,7 @@ const Header: React.FC<HeaderProps> = ({ showDashboardButton = false }) => {
 
   const openDashboard = () => {
     const dashboardUrl = `${window.location.origin}/dashboard`;
-    window.open(
-      dashboardUrl, 
-      '_blank', 
-      'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,fullscreen=yes,width=' + screen.width + ',height=' + screen.height
-    );
+    window.open(dashboardUrl, '_blank');
   };
 
   return (
