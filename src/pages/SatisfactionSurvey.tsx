@@ -90,6 +90,57 @@ const SatisfactionSurvey: React.FC = () => {
     validateLink();
   }, [attendantId, queueCustomerId, identityAppointmentId, whatsappServiceId, toast]);
 
+  // Real-time updates para atualizar lista quando novos atendimentos são finalizados
+  useEffect(() => {
+    if (!showServiceList) return;
+
+    const channel = supabase
+      .channel('satisfaction-realtime-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'queue_customers',
+          filter: 'status=eq.completed'
+        },
+        () => {
+          console.log('Novo atendimento da fila completado');
+          loadCompletedServices();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'identity_appointments',
+          filter: 'status=eq.completed'
+        },
+        () => {
+          console.log('Novo agendamento de identidade completado');
+          loadCompletedServices();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'whatsapp_services'
+        },
+        () => {
+          console.log('Novo atendimento WhatsApp registrado');
+          loadCompletedServices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [showServiceList]);
+
   const loadCompletedServices = async () => {
     setLoadingServices(true);
     try {
