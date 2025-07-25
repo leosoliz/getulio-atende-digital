@@ -11,7 +11,7 @@ import { Heart, Star, CheckCircle, AlertCircle, Users, Clock, User, X } from 'lu
 
 // Cliente Supabase independente para a página de satisfaction (sem autenticação)
 const supabasePublic = createClient(
-  "https://uizatcahxcyscjbkxnzp.supabase.co",
+  "https://uizatcahxcyscjbkxnzp.supabase.co", 
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpemF0Y2FoeGN5c2NqYmt4bnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjA2OTAsImV4cCI6MjA2NjQzNjY5MH0._u0W7P-j1tpBvgv5ruNwL__hzmfyVSBfk4V9H4NL3Y4",
   {
     auth: {
