@@ -50,6 +50,54 @@ export type Database = {
           },
         ]
       }
+      fleet_vehicles: {
+        Row: {
+          brand: string
+          capacity: number | null
+          created_at: string | null
+          department: string | null
+          fuel_type: string
+          id: string
+          license_plate: string
+          model: string
+          observations: string | null
+          status: string
+          updated_at: string | null
+          vehicle_type: string
+          year: number
+        }
+        Insert: {
+          brand: string
+          capacity?: number | null
+          created_at?: string | null
+          department?: string | null
+          fuel_type: string
+          id?: string
+          license_plate: string
+          model: string
+          observations?: string | null
+          status?: string
+          updated_at?: string | null
+          vehicle_type: string
+          year: number
+        }
+        Update: {
+          brand?: string
+          capacity?: number | null
+          created_at?: string | null
+          department?: string | null
+          fuel_type?: string
+          id?: string
+          license_plate?: string
+          model?: string
+          observations?: string | null
+          status?: string
+          updated_at?: string | null
+          vehicle_type?: string
+          year?: number
+        }
+        Relationships: []
+      }
       identity_appointments: {
         Row: {
           appointment_date: string
@@ -598,6 +646,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicle_bookings: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          booking_date: string
+          created_at: string | null
+          destination: string
+          end_time: string
+          id: string
+          observations: string | null
+          passenger_count: number | null
+          purpose: string
+          server_department: string
+          server_email: string | null
+          server_name: string
+          server_phone: string
+          start_time: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_date: string
+          created_at?: string | null
+          destination: string
+          end_time: string
+          id?: string
+          observations?: string | null
+          passenger_count?: number | null
+          purpose: string
+          server_department: string
+          server_email?: string | null
+          server_name: string
+          server_phone: string
+          start_time: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_date?: string
+          created_at?: string | null
+          destination?: string
+          end_time?: string
+          id?: string
+          observations?: string | null
+          passenger_count?: number | null
+          purpose?: string
+          server_department?: string
+          server_email?: string | null
+          server_name?: string
+          server_phone?: string
+          start_time?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vistoria_fotos: {
         Row: {
