@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart, Star, CheckCircle, AlertCircle, Users, Clock, User } from 'lucide-react';
+import { Heart, Star, CheckCircle, AlertCircle, Users, Clock, User, X } from 'lucide-react';
 
 interface CompletedService {
   id: string;
@@ -94,7 +94,6 @@ const SatisfactionSurvey: React.FC = () => {
     setLoadingServices(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
       // Buscar atendimentos da fila completados
       const { data: queueData, error: queueError } = await supabase
@@ -104,7 +103,7 @@ const SatisfactionSurvey: React.FC = () => {
           services!inner(name)
         `)
         .eq('status', 'completed')
-        .gte('completed_at', `${threeDaysAgo}T00:00:00`)
+        .gte('completed_at', `${today}T00:00:00`)
         .lte('completed_at', `${today}T23:59:59`)
         .order('completed_at', { ascending: false });
 
@@ -113,7 +112,7 @@ const SatisfactionSurvey: React.FC = () => {
         .from('identity_appointments')
         .select('id, name, phone, completed_at, attendant_id')
         .eq('status', 'completed')
-        .gte('completed_at', `${threeDaysAgo}T00:00:00`)
+        .gte('completed_at', `${today}T00:00:00`)
         .lte('completed_at', `${today}T23:59:59`)
         .order('completed_at', { ascending: false });
 
@@ -124,7 +123,7 @@ const SatisfactionSurvey: React.FC = () => {
           id, name, phone, created_at, attendant_id,
           services!inner(name)
         `)
-        .gte('created_at', `${threeDaysAgo}T00:00:00`)
+        .gte('created_at', `${today}T00:00:00`)
         .lte('created_at', `${today}T23:59:59`)
         .order('created_at', { ascending: false });
 
@@ -210,6 +209,20 @@ const SatisfactionSurvey: React.FC = () => {
   const handleServiceSelection = (service: CompletedService) => {
     setSelectedService(service);
     setShowServiceList(false);
+  };
+
+  const handleRemoveService = async (service: CompletedService, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Remover da lista local
+    setCompletedServices(prevServices => 
+      prevServices.filter(s => !(s.id === service.id && s.type === service.type))
+    );
+    
+    toast({
+      title: "Atendimento removido",
+      description: "O atendimento foi removido da lista de pesquisas disponíveis",
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -350,7 +363,7 @@ const SatisfactionSurvey: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground text-center mb-6">
-                  Encontramos {completedServices.length} atendimento(s) dos últimos 3 dias disponível(is) para avaliação
+                  Encontramos {completedServices.length} atendimento(s) de hoje disponível(is) para avaliação
                 </p>
                 
                 <div className="grid gap-4">
@@ -380,27 +393,38 @@ const SatisfactionSurvey: React.FC = () => {
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">
-                              {new Date(service.completed_at).toLocaleDateString('pt-BR')}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(service.completed_at).toLocaleTimeString('pt-BR', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </p>
-                            <Button 
-                              size="sm" 
-                              className="mt-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleServiceSelection(service);
-                              }}
-                            >
-                              Avaliar
-                            </Button>
-                          </div>
+                           <div className="text-right flex flex-col items-end space-y-2">
+                             <div>
+                               <p className="text-sm font-medium">
+                                 {new Date(service.completed_at).toLocaleDateString('pt-BR')}
+                               </p>
+                               <p className="text-xs text-muted-foreground">
+                                 {new Date(service.completed_at).toLocaleTimeString('pt-BR', { 
+                                   hour: '2-digit', 
+                                   minute: '2-digit' 
+                                 })}
+                               </p>
+                             </div>
+                             <div className="flex gap-2">
+                               <Button 
+                                 size="sm" 
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleServiceSelection(service);
+                                 }}
+                               >
+                                 Avaliar
+                               </Button>
+                               <Button 
+                                 size="sm" 
+                                 variant="outline"
+                                 onClick={(e) => handleRemoveService(service, e)}
+                                 className="text-muted-foreground hover:text-destructive"
+                               >
+                                 <X className="h-4 w-4" />
+                               </Button>
+                             </div>
+                           </div>
                         </div>
                       </CardContent>
                     </Card>
