@@ -7,7 +7,17 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart, Star, CheckCircle, AlertCircle } from 'lucide-react';
+import { Heart, Star, CheckCircle, AlertCircle, Users, Clock, User } from 'lucide-react';
+
+interface CompletedService {
+  id: string;
+  name: string;
+  phone: string;
+  service_name: string;
+  completed_at: string;
+  attendant_id: string;
+  type: 'queue' | 'identity' | 'whatsapp';
+}
 
 const SatisfactionSurvey: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +30,10 @@ const SatisfactionSurvey: React.FC = () => {
   const [problemResolved, setProblemResolved] = useState('');
   const [improvementAspect, setImprovementAspect] = useState('');
   const [linkExpired, setLinkExpired] = useState(false);
+  const [showServiceList, setShowServiceList] = useState(false);
+  const [completedServices, setCompletedServices] = useState<CompletedService[]>([]);
+  const [selectedService, setSelectedService] = useState<CompletedService | null>(null);
+  const [loadingServices, setLoadingServices] = useState(false);
   
   // Get parameters from URL
   const attendantId = searchParams.get('attendant_id');
@@ -29,51 +43,174 @@ const SatisfactionSurvey: React.FC = () => {
 
   useEffect(() => {
     const validateLink = async () => {
-      // Se não há attendant_id, permite acesso mas não faz validações de duplicação
-      if (!attendantId) {
-        return;
-      }
+      // Se há parâmetros específicos, usar o fluxo de link direto
+      if (attendantId && (queueCustomerId || identityAppointmentId || whatsappServiceId)) {
+        // Verificar se já existe uma pesquisa respondida para este link
+        try {
+          let query = supabase
+            .from('satisfaction_surveys')
+            .select('id')
+            .eq('attendant_id', attendantId);
 
-      // Verificar se já existe uma pesquisa respondida para este link
-      try {
-        let query = supabase
-          .from('satisfaction_surveys')
-          .select('id')
-          .eq('attendant_id', attendantId);
+          // Adicionar filtro específico baseado no tipo de atendimento
+          if (queueCustomerId) {
+            query = query.eq('queue_customer_id', queueCustomerId);
+          } else if (identityAppointmentId) {
+            query = query.eq('identity_appointment_id', identityAppointmentId);
+          } else if (whatsappServiceId) {
+            query = query.eq('whatsapp_service_id', whatsappServiceId);
+          }
 
-        // Adicionar filtro específico baseado no tipo de atendimento
-        if (queueCustomerId) {
-          query = query.eq('queue_customer_id', queueCustomerId);
-        } else if (identityAppointmentId) {
-          query = query.eq('identity_appointment_id', identityAppointmentId);
-        } else if (whatsappServiceId) {
-          query = query.eq('whatsapp_service_id', whatsappServiceId);
+          const { data: existingSurvey, error } = await query.maybeSingle();
+
+          if (error) {
+            console.error('Erro ao verificar pesquisa existente:', error);
+            return;
+          }
+
+          if (existingSurvey) {
+            // Pesquisa já foi respondida
+            setLinkExpired(true);
+            toast({
+              title: "Link expirado",
+              description: "Esta pesquisa já foi respondida anteriormente",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao validar link:', error);
         }
-
-        const { data: existingSurvey, error } = await query.single();
-
-        if (error && error.code !== 'PGRST116') {
-          // Erro diferente de "não encontrado"
-          console.error('Erro ao verificar pesquisa existente:', error);
-          return;
-        }
-
-        if (existingSurvey) {
-          // Pesquisa já foi respondida
-          setLinkExpired(true);
-          toast({
-            title: "Link expirado",
-            description: "Esta pesquisa já foi respondida anteriormente",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao validar link:', error);
+      } else {
+        // Se não há parâmetros específicos, mostrar lista de serviços
+        setShowServiceList(true);
+        loadCompletedServices();
       }
     };
 
     validateLink();
   }, [attendantId, queueCustomerId, identityAppointmentId, whatsappServiceId, toast]);
+
+  const loadCompletedServices = async () => {
+    setLoadingServices(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Buscar atendimentos da fila completados
+      const { data: queueData, error: queueError } = await supabase
+        .from('queue_customers')
+        .select(`
+          id, name, phone, completed_at, attendant_id,
+          services!inner(name)
+        `)
+        .eq('status', 'completed')
+        .gte('completed_at', `${threeDaysAgo}T00:00:00`)
+        .lte('completed_at', `${today}T23:59:59`)
+        .order('completed_at', { ascending: false });
+
+      // Buscar agendamentos de identidade completados
+      const { data: identityData, error: identityError } = await supabase
+        .from('identity_appointments')
+        .select('id, name, phone, completed_at, attendant_id')
+        .eq('status', 'completed')
+        .gte('completed_at', `${threeDaysAgo}T00:00:00`)
+        .lte('completed_at', `${today}T23:59:59`)
+        .order('completed_at', { ascending: false });
+
+      // Buscar atendimentos WhatsApp (sempre considerados completados)
+      const { data: whatsappData, error: whatsappError } = await supabase
+        .from('whatsapp_services')
+        .select(`
+          id, name, phone, created_at, attendant_id,
+          services!inner(name)
+        `)
+        .gte('created_at', `${threeDaysAgo}T00:00:00`)
+        .lte('created_at', `${today}T23:59:59`)
+        .order('created_at', { ascending: false });
+
+      if (queueError || identityError || whatsappError) {
+        console.error('Erro ao carregar serviços:', { queueError, identityError, whatsappError });
+        return;
+      }
+
+      const services: CompletedService[] = [];
+
+      // Adicionar serviços da fila
+      queueData?.forEach(item => {
+        services.push({
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+          service_name: (item.services as any)?.name || 'Atendimento Presencial',
+          completed_at: item.completed_at,
+          attendant_id: item.attendant_id,
+          type: 'queue'
+        });
+      });
+
+      // Adicionar agendamentos de identidade
+      identityData?.forEach(item => {
+        services.push({
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+          service_name: 'Agendamento de Identidade',
+          completed_at: item.completed_at,
+          attendant_id: item.attendant_id,
+          type: 'identity'
+        });
+      });
+
+      // Adicionar atendimentos WhatsApp
+      whatsappData?.forEach(item => {
+        services.push({
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+          service_name: (item.services as any)?.name || 'Atendimento WhatsApp',
+          completed_at: item.created_at,
+          attendant_id: item.attendant_id,
+          type: 'whatsapp'
+        });
+      });
+
+      // Filtrar serviços que já têm pesquisa respondida
+      const servicesWithoutSurvey = [];
+      for (const service of services) {
+        const { data: existingSurvey } = await supabase
+          .from('satisfaction_surveys')
+          .select('id')
+          .eq('attendant_id', service.attendant_id)
+          .eq(service.type === 'queue' ? 'queue_customer_id' : 
+              service.type === 'identity' ? 'identity_appointment_id' : 'whatsapp_service_id', 
+              service.id)
+          .maybeSingle();
+
+        if (!existingSurvey) {
+          servicesWithoutSurvey.push(service);
+        }
+      }
+
+      // Ordenar por data de completamento (mais recente primeiro)
+      servicesWithoutSurvey.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+      
+      setCompletedServices(servicesWithoutSurvey);
+    } catch (error) {
+      console.error('Erro ao carregar serviços completados:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os atendimentos disponíveis",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  const handleServiceSelection = (service: CompletedService) => {
+    setSelectedService(service);
+    setShowServiceList(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,27 +223,35 @@ const SatisfactionSurvey: React.FC = () => {
       });
       return;
     }
-
-    // Se não há attendant_id, ainda permite enviar uma pesquisa genérica
-    if (!attendantId) {
-      toast({
-        title: "Aviso",
-        description: "Esta pesquisa será enviada sem vinculação a um atendente específico",
-      });
-    }
     
     setLoading(true);
     
     try {
-      const surveyData = {
-        attendant_id: attendantId || null, // Permite null se não houver attendant_id
+      let surveyData: any = {
         overall_rating: overallRating,
         problem_resolved: problemResolved,
         improvement_aspect: improvementAspect,
-        queue_customer_id: queueCustomerId,
-        identity_appointment_id: identityAppointmentId,
-        whatsapp_service_id: whatsappServiceId
       };
+
+      // Se veio de link direto com parâmetros
+      if (attendantId) {
+        surveyData.attendant_id = attendantId;
+        surveyData.queue_customer_id = queueCustomerId;
+        surveyData.identity_appointment_id = identityAppointmentId;
+        surveyData.whatsapp_service_id = whatsappServiceId;
+      } 
+      // Se veio da seleção de serviço
+      else if (selectedService) {
+        surveyData.attendant_id = selectedService.attendant_id;
+        
+        if (selectedService.type === 'queue') {
+          surveyData.queue_customer_id = selectedService.id;
+        } else if (selectedService.type === 'identity') {
+          surveyData.identity_appointment_id = selectedService.id;
+        } else if (selectedService.type === 'whatsapp') {
+          surveyData.whatsapp_service_id = selectedService.id;
+        }
+      }
 
       const { error } = await supabase
         .from('satisfaction_surveys')
@@ -170,6 +315,111 @@ const SatisfactionSurvey: React.FC = () => {
     );
   }
 
+  // Se deve mostrar a lista de serviços
+  if (showServiceList) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-4xl">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Users className="h-12 w-12 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Pesquisa de Satisfação</CardTitle>
+            <p className="text-muted-foreground">
+              Selecione o atendimento que você gostaria de avaliar
+            </p>
+          </CardHeader>
+          
+          <CardContent>
+            {loadingServices ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-muted-foreground">Carregando atendimentos...</p>
+              </div>
+            ) : completedServices.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Nenhum atendimento disponível</h3>
+                <p className="text-muted-foreground mb-4">
+                  Não há atendimentos recentes disponíveis para avaliação ou todas as pesquisas já foram respondidas.
+                </p>
+                <Button onClick={() => navigate('/')} variant="outline">
+                  Voltar ao início
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground text-center mb-6">
+                  Encontramos {completedServices.length} atendimento(s) dos últimos 3 dias disponível(is) para avaliação
+                </p>
+                
+                <div className="grid gap-4">
+                  {completedServices.map((service) => (
+                    <Card 
+                      key={`${service.type}-${service.id}`}
+                      className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/20"
+                      onClick={() => handleServiceSelection(service)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                              {service.type === 'queue' ? (
+                                <Users className="h-6 w-6 text-primary" />
+                              ) : service.type === 'identity' ? (
+                                <User className="h-6 w-6 text-primary" />
+                              ) : (
+                                <Clock className="h-6 w-6 text-primary" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold">{service.name}</h3>
+                              <p className="text-sm text-muted-foreground">{service.service_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Telefone: {service.phone}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {new Date(service.completed_at).toLocaleDateString('pt-BR')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(service.completed_at).toLocaleTimeString('pt-BR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </p>
+                            <Button 
+                              size="sm" 
+                              className="mt-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleServiceSelection(service);
+                              }}
+                            >
+                              Avaliar
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                
+                <div className="text-center pt-4">
+                  <Button onClick={() => navigate('/')} variant="outline">
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <Card className="w-full max-w-2xl">
@@ -179,11 +429,34 @@ const SatisfactionSurvey: React.FC = () => {
           </div>
           <CardTitle className="text-2xl">Pesquisa de Satisfação</CardTitle>
           <p className="text-muted-foreground">
-            Sua opinião é muito importante para melhorarmos nosso atendimento
+            {selectedService ? 
+              `Avaliando: ${selectedService.service_name} - ${selectedService.name}` :
+              'Sua opinião é muito importante para melhorarmos nosso atendimento'
+            }
           </p>
         </CardHeader>
         
         <CardContent>
+          {selectedService && (
+            <div className="mb-6 p-4 bg-muted rounded-lg">
+              <h3 className="font-semibold mb-2">Detalhes do Atendimento:</h3>
+              <p className="text-sm text-muted-foreground">
+                <strong>Serviço:</strong> {selectedService.service_name}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Data:</strong> {new Date(selectedService.completed_at).toLocaleString('pt-BR')}
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => setShowServiceList(true)}
+              >
+                Escolher outro atendimento
+              </Button>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Avaliação Geral */}
             <div className="space-y-4">
