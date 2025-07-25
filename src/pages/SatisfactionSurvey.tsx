@@ -6,8 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { Heart, Star, CheckCircle, AlertCircle, Users, Clock, User, X } from 'lucide-react';
+
+// Cliente Supabase independente para a página de satisfaction (sem autenticação)
+const supabasePublic = createClient(
+  "https://uizatcahxcyscjbkxnzp.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpemF0Y2FoeGN5c2NqYmt4bnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjA2OTAsImV4cCI6MjA2NjQzNjY5MH0._u0W7P-j1tpBvgv5ruNwL__hzmfyVSBfk4V9H4NL3Y4",
+  {
+    auth: {
+      persistSession: false, // Não persistir sessão para página pública
+      autoRefreshToken: false, // Não renovar token automaticamente
+    }
+  }
+);
 
 interface CompletedService {
   id: string;
@@ -47,7 +59,7 @@ const SatisfactionSurvey: React.FC = () => {
       if (attendantId && (queueCustomerId || identityAppointmentId || whatsappServiceId)) {
         // Verificar se já existe uma pesquisa respondida para este link
         try {
-          let query = supabase
+          let query = supabasePublic
             .from('satisfaction_surveys')
             .select('id')
             .eq('attendant_id', attendantId);
@@ -94,7 +106,7 @@ const SatisfactionSurvey: React.FC = () => {
   useEffect(() => {
     if (!showServiceList) return;
 
-    const channel = supabase
+    const channel = supabasePublic
       .channel('satisfaction-realtime-updates')
       .on(
         'postgres_changes',
@@ -137,7 +149,7 @@ const SatisfactionSurvey: React.FC = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabasePublic.removeChannel(channel);
     };
   }, [showServiceList]);
 
@@ -147,7 +159,7 @@ const SatisfactionSurvey: React.FC = () => {
       const today = new Date().toISOString().split('T')[0];
 
       // Buscar atendimentos da fila completados
-      const { data: queueData, error: queueError } = await supabase
+      const { data: queueData, error: queueError } = await supabasePublic
         .from('queue_customers')
         .select(`
           id, name, phone, completed_at, attendant_id,
@@ -159,7 +171,7 @@ const SatisfactionSurvey: React.FC = () => {
         .order('completed_at', { ascending: false });
 
       // Buscar agendamentos de identidade completados
-      const { data: identityData, error: identityError } = await supabase
+      const { data: identityData, error: identityError } = await supabasePublic
         .from('identity_appointments')
         .select('id, name, phone, completed_at, attendant_id')
         .eq('status', 'completed')
@@ -168,7 +180,7 @@ const SatisfactionSurvey: React.FC = () => {
         .order('completed_at', { ascending: false });
 
       // Buscar atendimentos WhatsApp (sempre considerados completados)
-      const { data: whatsappData, error: whatsappError } = await supabase
+      const { data: whatsappData, error: whatsappError } = await supabasePublic
         .from('whatsapp_services')
         .select(`
           id, name, phone, created_at, attendant_id,
@@ -227,7 +239,7 @@ const SatisfactionSurvey: React.FC = () => {
       // Filtrar serviços que já têm pesquisa respondida
       const servicesWithoutSurvey = [];
       for (const service of services) {
-        const { data: existingSurvey } = await supabase
+        const { data: existingSurvey } = await supabasePublic
           .from('satisfaction_surveys')
           .select('id')
           .eq('attendant_id', service.attendant_id)
@@ -317,7 +329,7 @@ const SatisfactionSurvey: React.FC = () => {
         }
       }
 
-      const { error } = await supabase
+      const { error } = await supabasePublic
         .from('satisfaction_surveys')
         .insert(surveyData);
 
