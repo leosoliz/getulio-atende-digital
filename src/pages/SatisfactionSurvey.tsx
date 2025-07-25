@@ -29,13 +29,8 @@ const SatisfactionSurvey: React.FC = () => {
 
   useEffect(() => {
     const validateLink = async () => {
+      // Se não há attendant_id, permite acesso mas não faz validações de duplicação
       if (!attendantId) {
-        toast({
-          title: "Link inválido",
-          description: "Este link de pesquisa não é válido",
-          variant: "destructive",
-        });
-        navigate('/');
         return;
       }
 
@@ -78,7 +73,7 @@ const SatisfactionSurvey: React.FC = () => {
     };
 
     validateLink();
-  }, [attendantId, queueCustomerId, identityAppointmentId, whatsappServiceId, navigate, toast]);
+  }, [attendantId, queueCustomerId, identityAppointmentId, whatsappServiceId, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,12 +86,20 @@ const SatisfactionSurvey: React.FC = () => {
       });
       return;
     }
+
+    // Se não há attendant_id, ainda permite enviar uma pesquisa genérica
+    if (!attendantId) {
+      toast({
+        title: "Aviso",
+        description: "Esta pesquisa será enviada sem vinculação a um atendente específico",
+      });
+    }
     
     setLoading(true);
     
     try {
       const surveyData = {
-        attendant_id: attendantId,
+        attendant_id: attendantId || null, // Permite null se não houver attendant_id
         overall_rating: overallRating,
         problem_resolved: problemResolved,
         improvement_aspect: improvementAspect,
