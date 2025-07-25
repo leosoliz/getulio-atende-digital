@@ -812,6 +812,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_update_user_type: {
+        Args: { target_user_id: string; new_user_type: string }
+        Returns: boolean
+      }
       check_survey_rate_limit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
