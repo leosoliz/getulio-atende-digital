@@ -313,11 +313,11 @@ const Attendant: React.FC = () => {
       const serviceIds = attendantServices?.map(as => as.service_id) || [];
       console.log('📋 Attendant service IDs:', serviceIds);
       
-      // Buscar o ID do serviço de Emissão de Identidade
+      // Buscar o ID do serviço de RG - Emissão de Identidade
       const { data: identityService } = await supabase
         .from('services')
         .select('id')
-        .eq('name', 'Emissão de Identidade')
+        .eq('name', 'RG - Emissão de Identidade')
         .single();
 
       console.log('📋 Identity service:', identityService);
