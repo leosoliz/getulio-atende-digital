@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { User, Clock, Phone, AlertTriangle, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { User, Clock, Phone, AlertTriangle, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,9 +36,6 @@ interface IdentityAppointment {
   appointment_date: string;
   appointment_time: string;
   status: string;
-  created_at: string;
-  called_at: string | null;
-  started_at: string | null;
 }
 
 const Attendant: React.FC = () => {
@@ -48,7 +44,6 @@ const Attendant: React.FC = () => {
   const [queueCustomers, setQueueCustomers] = useState<QueueCustomer[]>([]);
   const [identityAppointments, setIdentityAppointments] = useState<IdentityAppointment[]>([]);
   const [currentCustomer, setCurrentCustomer] = useState<QueueCustomer | null>(null);
-  const [currentAppointment, setCurrentAppointment] = useState<IdentityAppointment | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasIdentityService, setHasIdentityService] = useState(false);
   
@@ -60,8 +55,7 @@ const Attendant: React.FC = () => {
       fetchQueueCustomers();
       fetchIdentityAppointments();
       
-      // Configurar real-time para a fila normal
-      const queueChannel = supabase
+      const channel = supabase
         .channel('queue-changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'queue_customers' },
@@ -69,18 +63,8 @@ const Attendant: React.FC = () => {
         )
         .subscribe();
 
-      // Configurar real-time para agendamentos de identidade
-      const appointmentsChannel = supabase
-        .channel('appointments-changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'identity_appointments' },
-          () => { fetchIdentityAppointments(); }
-        )
-        .subscribe();
-
       return () => {
-        supabase.removeChannel(queueChannel);
-        supabase.removeChannel(appointmentsChannel);
+        supabase.removeChannel(channel);
       };
     }
   }, [profile]);
@@ -108,21 +92,17 @@ const Attendant: React.FC = () => {
     const attendantServices = data?.map(item => item.services).filter(Boolean) || [];
     setServices(attendantServices);
     
-    // Verificar se o atendente possui o serviço de identidade
-    const hasIdentity = attendantServices.some(service => 
+    // Verificar se tem serviço de RG
+    const hasRG = attendantServices.some(service => 
       service.name.toLowerCase().includes('identidade') || 
       service.name.toLowerCase().includes('rg')
     );
-    setHasIdentityService(hasIdentity);
-    
-    console.log('Serviços do atendente:', attendantServices);
-    console.log('Possui serviço de identidade:', hasIdentity);
+    setHasIdentityService(hasRG);
   };
 
   const fetchQueueCustomers = async () => {
     if (!profile?.id) return;
     
-    // Buscar serviços do atendente
     const { data: attendantServices } = await supabase
       .from('attendant_services')
       .select('service_id')
@@ -152,7 +132,7 @@ const Attendant: React.FC = () => {
   };
 
   const fetchIdentityAppointments = async () => {
-    if (!profile?.id || !hasIdentityService) return;
+    if (!hasIdentityService) return;
     
     const today = new Date().toISOString().split('T')[0];
     
@@ -168,7 +148,6 @@ const Attendant: React.FC = () => {
       return;
     }
     
-    console.log('Agendamentos de identidade encontrados:', data);
     setIdentityAppointments(data || []);
   };
 
@@ -201,109 +180,6 @@ const Attendant: React.FC = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao chamar cidadão",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-    
-    setLoading(false);
-  };
-
-  const callNextAppointment = async () => {
-    if (identityAppointments.length === 0) return;
-    
-    const nextAppointment = identityAppointments[0];
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from('identity_appointments')
-        .update({
-          status: 'called',
-          attendant_id: profile?.id,
-          called_at: new Date().toISOString()
-        })
-        .eq('id', nextAppointment.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setCurrentAppointment(nextAppointment);
-      toast({
-        title: "Agendamento chamado",
-        description: `${nextAppointment.name} foi chamado para atendimento de identidade`,
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Erro ao chamar agendamento",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-    
-    setLoading(false);
-  };
-
-  const startService = async (customer: QueueCustomer) => {
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from('queue_customers')
-        .update({
-          status: 'in_progress',
-          started_at: new Date().toISOString()
-        })
-        .eq('id', customer.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setCurrentCustomer({ ...customer, status: 'in_progress' });
-      toast({
-        title: "Atendimento iniciado",
-        description: `Atendimento de ${customer.name} foi iniciado`,
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Erro ao iniciar atendimento",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-    
-    setLoading(false);
-  };
-
-  const startAppointment = async (appointment: IdentityAppointment) => {
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from('identity_appointments')
-        .update({
-          status: 'in_progress',
-          started_at: new Date().toISOString()
-        })
-        .eq('id', appointment.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setCurrentAppointment({ ...appointment, status: 'in_progress' });
-      toast({
-        title: "Atendimento iniciado",
-        description: `Atendimento de identidade para ${appointment.name} foi iniciado`,
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Erro ao iniciar atendimento",
         description: error.message,
         variant: "destructive",
       });
@@ -345,39 +221,6 @@ const Attendant: React.FC = () => {
     setLoading(false);
   };
 
-  const completeAppointment = async (appointment: IdentityAppointment) => {
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from('identity_appointments')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', appointment.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setCurrentAppointment(null);
-      toast({
-        title: "Atendimento finalizado",
-        description: `Atendimento de identidade para ${appointment.name} foi finalizado`,
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Erro ao finalizar atendimento",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-    
-    setLoading(false);
-  };
-
   const getWaitingTime = (createdAt: string) => {
     const now = new Date();
     const created = new Date(createdAt);
@@ -403,238 +246,149 @@ const Attendant: React.FC = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="queue" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="queue">Fila Normal</TabsTrigger>
-            <TabsTrigger value="identity" disabled={!hasIdentityService}>
-              Agendamentos Identidade
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="queue">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
-              {/* Atendimento Atual */}
-              <Card className="shadow-shadow-card">
-                <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Atendimento Atual
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {currentCustomer ? (
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-lg border border-border bg-card">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant={currentCustomer.is_priority ? "destructive" : "secondary"}>
-                            #{currentCustomer.queue_number}
-                          </Badge>
-                          {currentCustomer.is_priority && (
-                            <Badge variant="destructive">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Prioritário
+        {hasIdentityService ? (
+          <Tabs defaultValue="queue" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="queue">Fila Normal</TabsTrigger>
+              <TabsTrigger value="identity">Agendamentos RG</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="queue">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+                <Card className="shadow-shadow-card">
+                  <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Atendimento Atual
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {currentCustomer ? (
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-lg border border-border bg-card">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={currentCustomer.is_priority ? "destructive" : "secondary"}>
+                              #{currentCustomer.queue_number}
                             </Badge>
-                          )}
+                            {currentCustomer.is_priority && (
+                              <Badge variant="destructive">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Prioritário
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="font-medium text-lg">{currentCustomer.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {currentCustomer.services?.name}
+                          </p>
+                          <div className="flex items-center text-sm text-muted-foreground mt-2">
+                            <Phone className="h-4 w-4 mr-1" />
+                            {currentCustomer.phone}
+                          </div>
                         </div>
-                        <h3 className="font-medium text-lg">{currentCustomer.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {currentCustomer.services?.name}
-                        </p>
-                        <div className="flex items-center text-sm text-muted-foreground mt-2">
-                          <Phone className="h-4 w-4 mr-1" />
-                          {currentCustomer.phone}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        {currentCustomer.status === 'called' && (
-                          <Button 
-                            onClick={() => startService(currentCustomer)}
-                            disabled={loading}
-                            className="flex-1"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Iniciar Atendimento
-                          </Button>
-                        )}
-                        {currentCustomer.status === 'in_progress' && (
-                          <Button 
-                            onClick={() => completeService(currentCustomer)}
-                            disabled={loading}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Finalizar Atendimento
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Nenhum atendimento em andamento</p>
-                      <Button 
-                        onClick={callNextCustomer}
-                        disabled={loading || queueCustomers.length === 0}
-                        className="mt-4"
-                      >
-                        {loading ? 'Chamando...' : 'Chamar Próximo'}
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Fila de Espera */}
-              <Card className="shadow-shadow-card">
-                <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Fila de Espera ({queueCustomers.length} pessoas)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {queueCustomers.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">
-                        Nenhum cidadão na fila
-                      </p>
-                    ) : (
-                      queueCustomers.map((customer, index) => (
-                        <div
-                          key={customer.id}
-                          className={`p-4 rounded-lg border ${
-                            index === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                          } ${customer.is_priority ? 'border-destructive bg-destructive/5' : ''}`}
+                        
+                        <Button 
+                          onClick={() => completeService(currentCustomer)}
+                          disabled={loading}
+                          className="w-full"
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={customer.is_priority ? "destructive" : "secondary"}>
-                                  #{customer.queue_number}
-                                </Badge>
-                                {customer.is_priority && (
-                                  <Badge variant="destructive">
-                                    <AlertTriangle className="h-3 w-3 mr-1" />
-                                    Prioritário
+                          Finalizar Atendimento
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Nenhum atendimento em andamento</p>
+                        <Button 
+                          onClick={callNextCustomer}
+                          disabled={loading || queueCustomers.length === 0}
+                          className="mt-4"
+                        >
+                          {loading ? 'Chamando...' : 'Chamar Próximo'}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-shadow-card">
+                  <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Fila de Espera ({queueCustomers.length} pessoas)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {queueCustomers.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-8">
+                          Nenhum cidadão na fila
+                        </p>
+                      ) : (
+                        queueCustomers.map((customer, index) => (
+                          <div
+                            key={customer.id}
+                            className={`p-4 rounded-lg border ${
+                              index === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                            } ${customer.is_priority ? 'border-destructive bg-destructive/5' : ''}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={customer.is_priority ? "destructive" : "secondary"}>
+                                    #{customer.queue_number}
                                   </Badge>
-                                )}
-                                {index === 0 && (
-                                  <Badge variant="outline">
-                                    Próximo
-                                  </Badge>
-                                )}
+                                  {customer.is_priority && (
+                                    <Badge variant="destructive">
+                                      <AlertTriangle className="h-3 w-3 mr-1" />
+                                      Prioritário
+                                    </Badge>
+                                  )}
+                                  {index === 0 && (
+                                    <Badge variant="outline">
+                                      Próximo
+                                    </Badge>
+                                  )}
+                                </div>
+                                <h4 className="font-medium">{customer.name}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {customer.services?.name}
+                                </p>
                               </div>
-                              <h4 className="font-medium">{customer.name}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                {customer.services?.name}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {getWaitingTime(customer.created_at)} min
+                              <div className="text-right">
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  {getWaitingTime(customer.created_at)} min
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="identity">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
-              {/* Atendimento Atual - Identidade */}
-              <Card className="shadow-shadow-card">
+            <TabsContent value="identity">
+              <Card className="shadow-shadow-card mt-6">
                 <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Atendimento Atual - Identidade
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {currentAppointment ? (
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-lg border border-border bg-card">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary">
-                            {currentAppointment.appointment_time}
-                          </Badge>
-                        </div>
-                        <h3 className="font-medium text-lg">{currentAppointment.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Emissão de Identidade
-                        </p>
-                        <div className="flex items-center text-sm text-muted-foreground mt-2">
-                          <Phone className="h-4 w-4 mr-1" />
-                          {currentAppointment.phone}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        {currentAppointment.status === 'called' && (
-                          <Button 
-                            onClick={() => startAppointment(currentAppointment)}
-                            disabled={loading}
-                            className="flex-1"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Iniciar Atendimento
-                          </Button>
-                        )}
-                        {currentAppointment.status === 'in_progress' && (
-                          <Button 
-                            onClick={() => completeAppointment(currentAppointment)}
-                            disabled={loading}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Finalizar Atendimento
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Nenhum atendimento de identidade em andamento</p>
-                      <Button 
-                        onClick={callNextAppointment}
-                        disabled={loading || identityAppointments.length === 0}
-                        className="mt-4"
-                      >
-                        {loading ? 'Chamando...' : 'Chamar Próximo Agendamento'}
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Agendamentos de Hoje */}
-              <Card className="shadow-shadow-card">
-                <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Agendamentos de Hoje ({identityAppointments.length})
+                    Agendamentos de RG - Hoje ({identityAppointments.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {identityAppointments.length === 0 ? (
                       <p className="text-muted-foreground text-center py-8">
-                        Nenhum agendamento para hoje
+                        Nenhum agendamento de RG para hoje
                       </p>
                     ) : (
                       identityAppointments.map((appointment, index) => (
                         <div
                           key={appointment.id}
-                          className={`p-4 rounded-lg border ${
-                            index === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                          }`}
+                          className="p-4 rounded-lg border border-border bg-card"
                         >
                           <div className="flex items-center justify-between">
                             <div>
@@ -643,21 +397,14 @@ const Attendant: React.FC = () => {
                                   {appointment.appointment_time}
                                 </Badge>
                                 <Badge variant={
-                                  appointment.status === 'scheduled' ? 'outline' :
-                                  appointment.status === 'called' ? 'secondary' : 'default'
+                                  appointment.status === 'scheduled' ? 'outline' : 'secondary'
                                 }>
-                                  {appointment.status === 'scheduled' ? 'Agendado' :
-                                   appointment.status === 'called' ? 'Chamado' : 'Em Atendimento'}
+                                  {appointment.status === 'scheduled' ? 'Agendado' : 'Chamado'}
                                 </Badge>
-                                {index === 0 && (
-                                  <Badge variant="outline">
-                                    Próximo
-                                  </Badge>
-                                )}
                               </div>
                               <h4 className="font-medium">{appointment.name}</h4>
                               <p className="text-sm text-muted-foreground">
-                                Emissão de Identidade
+                                RG - Emissão de Identidade
                               </p>
                               <div className="flex items-center text-sm text-muted-foreground mt-1">
                                 <Phone className="h-4 w-4 mr-1" />
@@ -671,9 +418,124 @@ const Attendant: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card className="shadow-shadow-card">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Atendimento Atual
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {currentCustomer ? (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg border border-border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant={currentCustomer.is_priority ? "destructive" : "secondary"}>
+                          #{currentCustomer.queue_number}
+                        </Badge>
+                        {currentCustomer.is_priority && (
+                          <Badge variant="destructive">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Prioritário
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="font-medium text-lg">{currentCustomer.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {currentCustomer.services?.name}
+                      </p>
+                      <div className="flex items-center text-sm text-muted-foreground mt-2">
+                        <Phone className="h-4 w-4 mr-1" />
+                        {currentCustomer.phone}
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => completeService(currentCustomer)}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      Finalizar Atendimento
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum atendimento em andamento</p>
+                    <Button 
+                      onClick={callNextCustomer}
+                      disabled={loading || queueCustomers.length === 0}
+                      className="mt-4"
+                    >
+                      {loading ? 'Chamando...' : 'Chamar Próximo'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-shadow-card">
+              <CardHeader className="bg-gradient-to-r from-secondary/10 to-success/10">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Fila de Espera ({queueCustomers.length} pessoas)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {queueCustomers.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Nenhum cidadão na fila
+                    </p>
+                  ) : (
+                    queueCustomers.map((customer, index) => (
+                      <div
+                        key={customer.id}
+                        className={`p-4 rounded-lg border ${
+                          index === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                        } ${customer.is_priority ? 'border-destructive bg-destructive/5' : ''}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={customer.is_priority ? "destructive" : "secondary"}>
+                                #{customer.queue_number}
+                              </Badge>
+                              {customer.is_priority && (
+                                <Badge variant="destructive">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Prioritário
+                                </Badge>
+                              )}
+                              {index === 0 && (
+                                <Badge variant="outline">
+                                  Próximo
+                                </Badge>
+                              )}
+                            </div>
+                            <h4 className="font-medium">{customer.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {customer.services?.name}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {getWaitingTime(customer.created_at)} min
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
