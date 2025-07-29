@@ -58,17 +58,21 @@ const RoleBasedRedirect: React.FC = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirecionar baseado no tipo de usuário
-  switch (profile.user_type) {
-    case 'receptionist':
-      return <Navigate to="/reception" replace />;
-    case 'attendant':
-      return <Navigate to="/attendant" replace />;
-    case 'admin':
-      return <Navigate to="/admin" replace />;
-    default:
-      return <Navigate to="/dashboard" replace />;
-  }
+  // Redirecionar baseado no tipo de usuário apenas uma vez
+  const targetRoute = (() => {
+    switch (profile.user_type) {
+      case 'receptionist':
+        return '/reception';
+      case 'attendant':
+        return '/attendant';
+      case 'admin':
+        return '/admin';
+      default:
+        return '/dashboard';
+    }
+  })();
+
+  return <Navigate to={targetRoute} replace />;
 };
 
 const App = () => (
