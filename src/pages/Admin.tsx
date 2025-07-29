@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Search, BarChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
+import AttendantReports from '@/components/AttendantReports';
 
 interface UserProfile {
   id: string;
@@ -277,11 +279,25 @@ const Admin: React.FC = () => {
       
       <div className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Administração de Usuários</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">Administração</h1>
           <p className="text-muted-foreground">
-            Gerencie usuários do sistema de atendimento
+            Gerencie usuários e visualize relatórios do sistema
           </p>
         </div>
+
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              Relatórios
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="mt-6">
 
         {/* Barra de Busca e Novo Usuário */}
         <Card className="mb-8 shadow-shadow-card">
@@ -506,6 +522,12 @@ const Admin: React.FC = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <AttendantReports />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
