@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Users, Clock, CheckCircle, Calendar, MessageSquare, User } from 'lucide-react';
+import { BarChart, Users, Clock, CheckCircle, Calendar, MessageSquare, User, Star, IdCard } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,11 @@ interface PerformanceStats {
   todayServices: number;
   averageServiceTime: number;
   serviceCountByType: Record<string, number>;
+  satisfactionStats: {
+    averageRating: number;
+    totalSurveys: number;
+    ratingDistribution: Record<string, number>;
+  };
 }
 
 interface ServiceHistory {
@@ -38,7 +43,12 @@ const AttendantReports: React.FC = () => {
     totalServices: 0,
     todayServices: 0,
     averageServiceTime: 0,
-    serviceCountByType: {}
+    serviceCountByType: {},
+    satisfactionStats: {
+      averageRating: 0,
+      totalSurveys: 0,
+      ratingDistribution: {}
+    }
   });
   const [history, setHistory] = useState<ServiceHistory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,36 +88,158 @@ const AttendantReports: React.FC = () => {
     
     setLoading(true);
     try {
-      // Simular dados de performance para demonstração
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simular loading
+      const today = new Date().toISOString().split('T')[0];
       
-      const attendant = attendants.find(a => a.id === selectedAttendant);
-      
-      // Dados simulados baseados no atendente selecionado
-      const simulatedStats = {
-        totalServices: Math.floor(Math.random() * 100) + 50,
-        todayServices: Math.floor(Math.random() * 20) + 5,
-        averageServiceTime: Math.floor(Math.random() * 20) + 10,
+      // Buscar atendimentos da fila presencial
+      const { data: queueServices } = await supabase
+        .from('queue_customers')
+        .select(`
+          id, created_at, completed_at, started_at,
+          services(name)
+        `)
+        .eq('attendant_id', selectedAttendant)
+        .not('completed_at', 'is', null);
+
+      // Buscar atendimentos do WhatsApp
+      const { data: whatsappServices } = await supabase
+        .from('whatsapp_services')
+        .select('id, created_at, service_id, services(name)')
+        .eq('attendant_id', selectedAttendant);
+
+      // Buscar agendamentos de identidade
+      const { data: identityServices } = await supabase
+        .from('identity_appointments')
+        .select('id, created_at, completed_at, started_at')
+        .eq('attendant_id', selectedAttendant)
+        .not('completed_at', 'is', null);
+
+      // Calcular estatísticas
+      const queueCount = queueServices?.length || 0;
+      const whatsappCount = whatsappServices?.length || 0;
+      const identityCount = identityServices?.length || 0;
+      const totalServices = queueCount + whatsappCount + identityCount;
+
+      // Atendimentos de hoje
+      const queueToday = queueServices?.filter(s => s.created_at?.startsWith(today)).length || 0;
+      const whatsappToday = whatsappServices?.filter(s => s.created_at?.startsWith(today)).length || 0;
+      const identityToday = identityServices?.filter(s => s.created_at?.startsWith(today)).length || 0;
+      const todayServices = queueToday + whatsappToday + identityToday;
+
+      // Calcular tempo médio de atendimento
+      const completedServices = queueServices?.concat(identityServices as any) || [];
+      const validDurations = completedServices
+        .filter(s => s.started_at && s.completed_at)
+        .map(s => {
+          const start = new Date(s.started_at!);
+          const end = new Date(s.completed_at!);
+          return Math.round((end.getTime() - start.getTime()) / (1000 * 60)); // em minutos
+        })
+        .filter(duration => duration > 0 && duration < 300); // filtrar valores válidos
+
+      const averageServiceTime = validDurations.length > 0 
+        ? Math.round(validDurations.reduce((sum, time) => sum + time, 0) / validDurations.length)
+        : 0;
+
+      // Buscar dados de satisfação
+      const { data: satisfactionData } = await supabase
+        .from('satisfaction_surveys')
+        .select('overall_rating')
+        .eq('attendant_id', selectedAttendant);
+
+      // Calcular estatísticas de satisfação
+      const totalSurveys = satisfactionData?.length || 0;
+      const ratingDistribution: Record<string, number> = {};
+      let averageRating = 0;
+
+      if (totalSurveys > 0) {
+        satisfactionData?.forEach(survey => {
+          const rating = survey.overall_rating;
+          ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
+        });
+
+        // Converter ratings em números para calcular média
+        const ratingValues = satisfactionData?.map(s => {
+          switch(s.overall_rating) {
+            case 'excelente': return 5;
+            case 'bom': return 4;
+            case 'regular': return 3;
+            case 'ruim': return 2;
+            case 'pessimo': return 1;
+            default: return 3;
+          }
+        }) || [];
+
+        averageRating = ratingValues.length > 0 
+          ? Math.round((ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length) * 10) / 10
+          : 0;
+      }
+
+      // Montar estatísticas
+      const stats: PerformanceStats = {
+        totalServices,
+        todayServices,
+        averageServiceTime,
         serviceCountByType: {
-          'Fila Presencial': Math.floor(Math.random() * 30) + 15,
-          'Atendimento Especializado': Math.floor(Math.random() * 25) + 10,
-          'Suporte Técnico': Math.floor(Math.random() * 15) + 5
+          'Fila Presencial': queueCount,
+          'WhatsApp': whatsappCount,
+          'Agendamento Identidade': identityCount
+        },
+        satisfactionStats: {
+          averageRating,
+          totalSurveys,
+          ratingDistribution
         }
       };
 
-      setStats(simulatedStats);
+      setStats(stats);
 
-      // Histórico simulado
-      const simulatedHistory = Array.from({ length: 10 }, (_, index) => ({
-        serviceType: ['Fila Presencial', 'Atendimento Especializado', 'Suporte Técnico'][Math.floor(Math.random() * 3)],
-        customerName: `Cliente ${index + 1}`,
-        serviceName: ['Emissão de Documento', 'Consulta Geral', 'Suporte Técnico', 'Atendimento Especializado'][Math.floor(Math.random() * 4)],
-        date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        duration: Math.floor(Math.random() * 30) + 5,
-        status: 'Concluído'
-      }));
+      // Montar histórico combinado
+      const historyItems: ServiceHistory[] = [];
+      
+      // Adicionar serviços da fila
+      queueServices?.forEach(service => {
+        historyItems.push({
+          serviceType: 'Fila Presencial',
+          customerName: 'Cliente da Fila',
+          serviceName: service.services?.name || 'Serviço Geral',
+          date: service.completed_at || service.created_at,
+          duration: service.started_at && service.completed_at 
+            ? Math.round((new Date(service.completed_at).getTime() - new Date(service.started_at).getTime()) / (1000 * 60))
+            : 0,
+          status: 'Concluído'
+        });
+      });
 
-      setHistory(simulatedHistory);
+      // Adicionar serviços do WhatsApp
+      whatsappServices?.forEach(service => {
+        historyItems.push({
+          serviceType: 'WhatsApp',
+          customerName: 'Cliente WhatsApp',
+          serviceName: service.services?.name || 'Atendimento WhatsApp',
+          date: service.created_at,
+          duration: 0,
+          status: 'Concluído'
+        });
+      });
+
+      // Adicionar agendamentos de identidade
+      identityServices?.forEach(service => {
+        historyItems.push({
+          serviceType: 'Agendamento Identidade',
+          customerName: 'Cliente Agendamento',
+          serviceName: 'Documento de Identidade',
+          date: service.completed_at || service.created_at,
+          duration: service.started_at && service.completed_at 
+            ? Math.round((new Date(service.completed_at).getTime() - new Date(service.started_at).getTime()) / (1000 * 60))
+            : 0,
+          status: 'Concluído'
+        });
+      });
+
+      // Ordenar por data mais recente e pegar os 10 primeiros
+      historyItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setHistory(historyItems.slice(0, 10));
+
     } catch (error: any) {
       toast({
         title: "Erro ao carregar dados",
@@ -133,10 +265,10 @@ const AttendantReports: React.FC = () => {
     switch (type) {
       case 'Fila Presencial':
         return <Users className="h-4 w-4" />;
-      case 'Atendimento Especializado':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'Suporte Técnico':
+      case 'WhatsApp':
         return <MessageSquare className="h-4 w-4" />;
+      case 'Agendamento Identidade':
+        return <IdCard className="h-4 w-4" />;
       default:
         return <CheckCircle className="h-4 w-4" />;
     }
@@ -145,8 +277,8 @@ const AttendantReports: React.FC = () => {
   const getTypeBadge = (type: string) => {
     const variants = {
       'Fila Presencial': 'default',
-      'Atendimento Especializado': 'secondary',
-      'Suporte Técnico': 'outline'
+      'WhatsApp': 'secondary',
+      'Agendamento Identidade': 'outline'
     } as const;
 
     return (
@@ -200,7 +332,7 @@ const AttendantReports: React.FC = () => {
       {selectedAttendant && (
         <>
           {/* Estatísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -267,6 +399,33 @@ const AttendantReports: React.FC = () => {
                         <span className="font-medium">{count}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Star className="h-4 w-4 text-primary" />
+                  Satisfação
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="text-2xl font-bold text-primary flex items-center gap-1">
+                      {stats.satisfactionStats.averageRating}
+                      <Star className="h-4 w-4 fill-current" />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {stats.satisfactionStats.totalSurveys} avaliações
+                    </div>
                   </div>
                 )}
               </CardContent>
