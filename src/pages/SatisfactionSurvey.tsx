@@ -277,15 +277,46 @@ const SatisfactionSurvey: React.FC = () => {
   const handleRemoveService = async (service: CompletedService, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Remover da lista local
-    setCompletedServices(prevServices => 
-      prevServices.filter(s => !(s.id === service.id && s.type === service.type))
-    );
-    
-    toast({
-      title: "Atendimento removido",
-      description: "O atendimento foi removido da lista de pesquisas disponíveis",
-    });
+    try {
+      // Marcar como cancelada na base de dados inserindo uma pesquisa com status cancelado
+      let surveyData: any = {
+        attendant_id: service.attendant_id,
+        overall_rating: 'cancelled',
+        problem_resolved: 'cancelled',
+        improvement_aspect: 'cancelled',
+      };
+
+      if (service.type === 'queue') {
+        surveyData.queue_customer_id = service.id;
+      } else if (service.type === 'identity') {
+        surveyData.identity_appointment_id = service.id;
+      } else if (service.type === 'whatsapp') {
+        surveyData.whatsapp_service_id = service.id;
+      }
+
+      const { error } = await supabasePublic
+        .from('satisfaction_surveys')
+        .insert(surveyData);
+
+      if (error) throw error;
+
+      // Remover da lista local
+      setCompletedServices(prevServices => 
+        prevServices.filter(s => !(s.id === service.id && s.type === service.type))
+      );
+      
+      toast({
+        title: "Atendimento cancelado",
+        description: "A avaliação foi cancelada e não aparecerá mais na lista",
+      });
+    } catch (error) {
+      console.error('Erro ao cancelar avaliação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível cancelar a avaliação",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
