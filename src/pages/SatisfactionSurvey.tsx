@@ -289,9 +289,9 @@ const SatisfactionSurvey: React.FC = () => {
       // Marcar como cancelada na base de dados inserindo uma pesquisa com status cancelado
       let surveyData: any = {
         attendant_id: service.attendant_id,
-        overall_rating: 'cancelled',
-        problem_resolved: 'cancelled',
-        improvement_aspect: 'cancelled',
+        overall_rating: 'muito_ruim',
+        problem_resolved: 'nao',
+        improvement_aspect: 'outros',
       };
 
       if (service.type === 'queue') {
