@@ -401,7 +401,7 @@ const SatisfactionSurvey: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               Obrigado por avaliar nosso atendimento. Sua opinião é muito importante para nós!
             </p>
-            <Button onClick={() => navigate('/')} className="w-full">
+            <Button onClick={() => { setSubmitted(false); setShowServiceList(true); setSelectedService(null); setOverallRating(''); setProblemResolved(''); setImprovementAspect(''); loadCompletedServices(); }} className="w-full">
               Fechar
             </Button>
           </CardContent>
