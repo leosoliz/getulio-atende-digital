@@ -286,42 +286,21 @@ const SatisfactionSurvey: React.FC = () => {
     e.stopPropagation();
     
     try {
-      // Marcar como cancelada na base de dados inserindo uma pesquisa com valores válidos
-      let surveyData: any = {
-        attendant_id: service.attendant_id,
-        overall_rating: 'Péssimo',
-        problem_resolved: 'Não',
-        improvement_aspect: 'Nenhuma melhoria necessária',
-      };
-
-      if (service.type === 'queue') {
-        surveyData.queue_customer_id = service.id;
-      } else if (service.type === 'identity') {
-        surveyData.identity_appointment_id = service.id;
-      } else if (service.type === 'whatsapp') {
-        surveyData.whatsapp_service_id = service.id;
-      }
-
-      const { error } = await supabasePublic
-        .from('satisfaction_surveys')
-        .insert(surveyData);
-
-      if (error) throw error;
-
-      // Remover da lista local
+      // Simplesmente remover da lista local sem inserir no banco
+      // Isso permite que o usuário cancele a visualização sem criar registros desnecessários
       setCompletedServices(prevServices => 
         prevServices.filter(s => !(s.id === service.id && s.type === service.type))
       );
       
       toast({
-        title: "Atendimento cancelado",
-        description: "A avaliação foi cancelada e não aparecerá mais na lista",
+        title: "Atendimento removido",
+        description: "O atendimento foi removido da lista de avaliações pendentes",
       });
     } catch (error) {
-      console.error('Erro ao cancelar avaliação:', error);
+      console.error('Erro ao remover atendimento:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível cancelar a avaliação",
+        description: "Não foi possível remover o atendimento da lista",
         variant: "destructive",
       });
     }
