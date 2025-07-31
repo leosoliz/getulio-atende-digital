@@ -286,12 +286,12 @@ const SatisfactionSurvey: React.FC = () => {
     e.stopPropagation();
     
     try {
-      // Marcar como cancelada na base de dados inserindo uma pesquisa com status cancelado
+      // Marcar como cancelada na base de dados inserindo uma pesquisa com valores válidos
       let surveyData: any = {
         attendant_id: service.attendant_id,
-        overall_rating: 'muito_ruim',
-        problem_resolved: 'nao',
-        improvement_aspect: 'outros',
+        overall_rating: 'Péssimo',
+        problem_resolved: 'Não',
+        improvement_aspect: 'Nenhuma melhoria necessária',
       };
 
       if (service.type === 'queue') {
