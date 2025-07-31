@@ -236,18 +236,26 @@ const SatisfactionSurvey: React.FC = () => {
         });
       });
 
-      // Filtrar serviços que já têm pesquisa respondida
+      // Filtrar serviços que já têm pesquisa respondida ou cancelada
       const servicesWithoutSurvey = [];
       for (const service of services) {
-        const { data: existingSurvey } = await supabasePublic
+        let query = supabasePublic
           .from('satisfaction_surveys')
-          .select('id')
-          .eq('attendant_id', service.attendant_id)
-          .eq(service.type === 'queue' ? 'queue_customer_id' : 
-              service.type === 'identity' ? 'identity_appointment_id' : 'whatsapp_service_id', 
-              service.id)
-          .maybeSingle();
+          .select('id, overall_rating')
+          .eq('attendant_id', service.attendant_id);
 
+        // Adicionar filtro específico baseado no tipo de atendimento
+        if (service.type === 'queue') {
+          query = query.eq('queue_customer_id', service.id);
+        } else if (service.type === 'identity') {
+          query = query.eq('identity_appointment_id', service.id);
+        } else if (service.type === 'whatsapp') {
+          query = query.eq('whatsapp_service_id', service.id);
+        }
+
+        const { data: existingSurvey } = await query.maybeSingle();
+
+        // Incluir apenas se não há pesquisa associada (nem respondida nem cancelada)
         if (!existingSurvey) {
           servicesWithoutSurvey.push(service);
         }
