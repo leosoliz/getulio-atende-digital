@@ -57,35 +57,44 @@ const SatisfactionSurvey: React.FC = () => {
     const validateLink = async () => {
       // Se há parâmetros específicos, usar o fluxo de link direto
       if (attendantId && (queueCustomerId || identityAppointmentId || whatsappServiceId)) {
-        // Verificar se já existe uma pesquisa respondida para este link
+        // Verificar se já existe uma pesquisa respondida ou cancelada para este link
         try {
-          let query = supabasePublic
+          let surveyQuery = supabasePublic
             .from('satisfaction_surveys')
+            .select('id')
+            .eq('attendant_id', attendantId);
+
+          let cancelQuery = supabasePublic
+            .from('cancelled_surveys')
             .select('id')
             .eq('attendant_id', attendantId);
 
           // Adicionar filtro específico baseado no tipo de atendimento
           if (queueCustomerId) {
-            query = query.eq('queue_customer_id', queueCustomerId);
+            surveyQuery = surveyQuery.eq('queue_customer_id', queueCustomerId);
+            cancelQuery = cancelQuery.eq('queue_customer_id', queueCustomerId);
           } else if (identityAppointmentId) {
-            query = query.eq('identity_appointment_id', identityAppointmentId);
+            surveyQuery = surveyQuery.eq('identity_appointment_id', identityAppointmentId);
+            cancelQuery = cancelQuery.eq('identity_appointment_id', identityAppointmentId);
           } else if (whatsappServiceId) {
-            query = query.eq('whatsapp_service_id', whatsappServiceId);
+            surveyQuery = surveyQuery.eq('whatsapp_service_id', whatsappServiceId);
+            cancelQuery = cancelQuery.eq('whatsapp_service_id', whatsappServiceId);
           }
 
-          const { data: existingSurvey, error } = await query.maybeSingle();
+          const { data: existingSurvey, error: surveyError } = await surveyQuery.maybeSingle();
+          const { data: cancelledSurvey, error: cancelError } = await cancelQuery.maybeSingle();
 
-          if (error) {
-            console.error('Erro ao verificar pesquisa existente:', error);
+          if (surveyError || cancelError) {
+            console.error('Erro ao verificar pesquisa/cancelamento:', { surveyError, cancelError });
             return;
           }
 
-          if (existingSurvey) {
-            // Pesquisa já foi respondida
+          if (existingSurvey || cancelledSurvey) {
+            // Pesquisa já foi respondida ou cancelada
             setLinkExpired(true);
             toast({
               title: "Link expirado",
-              description: "Esta pesquisa já foi respondida anteriormente",
+              description: existingSurvey ? "Esta pesquisa já foi respondida anteriormente" : "Esta pesquisa foi cancelada",
               variant: "destructive",
             });
           }
@@ -239,24 +248,35 @@ const SatisfactionSurvey: React.FC = () => {
       // Filtrar serviços que já têm pesquisa respondida ou cancelada
       const servicesWithoutSurvey = [];
       for (const service of services) {
-        let query = supabasePublic
+        // Verificar se já tem pesquisa respondida
+        let surveyQuery = supabasePublic
           .from('satisfaction_surveys')
-          .select('id, overall_rating')
+          .select('id')
           .eq('attendant_id', service.attendant_id);
 
-        // Adicionar filtro específico baseado no tipo de atendimento
+        // Verificar se foi cancelada
+        let cancelQuery = supabasePublic
+          .from('cancelled_surveys')
+          .select('id')
+          .eq('attendant_id', service.attendant_id);
+
+        // Adicionar filtros específicos baseado no tipo de atendimento
         if (service.type === 'queue') {
-          query = query.eq('queue_customer_id', service.id);
+          surveyQuery = surveyQuery.eq('queue_customer_id', service.id);
+          cancelQuery = cancelQuery.eq('queue_customer_id', service.id);
         } else if (service.type === 'identity') {
-          query = query.eq('identity_appointment_id', service.id);
+          surveyQuery = surveyQuery.eq('identity_appointment_id', service.id);
+          cancelQuery = cancelQuery.eq('identity_appointment_id', service.id);
         } else if (service.type === 'whatsapp') {
-          query = query.eq('whatsapp_service_id', service.id);
+          surveyQuery = surveyQuery.eq('whatsapp_service_id', service.id);
+          cancelQuery = cancelQuery.eq('whatsapp_service_id', service.id);
         }
 
-        const { data: existingSurvey } = await query.maybeSingle();
+        const { data: existingSurvey } = await surveyQuery.maybeSingle();
+        const { data: cancelledSurvey } = await cancelQuery.maybeSingle();
 
-        // Incluir apenas se não há pesquisa associada (nem respondida nem cancelada)
-        if (!existingSurvey) {
+        // Incluir apenas se não há pesquisa respondida nem cancelada
+        if (!existingSurvey && !cancelledSurvey) {
           servicesWithoutSurvey.push(service);
         }
       }
@@ -286,21 +306,39 @@ const SatisfactionSurvey: React.FC = () => {
     e.stopPropagation();
     
     try {
-      // Simplesmente remover da lista local sem inserir no banco
-      // Isso permite que o usuário cancele a visualização sem criar registros desnecessários
+      // Inserir registro de cancelamento na base de dados para persistir o cancelamento
+      let cancelData: any = {
+        attendant_id: service.attendant_id,
+      };
+
+      if (service.type === 'queue') {
+        cancelData.queue_customer_id = service.id;
+      } else if (service.type === 'identity') {
+        cancelData.identity_appointment_id = service.id;
+      } else if (service.type === 'whatsapp') {
+        cancelData.whatsapp_service_id = service.id;
+      }
+
+      const { error } = await supabasePublic
+        .from('cancelled_surveys')
+        .insert(cancelData);
+
+      if (error) throw error;
+
+      // Remover da lista local após sucesso na base de dados
       setCompletedServices(prevServices => 
         prevServices.filter(s => !(s.id === service.id && s.type === service.type))
       );
       
       toast({
-        title: "Atendimento removido",
-        description: "O atendimento foi removido da lista de avaliações pendentes",
+        title: "Avaliação cancelada",
+        description: "A avaliação foi cancelada permanentemente e não aparecerá mais na lista",
       });
     } catch (error) {
-      console.error('Erro ao remover atendimento:', error);
+      console.error('Erro ao cancelar avaliação:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível remover o atendimento da lista",
+        description: "Não foi possível cancelar a avaliação",
         variant: "destructive",
       });
     }
