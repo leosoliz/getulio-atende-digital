@@ -210,9 +210,9 @@ const CallPopup: React.FC<CallPopupProps> = ({
           const utterance = new SpeechSynthesisUtterance();
           
           if (isAppointment) {
-            utterance.text = `${name}, ${name}, compareça ao balcão para seu agendamento`;
+            utterance.text = `${name}, compareça ao balcão para seu agendamento`;
           } else {
-            utterance.text = `${name}, ${name}, número ${number}, compareça ao balcão`;
+            utterance.text = `${name}, número ${number}, compareça ao balcão`;
           }
           
           utterance.lang = 'pt-BR';
