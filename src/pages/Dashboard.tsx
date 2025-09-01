@@ -16,6 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import SatisfactionIndicators from '@/components/SatisfactionIndicators';
 import DashboardHeader from '@/components/DashboardHeader';
+import CallPopup from '@/components/CallPopup';
 
 // Interfaces para tipagem
 interface QueueCustomer {
@@ -75,6 +76,23 @@ const Dashboard = () => {
   const [connectionHealth, setConnectionHealth] = useState(true);
   const [callQueue, setCallQueue] = useState<CallQueueItem[]>([]);
   const [waitingQueue, setWaitingQueue] = useState<QueueCustomer[]>([]);
+
+  // Novo estado para o popup de chamada
+  const [currentCall, setCurrentCall] = useState<{
+    isOpen: boolean;
+    customerName: string;
+    queueNumber: number;
+    serviceName: string;
+    isAppointment: boolean;
+    isPriority: boolean;
+  }>({
+    isOpen: false,
+    customerName: '',
+    queueNumber: 0,
+    serviceName: '',
+    isAppointment: false,
+    isPriority: false
+  });
 
   const lastDataFetchRef = useRef(new Date());
   const connectionHealthRef = useRef(true);
@@ -364,9 +382,9 @@ const Dashboard = () => {
     try {
       console.log('🔔 Nova chamada recebida:', newCall.id, newCall.name);
       
-      // Prevenir chamadas duplicadas
-      if (callQueue.some(call => call.id === newCall.id)) {
-        console.log('⚠️ Chamada duplicada ignorada:', newCall.id);
+      // Prevenir chamadas duplicadas no popup
+      if (currentCall.isOpen) {
+        console.log('⚠️ Popup já está ativo, ignorando chamada duplicada');
         return;
       }
 
@@ -387,12 +405,23 @@ const Dashboard = () => {
       }
 
       if (newCall.services) {
+        // Abrir popup de chamada
+        setCurrentCall({
+          isOpen: true,
+          customerName: newCall.name,
+          queueNumber: newCall.queue_number,
+          serviceName: newCall.services.name,
+          isAppointment: false,
+          isPriority: newCall.is_priority || false
+        });
+
+        // Manter registro na lista de chamadas ativas (para referência)
         const callWithTimer: CallQueueItem = {
           id: newCall.id,
           name: newCall.name,
           queue_number: newCall.queue_number,
           service_name: newCall.services.name,
-          showUntil: new Date(Date.now() + 30000), // Mostrar por 30 segundos
+          showUntil: new Date(Date.now() + 30000),
           type: 'queue',
           service_id: newCall.service_id,
           is_priority: newCall.is_priority,
@@ -400,14 +429,9 @@ const Dashboard = () => {
         };
 
         setCallQueue(prev => {
-          // Remover chamadas expiradas e adicionar nova
           const filtered = prev.filter(call => call.showUntil > new Date());
           return [...filtered, callWithTimer];
         });
-
-        // Tocar campainha e falar nome
-        playBell(newCall.name, newCall.queue_number, 'Fila Geral');
-        speakName(newCall.name, newCall.queue_number, 'Fila Geral');
       }
     } catch (error) {
       console.error('❌ Erro ao processar nova chamada:', error);
@@ -418,82 +442,50 @@ const Dashboard = () => {
     try {
       console.log('🔔 Nova chamada de agendamento recebida:', newAppointment.id, newAppointment.name);
       
-      // Prevenir chamadas duplicadas
-      if (callQueue.some(call => call.id === newAppointment.id)) {
-        console.log('⚠️ Chamada de agendamento duplicada ignorada:', newAppointment.id);
+      // Prevenir chamadas duplicadas no popup
+      if (currentCall.isOpen) {
+        console.log('⚠️ Popup já está ativo, ignorando chamada de agendamento duplicada');
         return;
       }
 
+      // Abrir popup de chamada
+      setCurrentCall({
+        isOpen: true,
+        customerName: newAppointment.name,
+        queueNumber: 0,
+        serviceName: 'Agendamento de Identidade',
+        isAppointment: true,
+        isPriority: false
+      });
+
+      // Manter registro na lista de chamadas ativas (para referência)
       const callWithTimer: CallQueueItem = {
         id: newAppointment.id,
         name: newAppointment.name,
-        queue_number: 0, // Agendamentos não têm número de fila
+        queue_number: 0,
         service_name: 'Agendamento de Identidade',
-        showUntil: new Date(Date.now() + 30000), // Mostrar por 30 segundos
+        showUntil: new Date(Date.now() + 30000),
         type: 'appointment'
       };
 
       setCallQueue(prev => {
-        // Remover chamadas expiradas e adicionar nova
         const filtered = prev.filter(call => call.showUntil > new Date());
         return [...filtered, callWithTimer];
       });
-
-      // Tocar campainha e falar nome
-      playBell(newAppointment.name, 0, 'Agendamento');
-      speakName(newAppointment.name, 0, 'Agendamento');
     } catch (error) {
       console.error('❌ Erro ao processar nova chamada de agendamento:', error);
     }
   };
 
-  const playBell = (name: string, queueNumber: number, queueType: string) => {
-    try {
-      // Criar um beep usando Web Audio API
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Frequência do beep
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.3); // Beep por 300ms
-    } catch (error) {
-      console.log('🔇 Som não disponível:', error);
-    }
-  };
-
-  const speakName = (name: string, queueNumber: number, queueType: string) => {
-    try {
-      if (speechSynthRef.current) {
-        // Cancelar qualquer fala anterior
-        speechSynthRef.current.cancel();
-        
-        // Criar novo utterance
-        const utterance = new SpeechSynthesisUtterance();
-        
-        if (queueType === 'Agendamento') {
-          utterance.text = `${name}, compareça ao balcão para seu agendamento`;
-        } else {
-          utterance.text = `${name}, número ${queueNumber}, compareça ao balcão`;
-        }
-        
-        utterance.lang = 'pt-BR';
-        utterance.rate = 0.9;
-        utterance.volume = 0.8;
-        
-        // Falar
-        speechSynthRef.current.speak(utterance);
-        
-        console.log('🔊 Falando:', utterance.text);
-      }
-    } catch (error) {
-      console.log('🔇 Text-to-speech não disponível:', error);
-    }
+  const handleCloseCallPopup = () => {
+    setCurrentCall({
+      isOpen: false,
+      customerName: '',
+      queueNumber: 0,
+      serviceName: '',
+      isAppointment: false,
+      isPriority: false
+    });
   };
 
   // Classes padrão para todos os cards
@@ -691,6 +683,17 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Popup de Chamada */}
+      <CallPopup
+        isOpen={currentCall.isOpen}
+        customerName={currentCall.customerName}
+        queueNumber={currentCall.queueNumber}
+        serviceName={currentCall.serviceName}
+        isAppointment={currentCall.isAppointment}
+        isPriority={currentCall.isPriority}
+        onClose={handleCloseCallPopup}
+      />
     </div>
   );
 };
