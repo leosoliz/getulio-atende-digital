@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp, Bell, BellOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import AttendantPerformanceModal from '@/components/AttendantPerformanceModal';
+import QueueNotificationPopup from '@/components/QueueNotificationPopup';
 
 interface QueueCustomer {
   id: string;
@@ -51,6 +52,11 @@ const Attendant: React.FC = () => {
   const [identityAppointments, setIdentityAppointments] = useState<IdentityAppointment[]>([]);
   const [performanceModalOpen, setPerformanceModalOpen] = useState(false);
   
+  // Queue notification states
+  const [queueNotificationsEnabled, setQueueNotificationsEnabled] = useState(true);
+  const [showQueueNotification, setShowQueueNotification] = useState(false);
+  const [previousQueueLength, setPreviousQueueLength] = useState(0);
+  
   // WhatsApp service form states
   const [whatsappName, setWhatsappName] = useState('');
   const [whatsappPhone, setWhatsappPhone] = useState('');
@@ -60,6 +66,13 @@ const Attendant: React.FC = () => {
   
   const { toast } = useToast();
   const { profile } = useAuth();
+
+  // Solicitar permissão para notificações
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   useEffect(() => {
     if (!profile?.id) {
@@ -92,7 +105,15 @@ const Attendant: React.FC = () => {
           console.log('🔥 QUEUE INSERT DETECTED:', payload);
           console.log('🔥 New customer added:', payload.new);
           console.log('🔥 Calling fetchQueues...');
-          fetchQueues(); 
+          fetchQueues();
+          
+          // Verificar se deve mostrar notificação para novo cliente
+          if (queueNotificationsEnabled && payload.new?.status === 'waiting') {
+            console.log('🔔 Triggering queue notification for new customer');
+            setTimeout(() => {
+              setShowQueueNotification(true);
+            }, 500); // Pequeno delay para permitir que a fila seja atualizada
+          }
         }
       )
       .on('postgres_changes', 
@@ -692,8 +713,24 @@ const Attendant: React.FC = () => {
       <Header />
       
       <div className="container mx-auto px-6 py-8">
-        {/* Botão de Performance */}
-        <div className="mb-6 flex justify-end">
+        {/* Botões de Configuração */}
+        <div className="mb-6 flex justify-end items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setQueueNotificationsEnabled(!queueNotificationsEnabled)}
+              variant={queueNotificationsEnabled ? "default" : "outline"}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              {queueNotificationsEnabled ? (
+                <Bell className="h-4 w-4" />
+              ) : (
+                <BellOff className="h-4 w-4" />
+              )}
+              {queueNotificationsEnabled ? 'Notificações On' : 'Notificações Off'}
+            </Button>
+          </div>
+          
           <Button 
             onClick={() => setPerformanceModalOpen(true)}
             variant="outline"
@@ -1045,6 +1082,13 @@ const Attendant: React.FC = () => {
         <AttendantPerformanceModal
           open={performanceModalOpen}
           onOpenChange={setPerformanceModalOpen}
+        />
+        
+        {/* Queue Notification Popup */}
+        <QueueNotificationPopup
+          isOpen={showQueueNotification}
+          queueLength={waitingQueue.length}
+          onClose={() => setShowQueueNotification(false)}
         />
       </div>
     </div>
