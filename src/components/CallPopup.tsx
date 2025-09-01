@@ -24,172 +24,134 @@ const CallPopup: React.FC<CallPopupProps> = ({
   onClose
 }) => {
   const [callPhase, setCallPhase] = useState<'bell' | 'calling' | 'closing'>('bell');
-  const sequenceAbortRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Função para limpar recursos
+  const cleanup = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) {
-      // Cancelar sequência anterior se estiver rodando
-      if (sequenceAbortRef.current) {
-        sequenceAbortRef.current.abort();
-      }
-      // Cancelar qualquer fala pendente
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      // Fechar contexto de áudio
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
+      cleanup();
+      setCallPhase('bell');
       return;
     }
 
-    const runSequence = async () => {
-      // Criar novo controlador para esta sequência
-      sequenceAbortRef.current = new AbortController();
-      const signal = sequenceAbortRef.current.signal;
-
+    console.log('🔔 INICIANDO CHAMADA:', customerName);
+    
+    const executeCallSequence = async () => {
       try {
-        console.log('🔔 Iniciando sequência de chamada para:', customerName);
-        
-        // Fase 1: Campainha (2 segundos)
-        if (signal.aborted) return;
+        // ETAPA 1: Campainha + Mostrar popup (2 segundos)
+        console.log('🔔 ETAPA 1: Tocando campainha...');
         setCallPhase('bell');
-        console.log('🔔 Fase 1: Tocando campainha...');
         
-        await playBell();
-        await delay(2000, signal);
+        // Tocar campainha
+        playBell();
         
-        // Fase 2: Chamada por voz (5 segundos)
-        if (signal.aborted) return;
+        // Aguardar 2 segundos
+        await new Promise<void>((resolve) => {
+          timeoutRef.current = setTimeout(() => {
+            resolve();
+          }, 2000);
+        });
+        
+        // ETAPA 2: Chamada por voz (4 segundos)
+        console.log('🔊 ETAPA 2: Chamada por voz...');
         setCallPhase('calling');
-        console.log('🔊 Fase 2: Chamada por voz...');
         
-        await speakName(customerName, queueNumber, isAppointment, signal);
-        await delay(1000, signal);
+        // Chamar por voz
+        await speakName(customerName, queueNumber, isAppointment);
         
-        // Fase 3: Fechamento (1 segundo)
-        if (signal.aborted) return;
+        // Aguardar mais 1 segundo após a fala
+        await new Promise<void>((resolve) => {
+          timeoutRef.current = setTimeout(() => {
+            resolve();
+          }, 1000);
+        });
+        
+        // ETAPA 3: Fechamento (1 segundo)
+        console.log('✅ ETAPA 3: Finalizando...');
         setCallPhase('closing');
-        console.log('✅ Fase 3: Finalizando...');
         
-        await delay(1000, signal);
+        await new Promise<void>((resolve) => {
+          timeoutRef.current = setTimeout(() => {
+            resolve();
+          }, 1000);
+        });
         
         // Fechar popup
-        if (!signal.aborted) {
-          console.log('🔔 Sequência concluída, fechando popup');
-          onClose();
-        }
+        console.log('🔔 SEQUÊNCIA CONCLUÍDA');
+        onClose();
+        
       } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.log('🔔 Sequência cancelada');
-        } else {
-          console.error('🔔 Erro na sequência:', error);
-          onClose();
-        }
+        console.error('❌ Erro na sequência de chamada:', error);
+        onClose();
       }
     };
 
-    runSequence();
+    executeCallSequence();
 
-    // Cleanup quando o componente for desmontado ou isOpen mudar
-    return () => {
-      if (sequenceAbortRef.current) {
-        sequenceAbortRef.current.abort();
-      }
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-    };
+    // Cleanup quando componente desmontar ou isOpen mudar
+    return cleanup;
   }, [isOpen, customerName, queueNumber, isAppointment, onClose]);
 
-  const delay = (ms: number, signal?: AbortSignal): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(resolve, ms);
+  const playBell = () => {
+    try {
+      console.log('🔔 Tocando campainha...');
       
-      if (signal) {
-        signal.addEventListener('abort', () => {
-          clearTimeout(timeout);
-          reject(new Error('Aborted'));
-        });
+      // Fechar contexto anterior se existir
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
       }
-    });
+      
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = audioContextRef.current;
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Som de campainha - 3 toques rápidos
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.15);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.3);
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.45);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.6);
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.75);
+      
+      gainNode.gain.setValueAtTime(0.7, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.2);
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 1.2);
+      
+      console.log('🔔 Campainha iniciada');
+      
+    } catch (error) {
+      console.log('🔇 Erro ao tocar campainha:', error);
+    }
   };
 
-  const playBell = async (): Promise<void> => {
-    return new Promise((resolve) => {
+  const speakName = async (name: string, number: number, isAppointment: boolean): Promise<void> => {
+    return new Promise<void>((resolve) => {
       try {
-        // Usar contexto de áudio reutilizável
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-        
-        const audioContext = audioContextRef.current;
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        // Som de campainha melhorado - tocar 3 vezes
-        let currentTime = audioContext.currentTime;
-        
-        // Primeira campainha
-        oscillator.frequency.setValueAtTime(800, currentTime);
-        oscillator.frequency.setValueAtTime(1000, currentTime + 0.1);
-        oscillator.frequency.setValueAtTime(800, currentTime + 0.2);
-        
-        gainNode.gain.setValueAtTime(0.6, currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.3);
-        
-        // Segunda campainha (após pausa)
-        oscillator.frequency.setValueAtTime(800, currentTime + 0.5);
-        oscillator.frequency.setValueAtTime(1000, currentTime + 0.6);
-        oscillator.frequency.setValueAtTime(800, currentTime + 0.7);
-        
-        gainNode.gain.setValueAtTime(0.6, currentTime + 0.5);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.8);
-        
-        // Terceira campainha (após pausa)
-        oscillator.frequency.setValueAtTime(800, currentTime + 1.0);
-        oscillator.frequency.setValueAtTime(1000, currentTime + 1.1);
-        oscillator.frequency.setValueAtTime(800, currentTime + 1.2);
-        
-        gainNode.gain.setValueAtTime(0.6, currentTime + 1.0);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 1.3);
-        
-        oscillator.start();
-        oscillator.stop(currentTime + 1.5);
-        
-        oscillator.onended = () => {
-          console.log('🔔 Campainha concluída');
-          resolve();
-        };
-        
-        // Fallback caso onended não funcione
-        setTimeout(() => {
-          resolve();
-        }, 1600);
-        
-      } catch (error) {
-        console.log('🔇 Som não disponível:', error);
-        resolve();
-      }
-    });
-  };
-
-  const speakName = async (name: string, number: number, isAppointment: boolean, signal?: AbortSignal): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        if (signal?.aborted) {
-          reject(new Error('Aborted'));
-          return;
-        }
+        console.log('🔊 Iniciando chamada por voz...');
         
         if (!window.speechSynthesis) {
           console.log('🔇 Text-to-speech não disponível');
@@ -200,70 +162,59 @@ const CallPopup: React.FC<CallPopupProps> = ({
         // Cancelar qualquer fala anterior
         window.speechSynthesis.cancel();
         
-        // Aguardar um pouco para garantir que a fala anterior foi cancelada
+        // Pequena pausa para garantir cancelamento
         setTimeout(() => {
-          if (signal?.aborted) {
-            reject(new Error('Aborted'));
-            return;
-          }
-          
           const utterance = new SpeechSynthesisUtterance();
           
+          // Texto da chamada
           if (isAppointment) {
             utterance.text = `${name}, compareça ao balcão para seu agendamento`;
           } else {
             utterance.text = `${name}, número ${number}, compareça ao balcão`;
           }
           
+          // Configurações de voz
           utterance.lang = 'pt-BR';
-          utterance.rate = 0.7; // Mais devagar para melhor compreensão
+          utterance.rate = 0.8;
           utterance.volume = 1.0;
           utterance.pitch = 1.0;
           
-          let resolved = false;
+          let finished = false;
           
           utterance.onend = () => {
             console.log('🔊 Chamada por voz concluída');
-            if (!resolved) {
-              resolved = true;
+            if (!finished) {
+              finished = true;
               resolve();
             }
           };
           
           utterance.onerror = (event) => {
             console.log('🔇 Erro na chamada por voz:', event.error);
-            if (!resolved) {
-              resolved = true;
+            if (!finished) {
+              finished = true;
               resolve();
             }
           };
           
-          // Timeout de segurança
+          // Timeout de segurança - se não acabar em 6 segundos, força resolve
           setTimeout(() => {
-            if (!resolved) {
-              console.log('🔇 Timeout na chamada por voz');
-              resolved = true;
+            if (!finished) {
+              console.log('🔇 Timeout na chamada por voz - forçando conclusão');
+              window.speechSynthesis.cancel();
+              finished = true;
               resolve();
             }
-          }, 8000);
+          }, 6000);
           
-          // Registrar listener para abort signal
-          if (signal) {
-            signal.addEventListener('abort', () => {
-              window.speechSynthesis.cancel();
-              if (!resolved) {
-                resolved = true;
-                reject(new Error('Aborted'));
-              }
-            });
-          }
-          
+          // Iniciar fala
           window.speechSynthesis.speak(utterance);
-          console.log('🔊 Chamando:', utterance.text);
-        }, 100);
+          console.log('🔊 Falando:', utterance.text);
+          
+        }, 200);
         
       } catch (error) {
-        console.log('🔇 Text-to-speech erro:', error);
+        console.log('🔇 Erro geral na chamada por voz:', error);
         resolve();
       }
     });
@@ -274,15 +225,15 @@ const CallPopup: React.FC<CallPopupProps> = ({
   return (
     <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-sm flex items-center justify-center">
       <div className="w-full h-full flex items-center justify-center p-8">
-        <Card className="w-full max-w-4xl bg-card border-2 shadow-2xl animate-in zoom-in-95 duration-300">
-          <CardContent className="p-12 text-center space-y-8">
+        <Card className="w-full max-w-6xl bg-card border-2 shadow-2xl animate-in zoom-in-95 duration-300">
+          <CardContent className="p-16 text-center space-y-12">
             {/* Fase da campainha */}
             {callPhase === 'bell' && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div className="animate-pulse">
-                  <Phone className="h-24 w-24 mx-auto text-primary animate-bounce" />
+                  <Phone className="h-32 w-32 mx-auto text-primary animate-bounce" />
                 </div>
-                <h2 className="text-4xl font-bold text-primary animate-pulse">
+                <h2 className="text-6xl font-bold text-primary animate-pulse">
                   Chamando...
                 </h2>
               </div>
@@ -290,41 +241,41 @@ const CallPopup: React.FC<CallPopupProps> = ({
 
             {/* Fase da chamada */}
             {callPhase === 'calling' && (
-              <div className="space-y-8">
+              <div className="space-y-10">
                 <div className="flex items-center justify-center">
-                  <User className="h-20 w-20 text-primary" />
+                  <User className="h-24 w-24 text-primary" />
                 </div>
                 
                 {/* Nome em destaque */}
-                <div className="space-y-4">
-                  <h1 className="text-8xl font-black text-primary tracking-wide uppercase animate-pulse">
+                <div className="space-y-6">
+                  <h1 className="text-9xl font-black text-primary tracking-wide uppercase animate-pulse">
                     {customerName}
                   </h1>
                   
                   {!isAppointment && (
-                    <div className="text-6xl font-bold text-muted-foreground">
+                    <div className="text-7xl font-bold text-muted-foreground">
                       Senha {queueNumber}
                     </div>
                   )}
                 </div>
 
                 {/* Informações do serviço */}
-                <div className="space-y-4">
-                  <p className="text-3xl font-semibold text-muted-foreground">
+                <div className="space-y-6">
+                  <p className="text-4xl font-semibold text-muted-foreground">
                     {serviceName}
                   </p>
                   
-                  <div className="flex items-center justify-center gap-4">
+                  <div className="flex items-center justify-center gap-6">
                     {isPriority && (
-                      <Badge variant="destructive" className="text-lg px-4 py-2">
-                        <AlertCircle className="h-5 w-5 mr-2" />
+                      <Badge variant="destructive" className="text-xl px-6 py-3">
+                        <AlertCircle className="h-6 w-6 mr-2" />
                         Prioritário
                       </Badge>
                     )}
                     
                     <Badge 
                       variant={isAppointment ? "outline" : "secondary"} 
-                      className="text-lg px-4 py-2"
+                      className="text-xl px-6 py-3"
                     >
                       {isAppointment ? 'Agendamento' : 'Fila Geral'}
                     </Badge>
@@ -332,7 +283,7 @@ const CallPopup: React.FC<CallPopupProps> = ({
                 </div>
 
                 {/* Instrução */}
-                <div className="text-2xl font-medium text-primary animate-pulse">
+                <div className="text-3xl font-medium text-primary animate-pulse">
                   Compareça ao balcão
                 </div>
               </div>
@@ -340,11 +291,11 @@ const CallPopup: React.FC<CallPopupProps> = ({
 
             {/* Fase de fechamento */}
             {callPhase === 'closing' && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div className="animate-pulse">
-                  <Phone className="h-16 w-16 mx-auto text-muted-foreground" />
+                  <Phone className="h-20 w-20 mx-auto text-muted-foreground" />
                 </div>
-                <h2 className="text-3xl font-medium text-muted-foreground">
+                <h2 className="text-4xl font-medium text-muted-foreground">
                   Chamada concluída
                 </h2>
               </div>
@@ -357,3 +308,4 @@ const CallPopup: React.FC<CallPopupProps> = ({
 };
 
 export default CallPopup;
+
