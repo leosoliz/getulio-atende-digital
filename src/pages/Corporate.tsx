@@ -19,6 +19,7 @@ interface ServiceStats {
   queueServices: number;
   whatsappServices: number;
   identityServices: number;
+  averageServiceTime: number;
 }
 
 interface SatisfactionStats {
@@ -40,6 +41,7 @@ export default function Corporate() {
     queueServices: 0,
     whatsappServices: 0,
     identityServices: 0,
+    averageServiceTime: 0,
   });
   const [satisfactionStats, setSatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
@@ -146,6 +148,34 @@ export default function Corporate() {
       const whatsappMonthCount = whatsappMonthData?.length || 0;
       const identityMonthCount = identityMonthData?.length || 0;
 
+      // Calcular tempo médio de atendimento (em minutos)
+      let totalServiceTime = 0;
+      let completedServices = 0;
+
+      // Calcular tempo da fila presencial
+      queueData?.forEach(service => {
+        if (service.started_at && service.completed_at) {
+          const startTime = new Date(service.started_at).getTime();
+          const endTime = new Date(service.completed_at).getTime();
+          totalServiceTime += (endTime - startTime);
+          completedServices++;
+        }
+      });
+
+      // Calcular tempo dos agendamentos de identidade
+      identityData?.forEach(appointment => {
+        if (appointment.started_at && appointment.completed_at) {
+          const startTime = new Date(appointment.started_at).getTime();
+          const endTime = new Date(appointment.completed_at).getTime();
+          totalServiceTime += (endTime - startTime);
+          completedServices++;
+        }
+      });
+
+      const averageServiceTimeMinutes = completedServices > 0 
+        ? Math.round(totalServiceTime / completedServices / 1000 / 60) 
+        : 0;
+
       setServiceStats({
         total: queueCount + whatsappCount + identityCount,
         today: queueTodayCount + whatsappTodayCount + identityTodayCount,
@@ -153,6 +183,7 @@ export default function Corporate() {
         queueServices: queueCount,
         whatsappServices: whatsappCount,
         identityServices: identityCount,
+        averageServiceTime: averageServiceTimeMinutes,
       });
 
       // Buscar dados de satisfação
@@ -252,10 +283,10 @@ export default function Corporate() {
                 color="blue"
               />
               <MetricsCard
-                title="Fila Presencial"
-                value={serviceStats.queueServices}
-                icon={<UserCheck className="h-8 w-8" />}
-                subtitle="Atendimentos presenciais"
+                title="Tempo Médio"
+                value={serviceStats.averageServiceTime}
+                icon={<Clock className="h-8 w-8" />}
+                subtitle="Minutos por atendimento"
                 color="green"
               />
               <MetricsCard
