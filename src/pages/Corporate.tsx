@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, TrendingUp, Star, Clock, Phone, UserCheck, Calendar, Target, BarChart3 } from "lucide-react";
+import { CalendarDays, Users, TrendingUp, Star, Clock, Phone, UserCheck, Calendar, Target, BarChart3, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,6 +20,7 @@ interface ServiceStats {
   whatsappServices: number;
   identityServices: number;
   averageServiceTime: number;
+  averageWaitTime: number;
 }
 
 interface SatisfactionStats {
@@ -42,6 +43,7 @@ export default function Corporate() {
     whatsappServices: 0,
     identityServices: 0,
     averageServiceTime: 0,
+    averageWaitTime: 0,
   });
   const [satisfactionStats, setSatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
@@ -176,6 +178,34 @@ export default function Corporate() {
         ? Math.round(totalServiceTime / completedServices / 1000 / 60) 
         : 0;
 
+      // Calcular tempo médio de espera (em minutos)
+      let totalWaitTime = 0;
+      let waitingCustomers = 0;
+
+      // Calcular tempo de espera da fila presencial
+      queueData?.forEach(service => {
+        if (service.created_at && service.called_at) {
+          const createdTime = new Date(service.created_at).getTime();
+          const calledTime = new Date(service.called_at).getTime();
+          totalWaitTime += (calledTime - createdTime);
+          waitingCustomers++;
+        }
+      });
+
+      // Calcular tempo de espera dos agendamentos
+      identityData?.forEach(appointment => {
+        if (appointment.created_at && appointment.called_at) {
+          const createdTime = new Date(appointment.created_at).getTime();
+          const calledTime = new Date(appointment.called_at).getTime();
+          totalWaitTime += (calledTime - createdTime);
+          waitingCustomers++;
+        }
+      });
+
+      const averageWaitTimeMinutes = waitingCustomers > 0 
+        ? Math.round(totalWaitTime / waitingCustomers / 1000 / 60) 
+        : 0;
+
       setServiceStats({
         total: queueCount + whatsappCount + identityCount,
         today: queueTodayCount + whatsappTodayCount + identityTodayCount,
@@ -184,6 +214,7 @@ export default function Corporate() {
         whatsappServices: whatsappCount,
         identityServices: identityCount,
         averageServiceTime: averageServiceTimeMinutes,
+        averageWaitTime: averageWaitTimeMinutes,
       });
 
       // Buscar dados de satisfação
@@ -283,24 +314,24 @@ export default function Corporate() {
                 color="blue"
               />
               <MetricsCard
-                title="Tempo Médio"
+                title="Tempo Médio de Atendimento"
                 value={serviceStats.averageServiceTime}
                 icon={<Clock className="h-8 w-8" />}
                 subtitle="Minutos por atendimento"
                 color="green"
               />
               <MetricsCard
-                title="WhatsApp"
-                value={serviceStats.whatsappServices}
-                icon={<Phone className="h-8 w-8" />}
-                subtitle="Atendimentos por WhatsApp"
+                title="Tempo Médio de Espera"
+                value={serviceStats.averageWaitTime}
+                icon={<Timer className="h-8 w-8" />}
+                subtitle="Minutos até ser chamado"
                 color="purple"
               />
               <MetricsCard
-                title="Agendamentos"
-                value={serviceStats.identityServices}
-                icon={<Calendar className="h-8 w-8" />}
-                subtitle="Agendamentos de identidade"
+                title="Satisfação"
+                value={Math.round(satisfactionStats.averageRating * 20)}
+                icon={<Star className="h-8 w-8" />}
+                subtitle={`${satisfactionStats.totalSurveys} avaliações`}
                 color="orange"
               />
             </div>
