@@ -220,24 +220,44 @@ export default function Corporate() {
       // Buscar dados de satisfação
       const { data: satisfactionData } = await supabase
         .from('satisfaction_surveys')
-        .select('overall_rating');
+        .select('overall_rating, problem_resolved');
 
       if (satisfactionData && satisfactionData.length > 0) {
-        const ratings = satisfactionData.map(s => s.overall_rating);
+        // Mapear valores de avaliação (normalizado para 0-100)
         const ratingValues: { [key: string]: number } = {
-          'excelente': 5,
-          'bom': 4,
-          'regular': 3,
-          'ruim': 2,
-          'pessimo': 1
+          'excelente': 100,
+          'bom': 75,
+          'regular': 50,
+          'ruim': 25,
+          'pessimo': 0
         };
 
-        const numericRatings = ratings.map(r => ratingValues[r] || 0).filter(r => r > 0);
-        const averageRating = numericRatings.length > 0 
-          ? numericRatings.reduce((sum, rating) => sum + rating, 0) / numericRatings.length 
-          : 0;
+        // Mapear valores de resolução de problema
+        const resolvedValues: { [key: string]: number } = {
+          'sim': 100,
+          'parcialmente': 50,
+          'não': 0,
+          'nao': 0
+        };
 
-        const distribution = ratings.reduce((acc, rating) => {
+        // Calcular score ponderado: 70% avaliação geral + 30% resolução de problema
+        let totalScore = 0;
+        let validSurveys = 0;
+
+        satisfactionData.forEach(survey => {
+          const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
+          const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
+          
+          // Equação ponderada de satisfação
+          const satisfactionScore = (ratingScore * 0.7) + (resolvedScore * 0.3);
+          totalScore += satisfactionScore;
+          validSurveys++;
+        });
+
+        const averageRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
+
+        const distribution = satisfactionData.reduce((acc, survey) => {
+          const rating = survey.overall_rating || 'sem avaliação';
           acc[rating] = (acc[rating] || 0) + 1;
           return acc;
         }, {} as { [key: string]: number });
