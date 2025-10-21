@@ -317,6 +317,8 @@ export default function Corporate() {
         .select('id, full_name')
         .eq('user_type', 'attendant');
 
+      console.log('Profiles data:', profilesData);
+
       // Criar distribuição por atendente
       const attendantDistribution: { [key: string]: number } = {};
 
@@ -341,18 +343,24 @@ export default function Corporate() {
         }
       });
 
+      console.log('Attendant distribution:', attendantDistribution);
+
+      // Cores para o gráfico
+      const attendantColors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#94a3b8", "#f97316", "#84cc16"];
+
       // Mapear para o formato do componente
       const attendantsArray: AttendantData[] = Object.entries(attendantDistribution).map(([attendantId, count], index) => {
         const attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
         return {
           name: attendantName,
           value: count,
-          color: COLORS[index % COLORS.length]
+          color: attendantColors[index % attendantColors.length]
         };
       });
 
       // Ordenar por quantidade (decrescente)
       attendantsArray.sort((a, b) => b.value - a.value);
+      console.log('Attendants array:', attendantsArray);
       setAttendantData(attendantsArray);
 
       // Buscar dados de satisfação
