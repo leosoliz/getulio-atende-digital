@@ -345,23 +345,20 @@ export default function Corporate() {
 
       // Contar atendimentos por attendant_id da fila
       queueData?.forEach(service => {
-        if (service.attendant_id) {
-          attendantDistribution[service.attendant_id] = (attendantDistribution[service.attendant_id] || 0) + 1;
-        }
+        const key = service.attendant_id || 'no_attendant';
+        attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
       // Contar atendimentos por attendant_id do WhatsApp
       whatsappData?.forEach(service => {
-        if (service.attendant_id) {
-          attendantDistribution[service.attendant_id] = (attendantDistribution[service.attendant_id] || 0) + 1;
-        }
+        const key = service.attendant_id || 'no_attendant';
+        attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
       // Contar atendimentos por attendant_id dos agendamentos de identidade
       identityData?.forEach(appointment => {
-        if (appointment.attendant_id) {
-          attendantDistribution[appointment.attendant_id] = (attendantDistribution[appointment.attendant_id] || 0) + 1;
-        }
+        const key = appointment.attendant_id || 'no_attendant';
+        attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
       console.log('Attendant distribution:', attendantDistribution);
@@ -371,7 +368,12 @@ export default function Corporate() {
 
       // Mapear para o formato do componente
       const attendantsArray: AttendantData[] = Object.entries(attendantDistribution).map(([attendantId, count], index) => {
-        const attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        let attendantName: string;
+        if (attendantId === 'no_attendant') {
+          attendantName = 'Sem atendente';
+        } else {
+          attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        }
         return {
           name: attendantName,
           value: count,
@@ -439,28 +441,30 @@ export default function Corporate() {
 
       // Contar atendimentos de hoje por attendant_id da fila
       queueTodayData?.forEach(service => {
-        if (service.attendant_id) {
-          dailyAttendantDistribution[service.attendant_id] = (dailyAttendantDistribution[service.attendant_id] || 0) + 1;
-        }
+        const key = service.attendant_id || 'no_attendant';
+        dailyAttendantDistribution[key] = (dailyAttendantDistribution[key] || 0) + 1;
       });
 
       // Contar atendimentos de hoje por attendant_id do WhatsApp
       whatsappTodayData?.forEach(service => {
-        if (service.attendant_id) {
-          dailyAttendantDistribution[service.attendant_id] = (dailyAttendantDistribution[service.attendant_id] || 0) + 1;
-        }
+        const key = service.attendant_id || 'no_attendant';
+        dailyAttendantDistribution[key] = (dailyAttendantDistribution[key] || 0) + 1;
       });
 
       // Contar atendimentos de hoje por attendant_id dos agendamentos de identidade
       identityTodayData?.forEach(appointment => {
-        if (appointment.attendant_id) {
-          dailyAttendantDistribution[appointment.attendant_id] = (dailyAttendantDistribution[appointment.attendant_id] || 0) + 1;
-        }
+        const key = appointment.attendant_id || 'no_attendant';
+        dailyAttendantDistribution[key] = (dailyAttendantDistribution[key] || 0) + 1;
       });
 
       // Mapear para o formato do componente
       const dailyAttendantsArray: AttendantData[] = Object.entries(dailyAttendantDistribution).map(([attendantId, count], index) => {
-        const attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        let attendantName: string;
+        if (attendantId === 'no_attendant') {
+          attendantName = 'Sem atendente';
+        } else {
+          attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        }
         return {
           name: attendantName,
           value: count,
