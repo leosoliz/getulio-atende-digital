@@ -22,6 +22,23 @@ export default function SatisfactionChart({
 }: AttendantDistributionChartProps) {
   const top10 = attendants.slice(0, 10);
 
+  const renderCustomLabel = (props: any) => {
+    const { x, y, width, height, value } = props;
+    return (
+      <text 
+        x={x + width + 5} 
+        y={y + height / 2} 
+        fill="#666" 
+        textAnchor="start" 
+        dominantBaseline="middle"
+        fontSize="11"
+        fontWeight="bold"
+      >
+        {value}
+      </text>
+    );
+  };
+
   return (
     <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50/50 to-yellow-100/50">
       <CardHeader className="pb-2 pt-3 px-3">
@@ -37,7 +54,7 @@ export default function SatisfactionChart({
               <BarChart 
                 data={top10}
                 layout="vertical"
-                margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+                margin={{ top: 0, right: 40, left: 10, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis type="number" tick={{ fontSize: 9 }} />
@@ -51,7 +68,7 @@ export default function SatisfactionChart({
                   formatter={(value: number) => [`${value} atendimentos`, 'Quantidade']}
                   labelStyle={{ fontWeight: 'bold' }}
                 />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} label={renderCustomLabel}>
                   {top10.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
