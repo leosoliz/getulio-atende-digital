@@ -77,6 +77,8 @@ export default function Corporate() {
   const [dailyQueueServices, setDailyQueueServices] = useState(0);
   const [dailyWhatsappServices, setDailyWhatsappServices] = useState(0);
   const [dailyIdentityServices, setDailyIdentityServices] = useState(0);
+  const [dailyAverageServiceTime, setDailyAverageServiceTime] = useState(0);
+  const [dailyAverageWaitTime, setDailyAverageWaitTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -461,6 +463,58 @@ export default function Corporate() {
       setDailyWhatsappServices(whatsappTodayCount);
       setDailyIdentityServices(identityTodayCount);
 
+      // Calcular tempo médio de atendimento DIÁRIO (em minutos)
+      let dailyTotalServiceTime = 0;
+      let dailyCompletedServices = 0;
+
+      // Calcular tempo da fila presencial de hoje
+      queueTodayData?.forEach(service => {
+        if (service.started_at && service.completed_at) {
+          const startTime = new Date(service.started_at).getTime();
+          const endTime = new Date(service.completed_at).getTime();
+          dailyTotalServiceTime += endTime - startTime;
+          dailyCompletedServices++;
+        }
+      });
+
+      // Calcular tempo dos agendamentos de identidade de hoje
+      identityTodayData?.forEach(appointment => {
+        if (appointment.started_at && appointment.completed_at) {
+          const startTime = new Date(appointment.started_at).getTime();
+          const endTime = new Date(appointment.completed_at).getTime();
+          dailyTotalServiceTime += endTime - startTime;
+          dailyCompletedServices++;
+        }
+      });
+      const dailyAverageServiceTimeMinutes = dailyCompletedServices > 0 ? Math.round(dailyTotalServiceTime / dailyCompletedServices / 1000 / 60) : 0;
+      setDailyAverageServiceTime(dailyAverageServiceTimeMinutes);
+
+      // Calcular tempo médio de espera DIÁRIO (em minutos)
+      let dailyTotalWaitTime = 0;
+      let dailyWaitingCustomers = 0;
+
+      // Calcular tempo de espera da fila presencial de hoje
+      queueTodayData?.forEach(service => {
+        if (service.created_at && service.called_at) {
+          const createdTime = new Date(service.created_at).getTime();
+          const calledTime = new Date(service.called_at).getTime();
+          dailyTotalWaitTime += calledTime - createdTime;
+          dailyWaitingCustomers++;
+        }
+      });
+
+      // Calcular tempo de espera dos agendamentos de hoje
+      identityTodayData?.forEach(appointment => {
+        if (appointment.created_at && appointment.called_at) {
+          const createdTime = new Date(appointment.created_at).getTime();
+          const calledTime = new Date(appointment.called_at).getTime();
+          dailyTotalWaitTime += calledTime - createdTime;
+          dailyWaitingCustomers++;
+        }
+      });
+      const dailyAverageWaitTimeMinutes = dailyWaitingCustomers > 0 ? Math.round(dailyTotalWaitTime / dailyWaitingCustomers / 1000 / 60) : 0;
+      setDailyAverageWaitTime(dailyAverageWaitTimeMinutes);
+
       // Buscar dados de satisfação
       const {
         data: satisfactionData
@@ -584,8 +638,8 @@ export default function Corporate() {
                 <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} icon={<Users className="h-6 w-6" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
                   locale: ptBR
                 })} color="blue" />
-                <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento hoje" color="green" />
-                <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado hoje" color="purple" />
+                <MetricsCard title="Tempo Médio de Atendimento" value={dailyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento hoje" color="green" />
+                <MetricsCard title="Tempo Médio de Espera" value={dailyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado hoje" color="purple" />
                 <MetricsCard title="Satisfação Hoje" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
               </div>
 
