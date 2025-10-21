@@ -63,71 +63,71 @@ export default function MetricsCard({
 
   return (
     <Card className={`bg-gradient-to-br ${colorClasses[color]} border-2 hover:shadow-lg transition-all duration-300`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-2 px-3">
-        <CardTitle className="text-xs font-medium text-muted-foreground">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
+        <CardTitle className="text-[10px] font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={`h-6 w-6 ${iconColors[color]}`}>
+        <div className={`h-5 w-5 ${iconColors[color]}`}>
           {icon}
         </div>
       </CardHeader>
-      <CardContent className="pt-1 pb-2 px-3">
-        <div className="text-3xl font-bold text-foreground mb-1">
+      <CardContent className="pt-0.5 pb-1 px-2">
+        <div className="text-xl font-bold text-foreground mb-0.5">
           {value.toLocaleString()}{isPercentage && '%'}
         </div>
         
         {target && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Meta:</span>
               {isEditable && !isEditing && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsEditing(true)}
-                  className="h-6 px-2"
+                  className="h-5 px-1"
                 >
-                  <Edit2 className="h-3 w-3" />
+                  <Edit2 className="h-2.5 w-2.5" />
                 </Button>
               )}
             </div>
             
             {isEditing ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <Input
                   type="number"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="h-7 text-sm"
+                  className="h-6 text-xs"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleSave}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 p-0"
                 >
-                  <Check className="h-3 w-3" />
+                  <Check className="h-2.5 w-2.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleCancel}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 p-0"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-2.5 w-2.5" />
                 </Button>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{target.toLocaleString()}</span>
-                  <Badge variant={percentage >= 100 ? "default" : "secondary"}>
+                  <span className="text-xs font-medium">{target.toLocaleString()}</span>
+                  <Badge variant={percentage >= 100 ? "default" : "secondary"} className="text-[10px] h-4 px-1">
                     {percentage}%
                   </Badge>
                 </div>
-                <div className="w-full bg-secondary rounded-full h-2">
+                <div className="w-full bg-secondary rounded-full h-1.5">
                   <div
-                    className={`h-2 rounded-full transition-all duration-500 ${
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
                       percentage >= 100 ? "bg-green-500" : "bg-primary"
                     }`}
                     style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -139,7 +139,7 @@ export default function MetricsCard({
         )}
         
         {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>
         )}
       </CardContent>
     </Card>

@@ -435,42 +435,42 @@ export default function Corporate() {
       </div>;
   }
   return <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
-      <div className="container mx-auto px-3 py-2 flex-1 flex flex-col overflow-hidden">
-        <div className="mb-2 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-0.5 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
-          <p className="text-muted-foreground text-xs">Secretaria de Desenvolvimento Econômico e Planejamento</p>
+      <div className="container mx-auto px-2 py-1 flex-1 flex flex-col overflow-hidden">
+        <div className="mb-1 text-center">
+          <h1 className="text-lg font-bold text-foreground mb-0 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
+          <p className="text-muted-foreground text-[10px]">Secretaria de Desenvolvimento Econômico e Planejamento</p>
         </div>
 
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-1 h-9">
-            <TabsTrigger value="overview" className="flex items-center gap-2 text-sm py-2">
+          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-1 h-7">
+            <TabsTrigger value="overview" className="flex items-center gap-1 text-xs py-1">
               <BarChart3 className="h-3 w-3" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="daily" className="flex items-center gap-2 text-sm py-2">
+            <TabsTrigger value="daily" className="flex items-center gap-1 text-xs py-1">
               <CalendarDays className="h-3 w-3" />
               Diário
             </TabsTrigger>
-            <TabsTrigger value="monthly" className="flex items-center gap-2 text-sm py-2">
+            <TabsTrigger value="monthly" className="flex items-center gap-1 text-xs py-1">
               <TrendingUp className="h-3 w-3" />
               Mensal
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2 text-sm py-2">
+            <TabsTrigger value="analytics" className="flex items-center gap-1 text-xs py-1">
               <Target className="h-3 w-3" />
               Analytics
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="flex-1 overflow-y-auto">
-            <div className="space-y-2">
-              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-              <MetricsCard title="Total de Atendimentos" value={serviceStats.total} icon={<Users className="h-8 w-8" />} subtitle="Todos os tipos de atendimento" color="blue" />
-              <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-8 w-8" />} subtitle="Minutos por atendimento" color="green" />
-              <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-8 w-8" />} subtitle="Minutos até ser chamado" color="purple" />
-              <MetricsCard title="Satisfação" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-8 w-8" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
+            <div className="space-y-1">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <MetricsCard title="Total de Atendimentos" value={serviceStats.total} icon={<Users className="h-6 w-6" />} subtitle="Todos os tipos de atendimento" color="blue" />
+              <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento" color="green" />
+              <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado" color="purple" />
+              <MetricsCard title="Satisfação" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
               </div>
 
-              <div className="grid gap-2 lg:grid-cols-3">
+              <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
                 <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
@@ -480,36 +480,36 @@ export default function Corporate() {
             </div>
           </TabsContent>
 
-          <TabsContent value="daily" className="space-y-3">
-            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-              <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} target={targets.daily} icon={<CalendarDays className="h-8 w-8" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
+          <TabsContent value="daily" className="space-y-1">
+            <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-3">
+              <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} target={targets.daily} icon={<CalendarDays className="h-6 w-6" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
               locale: ptBR
             })} color="blue" isEditable={true} onTargetUpdate={value => updateTarget('daily', value)} />
-              <MetricsCard title="Eficiência Diária" value={serviceStats.today > 0 ? Math.round(serviceStats.today / targets.daily * 100) : 0} icon={<Clock className="h-8 w-8" />} subtitle="% da meta diária" color="green" />
-              <MetricsCard title="Status da Meta" value={Math.max(0, targets.daily - serviceStats.today)} icon={<Target className="h-8 w-8" />} subtitle={serviceStats.today >= targets.daily ? "Meta atingida! 🎉" : "Restantes para a meta"} color={serviceStats.today >= targets.daily ? "green" : "orange"} />
+              <MetricsCard title="Eficiência Diária" value={serviceStats.today > 0 ? Math.round(serviceStats.today / targets.daily * 100) : 0} icon={<Clock className="h-6 w-6" />} subtitle="% da meta diária" color="green" />
+              <MetricsCard title="Status da Meta" value={Math.max(0, targets.daily - serviceStats.today)} icon={<Target className="h-6 w-6" />} subtitle={serviceStats.today >= targets.daily ? "Meta atingida! 🎉" : "Restantes para a meta"} color={serviceStats.today >= targets.daily ? "green" : "orange"} />
             </div>
 
             <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 to-blue-100/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
+              <CardHeader className="pb-1 pt-2 px-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-blue-600" />
                   Performance Diária
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 pb-2">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Progresso da Meta Diária</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs font-medium">Progresso da Meta Diária</span>
+                    <span className="text-xs text-muted-foreground">
                       {serviceStats.today} / {targets.daily}
                     </span>
                   </div>
-                  <div className="w-full bg-secondary rounded-full h-4">
-                    <div className="h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000" style={{
+                  <div className="w-full bg-secondary rounded-full h-3">
+                    <div className="h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000" style={{
                     width: `${Math.min(serviceStats.today / targets.daily * 100, 100)}%`
                   }} />
                   </div>
-                  <div className="text-center text-2xl font-bold text-blue-600">
+                  <div className="text-center text-xl font-bold text-blue-600">
                     {Math.round(serviceStats.today / targets.daily * 100)}%
                   </div>
                 </div>
@@ -517,47 +517,47 @@ export default function Corporate() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="monthly" className="space-y-3">
-            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-              <MetricsCard title="Atendimentos Este Mês" value={serviceStats.thisMonth} target={targets.monthly} icon={<CalendarDays className="h-8 w-8" />} subtitle={format(new Date(), "MMMM 'de' yyyy", {
+          <TabsContent value="monthly" className="space-y-1">
+            <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-3">
+              <MetricsCard title="Atendimentos Este Mês" value={serviceStats.thisMonth} target={targets.monthly} icon={<CalendarDays className="h-6 w-6" />} subtitle={format(new Date(), "MMMM 'de' yyyy", {
               locale: ptBR
             })} color="purple" isEditable={true} onTargetUpdate={value => updateTarget('monthly', value)} />
-              <MetricsCard title="Performance Mensal" value={serviceStats.thisMonth > 0 ? Math.round(serviceStats.thisMonth / targets.monthly * 100) : 0} icon={<TrendingUp className="h-8 w-8" />} subtitle="% da meta mensal" color="green" />
-              <MetricsCard title="Projeção do Mês" value={Math.round(serviceStats.thisMonth / new Date().getDate() * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate())} icon={<Target className="h-8 w-8" />} subtitle="Estimativa baseada na média diária" color="orange" />
+              <MetricsCard title="Performance Mensal" value={serviceStats.thisMonth > 0 ? Math.round(serviceStats.thisMonth / targets.monthly * 100) : 0} icon={<TrendingUp className="h-6 w-6" />} subtitle="% da meta mensal" color="green" />
+              <MetricsCard title="Projeção do Mês" value={Math.round(serviceStats.thisMonth / new Date().getDate() * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate())} icon={<Target className="h-6 w-6" />} subtitle="Estimativa baseada na média diária" color="orange" />
             </div>
 
             <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-purple-100/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
+              <CardHeader className="pb-1 pt-2 px-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
                   Análise Mensal
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 pb-2">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Progresso da Meta Mensal</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs font-medium">Progresso da Meta Mensal</span>
+                    <span className="text-xs text-muted-foreground">
                       {serviceStats.thisMonth} / {targets.monthly}
                     </span>
                   </div>
-                  <div className="w-full bg-secondary rounded-full h-4">
-                    <div className="h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000" style={{
+                  <div className="w-full bg-secondary rounded-full h-3">
+                    <div className="h-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000" style={{
                     width: `${Math.min(serviceStats.thisMonth / targets.monthly * 100, 100)}%`
                   }} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="grid grid-cols-2 gap-2 text-center">
                     <div>
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-xl font-bold text-purple-600">
                         {Math.round(serviceStats.thisMonth / targets.monthly * 100)}%
                       </div>
-                      <div className="text-sm text-muted-foreground">Concluído</div>
+                      <div className="text-xs text-muted-foreground">Concluído</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-orange-600">
+                      <div className="text-xl font-bold text-orange-600">
                         {Math.max(0, targets.monthly - serviceStats.thisMonth)}
                       </div>
-                      <div className="text-sm text-muted-foreground">Restante</div>
+                      <div className="text-xs text-muted-foreground">Restante</div>
                     </div>
                   </div>
                 </div>
@@ -565,44 +565,44 @@ export default function Corporate() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-3">
-            <div className="grid gap-2 lg:grid-cols-2">
+          <TabsContent value="analytics" className="space-y-1">
+            <div className="grid gap-1 lg:grid-cols-2">
               <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
               <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
             </div>
             
             <TrendChart monthlyData={monthlyData} />
 
-            <div className="grid gap-2 md:grid-cols-3">
+            <div className="grid gap-1 md:grid-cols-3">
               <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
-                <CardHeader>
-                  <CardTitle className="text-emerald-600">Taxa de Conversão</CardTitle>
+                <CardHeader className="pb-1 pt-2 px-3">
+                  <CardTitle className="text-emerald-600 text-sm">Taxa de Conversão</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-emerald-600">
+                <CardContent className="px-3 pb-2">
+                  <div className="text-xl font-bold text-emerald-600">
                     {serviceStats.total > 0 ? Math.round(serviceStats.total / (serviceStats.total + 50) * 100) : 0}%
                   </div>
-                  <p className="text-sm text-muted-foreground">Atendimentos concluídos</p>
+                  <p className="text-xs text-muted-foreground">Atendimentos concluídos</p>
                 </CardContent>
               </Card>
 
               <Card className="border-2 border-rose-200 bg-gradient-to-br from-rose-50/50 to-rose-100/50">
-                <CardHeader>
-                  <CardTitle className="text-rose-600">Tempo Médio</CardTitle>
+                <CardHeader className="pb-1 pt-2 px-3">
+                  <CardTitle className="text-rose-600 text-sm">Tempo Médio</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-rose-600">15min</div>
-                  <p className="text-sm text-muted-foreground">Por atendimento</p>
+                <CardContent className="px-3 pb-2">
+                  <div className="text-xl font-bold text-rose-600">15min</div>
+                  <p className="text-xs text-muted-foreground">Por atendimento</p>
                 </CardContent>
               </Card>
 
               <Card className="border-2 border-cyan-200 bg-gradient-to-br from-cyan-50/50 to-cyan-100/50">
-                <CardHeader>
-                  <CardTitle className="text-cyan-600">Pico de Demanda</CardTitle>
+                <CardHeader className="pb-1 pt-2 px-3">
+                  <CardTitle className="text-cyan-600 text-sm">Pico de Demanda</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-cyan-600">14h-16h</div>
-                  <p className="text-sm text-muted-foreground">Horário de pico</p>
+                <CardContent className="px-3 pb-2">
+                  <div className="text-xl font-bold text-cyan-600">14h-16h</div>
+                  <p className="text-xs text-muted-foreground">Horário de pico</p>
                 </CardContent>
               </Card>
             </div>

@@ -58,28 +58,28 @@ export default function ServiceTypeDistributionChart({
 
   return (
     <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-purple-100/50">
-      <CardHeader className="pb-2 pt-3 px-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <BarChart3 className="h-4 w-4 text-purple-600" />
+      <CardHeader className="pb-1 pt-1.5 px-2">
+        <CardTitle className="flex items-center gap-2 text-xs">
+          <BarChart3 className="h-3 w-3 text-purple-600" />
           Distribuição por Tipo de Serviço
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-3 pb-3">
+      <CardContent className="px-2 pb-1.5">
         {displayData.length > 0 ? (
-          <div className="h-72">
+          <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={displayData}
                 layout="vertical"
-                margin={{ top: 0, right: 40, left: 10, bottom: 0 }}
+                margin={{ top: 0, right: 30, left: 5, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 9 }} />
+                <XAxis type="number" tick={{ fontSize: 8 }} />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={100}
-                  tick={{ fontSize: 9 }}
+                  width={80}
+                  tick={{ fontSize: 8 }}
                 />
                 <Tooltip 
                   formatter={(value: number) => [`${value} atendimentos`, 'Quantidade']}
@@ -94,7 +94,7 @@ export default function ServiceTypeDistributionChart({
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-muted-foreground py-8 text-xs">
             Nenhum dado disponível
           </div>
         )}

@@ -32,25 +32,25 @@ export default function TrendChart({ monthlyData }: TrendChartProps) {
 
   return (
     <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
-      <CardHeader className="pb-2 pt-3 px-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <CalendarDays className="h-4 w-4 text-emerald-600" />
+      <CardHeader className="pb-1 pt-1.5 px-2">
+        <CardTitle className="flex items-center gap-2 text-xs">
+          <CalendarDays className="h-3 w-3 text-emerald-600" />
           Histórico dos Últimos 12 Meses
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-3 pb-3">
-        <div className="h-36">
+      <CardContent className="px-2 pb-1.5">
+        <div className="h-24">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+            <BarChart data={monthlyData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
                 dataKey="month" 
-                tick={{ fontSize: 9 }}
+                tick={{ fontSize: 8 }}
                 angle={-45}
                 textAnchor="end"
-                height={50}
+                height={30}
               />
-              <YAxis tick={{ fontSize: 9 }} />
+              <YAxis tick={{ fontSize: 8 }} />
               <Tooltip 
                 formatter={(value: number) => [`${value} atendimentos`, 'Total']}
                 labelFormatter={(label, payload) => {
