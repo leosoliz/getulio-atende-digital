@@ -84,6 +84,7 @@ export default function Corporate() {
     averageRating: 0,
     ratingDistribution: {}
   });
+  const [hourlyData, setHourlyData] = useState<MonthlyData[]>([]);
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -476,6 +477,42 @@ export default function Corporate() {
       setDailyWhatsappServices(whatsappTodayCount);
       setDailyIdentityServices(identityTodayCount);
 
+      // Buscar dados por hora do dia atual
+      const hourlyDataArray: MonthlyData[] = [];
+      for (let hour = 0; hour < 24; hour++) {
+        const startHour = new Date(today);
+        startHour.setHours(hour, 0, 0, 0);
+        const endHour = new Date(today);
+        endHour.setHours(hour, 59, 59, 999);
+
+        // Contar atendimentos da fila nesta hora
+        const hourQueueCount = queueTodayData?.filter(service => {
+          const serviceTime = new Date(service.created_at);
+          return serviceTime >= startHour && serviceTime <= endHour;
+        }).length || 0;
+
+        // Contar atendimentos do WhatsApp nesta hora
+        const hourWhatsappCount = whatsappTodayData?.filter(service => {
+          const serviceTime = new Date(service.created_at);
+          return serviceTime >= startHour && serviceTime <= endHour;
+        }).length || 0;
+
+        // Contar agendamentos de identidade nesta hora
+        const hourIdentityCount = identityTodayData?.filter(appointment => {
+          const appointmentTime = new Date(appointment.created_at);
+          return appointmentTime >= startHour && appointmentTime <= endHour;
+        }).length || 0;
+
+        const totalHourServices = hourQueueCount + hourWhatsappCount + hourIdentityCount;
+
+        hourlyDataArray.push({
+          month: `${hour.toString().padStart(2, '0')}:00`,
+          services: totalHourServices,
+          fullMonth: `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:59`
+        });
+      }
+      setHourlyData(hourlyDataArray);
+
       // Calcular tempo médio de atendimento DIÁRIO (em minutos)
       let dailyTotalServiceTime = 0;
       let dailyCompletedServices = 0;
@@ -746,6 +783,8 @@ export default function Corporate() {
                 <ServiceDistributionChart queueServices={dailyQueueServices} whatsappServices={dailyWhatsappServices} identityServices={dailyIdentityServices} total={serviceStats.today} />
                 <ServiceTypeDistributionChart serviceTypes={dailyServiceTypeData} total={serviceStats.today} />
               </div>
+
+              <TrendChart monthlyData={hourlyData} />
             </div>
           </TabsContent>
 
