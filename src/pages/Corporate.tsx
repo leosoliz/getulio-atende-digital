@@ -70,8 +70,13 @@ export default function Corporate() {
     monthly: 3000
   });
   const [serviceTypeData, setServiceTypeData] = useState<ServiceTypeData[]>([]);
+  const [dailyServiceTypeData, setDailyServiceTypeData] = useState<ServiceTypeData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [attendantData, setAttendantData] = useState<AttendantData[]>([]);
+  const [dailyAttendantData, setDailyAttendantData] = useState<AttendantData[]>([]);
+  const [dailyQueueServices, setDailyQueueServices] = useState(0);
+  const [dailyWhatsappServices, setDailyWhatsappServices] = useState(0);
+  const [dailyIdentityServices, setDailyIdentityServices] = useState(0);
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -363,6 +368,99 @@ export default function Corporate() {
       console.log('Attendants array:', attendantsArray);
       setAttendantData(attendantsArray);
 
+      // === DADOS DIÁRIOS ===
+      // Buscar atendimentos de hoje para distribuição por tipo de serviço
+      const dailyServiceTypeDistribution: { [key: string]: number } = {};
+
+      // Contar atendimentos de hoje por service_id da fila
+      queueTodayData?.forEach(service => {
+        const serviceId = service.service_id;
+        dailyServiceTypeDistribution[serviceId] = (dailyServiceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      // Contar atendimentos de hoje por service_id do WhatsApp
+      whatsappTodayData?.forEach(service => {
+        const serviceId = service.service_id;
+        dailyServiceTypeDistribution[serviceId] = (dailyServiceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      // Agendamentos de identidade de hoje
+      const dailyIdentityAppointmentsCount = identityTodayData?.length || 0;
+      if (dailyIdentityAppointmentsCount > 0) {
+        dailyServiceTypeDistribution['identity'] = dailyIdentityAppointmentsCount;
+      }
+
+      // Mapear para o formato do componente
+      const totalDailyServices = Object.values(dailyServiceTypeDistribution).reduce((a, b) => a + b, 0);
+      const dailyServiceTypesArray: ServiceTypeData[] = [];
+
+      // Adicionar serviços regulares
+      Object.entries(dailyServiceTypeDistribution).forEach(([serviceId, count], index) => {
+        if (serviceId === 'identity') {
+          dailyServiceTypesArray.push({
+            name: 'Agendamento de Identidade',
+            value: count,
+            percentage: totalDailyServices > 0 ? Math.round(count / totalDailyServices * 100) : 0,
+            color: COLORS[index % COLORS.length]
+          });
+        } else {
+          const serviceName = servicesData?.find(s => s.id === serviceId)?.name || 'Serviço não identificado';
+          dailyServiceTypesArray.push({
+            name: serviceName,
+            value: count,
+            percentage: totalDailyServices > 0 ? Math.round(count / totalDailyServices * 100) : 0,
+            color: COLORS[index % COLORS.length]
+          });
+        }
+      });
+
+      // Ordenar por quantidade (decrescente)
+      dailyServiceTypesArray.sort((a, b) => b.value - a.value);
+      setDailyServiceTypeData(dailyServiceTypesArray);
+
+      // Distribuição por atendente de hoje
+      const dailyAttendantDistribution: { [key: string]: number } = {};
+
+      // Contar atendimentos de hoje por attendant_id da fila
+      queueTodayData?.forEach(service => {
+        if (service.attendant_id) {
+          dailyAttendantDistribution[service.attendant_id] = (dailyAttendantDistribution[service.attendant_id] || 0) + 1;
+        }
+      });
+
+      // Contar atendimentos de hoje por attendant_id do WhatsApp
+      whatsappTodayData?.forEach(service => {
+        if (service.attendant_id) {
+          dailyAttendantDistribution[service.attendant_id] = (dailyAttendantDistribution[service.attendant_id] || 0) + 1;
+        }
+      });
+
+      // Contar atendimentos de hoje por attendant_id dos agendamentos de identidade
+      identityTodayData?.forEach(appointment => {
+        if (appointment.attendant_id) {
+          dailyAttendantDistribution[appointment.attendant_id] = (dailyAttendantDistribution[appointment.attendant_id] || 0) + 1;
+        }
+      });
+
+      // Mapear para o formato do componente
+      const dailyAttendantsArray: AttendantData[] = Object.entries(dailyAttendantDistribution).map(([attendantId, count], index) => {
+        const attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        return {
+          name: attendantName,
+          value: count,
+          color: attendantColors[index % attendantColors.length]
+        };
+      });
+
+      // Ordenar por quantidade (decrescente)
+      dailyAttendantsArray.sort((a, b) => b.value - a.value);
+      setDailyAttendantData(dailyAttendantsArray);
+
+      // Armazenar contagens de serviços diários
+      setDailyQueueServices(queueTodayCount);
+      setDailyWhatsappServices(whatsappTodayCount);
+      setDailyIdentityServices(identityTodayCount);
+
       // Buscar dados de satisfação
       const {
         data: satisfactionData
@@ -480,41 +578,23 @@ export default function Corporate() {
             </div>
           </TabsContent>
 
-          <TabsContent value="daily" className="space-y-1">
-            <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-3">
-              <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} target={targets.daily} icon={<CalendarDays className="h-6 w-6" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
-              locale: ptBR
-            })} color="blue" isEditable={true} onTargetUpdate={value => updateTarget('daily', value)} />
-              <MetricsCard title="Eficiência Diária" value={serviceStats.today > 0 ? Math.round(serviceStats.today / targets.daily * 100) : 0} icon={<Clock className="h-6 w-6" />} subtitle="% da meta diária" color="green" />
-              <MetricsCard title="Status da Meta" value={Math.max(0, targets.daily - serviceStats.today)} icon={<Target className="h-6 w-6" />} subtitle={serviceStats.today >= targets.daily ? "Meta atingida! 🎉" : "Restantes para a meta"} color={serviceStats.today >= targets.daily ? "green" : "orange"} />
-            </div>
+          <TabsContent value="daily" className="flex-1 overflow-y-auto">
+            <div className="space-y-1">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+                <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} icon={<Users className="h-6 w-6" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR
+                })} color="blue" />
+                <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento hoje" color="green" />
+                <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado hoje" color="purple" />
+                <MetricsCard title="Satisfação Hoje" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
+              </div>
 
-            <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 to-blue-100/50">
-              <CardHeader className="pb-1 pt-2 px-3">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  Performance Diária
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-2">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">Progresso da Meta Diária</span>
-                    <span className="text-xs text-muted-foreground">
-                      {serviceStats.today} / {targets.daily}
-                    </span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-3">
-                    <div className="h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000" style={{
-                    width: `${Math.min(serviceStats.today / targets.daily * 100, 100)}%`
-                  }} />
-                  </div>
-                  <div className="text-center text-xl font-bold text-blue-600">
-                    {Math.round(serviceStats.today / targets.daily * 100)}%
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <div className="grid gap-1 lg:grid-cols-3">
+                <SatisfactionChart attendants={dailyAttendantData} total={serviceStats.today} />
+                <ServiceDistributionChart queueServices={dailyQueueServices} whatsappServices={dailyWhatsappServices} identityServices={dailyIdentityServices} total={serviceStats.today} />
+                <ServiceTypeDistributionChart serviceTypes={dailyServiceTypeData} total={serviceStats.today} />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-1">
