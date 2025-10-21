@@ -353,6 +353,7 @@ export default function Corporate() {
                 icon={<Star className="h-8 w-8" />}
                 subtitle={`${satisfactionStats.totalSurveys} avaliações`}
                 color="orange"
+                isPercentage={true}
               />
             </div>
 

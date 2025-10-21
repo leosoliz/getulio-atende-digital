@@ -15,6 +15,7 @@ interface MetricsCardProps {
   color: "blue" | "green" | "purple" | "orange";
   isEditable?: boolean;
   onTargetUpdate?: (newTarget: number) => void;
+  isPercentage?: boolean;
 }
 
 export default function MetricsCard({ 
@@ -25,7 +26,8 @@ export default function MetricsCard({
   subtitle, 
   color,
   isEditable = false,
-  onTargetUpdate 
+  onTargetUpdate,
+  isPercentage = false
 }: MetricsCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(target?.toString() || "");
@@ -71,7 +73,7 @@ export default function MetricsCard({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-foreground mb-2">
-          {value.toLocaleString()}
+          {value.toLocaleString()}{isPercentage && '%'}
         </div>
         
         {target && (
