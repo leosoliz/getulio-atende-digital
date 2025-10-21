@@ -63,16 +63,16 @@ export default function MetricsCard({
 
   return (
     <Card className={`bg-gradient-to-br ${colorClasses[color]} border-2 hover:shadow-lg transition-all duration-300`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+        <CardTitle className="text-xs font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={`h-8 w-8 ${iconColors[color]}`}>
+        <div className={`h-5 w-5 ${iconColors[color]}`}>
           {icon}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground mb-2">
+      <CardContent className="pt-1 pb-3 px-3">
+        <div className="text-xl font-bold text-foreground mb-1">
           {value.toLocaleString()}{isPercentage && '%'}
         </div>
         
@@ -139,7 +139,7 @@ export default function MetricsCard({
         )}
         
         {subtitle && (
-          <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>
+          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
         )}
       </CardContent>
     </Card>

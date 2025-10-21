@@ -423,39 +423,40 @@ export default function Corporate() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto p-6">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
+      <div className="container mx-auto p-4 flex-1 flex flex-col overflow-hidden">
+        <div className="mb-4 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             Indicadores Corporativos
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm">
             Visão estratégica dos indicadores de performance organizacional
           </p>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-2">
+            <TabsTrigger value="overview" className="flex items-center gap-2 text-sm py-2">
+              <BarChart3 className="h-3 w-3" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="daily" className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
+            <TabsTrigger value="daily" className="flex items-center gap-2 text-sm py-2">
+              <CalendarDays className="h-3 w-3" />
               Diário
             </TabsTrigger>
-            <TabsTrigger value="monthly" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+            <TabsTrigger value="monthly" className="flex items-center gap-2 text-sm py-2">
+              <TrendingUp className="h-3 w-3" />
               Mensal
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
+            <TabsTrigger value="analytics" className="flex items-center gap-2 text-sm py-2">
+              <Target className="h-3 w-3" />
               Analytics
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <TabsContent value="overview" className="flex-1 overflow-y-auto">
+            <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <MetricsCard
                 title="Total de Atendimentos"
                 value={serviceStats.total}
@@ -485,30 +486,30 @@ export default function Corporate() {
                 color="orange"
                 isPercentage={true}
               />
-            </div>
+              </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <SatisfactionChart
-                averageRating={satisfactionStats.averageRating}
-                totalSurveys={satisfactionStats.totalSurveys}
-                ratingDistribution={satisfactionStats.ratingDistribution}
+              <div className="grid gap-3 lg:grid-cols-3">
+                <SatisfactionChart
+                  averageRating={satisfactionStats.averageRating}
+                  totalSurveys={satisfactionStats.totalSurveys}
+                  ratingDistribution={satisfactionStats.ratingDistribution}
+                />
+                <ServiceDistributionChart
+                  queueServices={serviceStats.queueServices}
+                  whatsappServices={serviceStats.whatsappServices}
+                  identityServices={serviceStats.identityServices}
+                  total={serviceStats.total}
+                />
+                <ServiceTypeDistributionChart
+                  serviceTypes={serviceTypeData}
+                  total={serviceStats.total}
+                />
+              </div>
+
+              <TrendChart 
+                monthlyData={monthlyData}
               />
-              <ServiceDistributionChart
-                queueServices={serviceStats.queueServices}
-                whatsappServices={serviceStats.whatsappServices}
-                identityServices={serviceStats.identityServices}
-                total={serviceStats.total}
-              />
             </div>
-
-            <ServiceTypeDistributionChart
-              serviceTypes={serviceTypeData}
-              total={serviceStats.total}
-            />
-
-            <TrendChart 
-              monthlyData={monthlyData}
-            />
           </TabsContent>
 
           <TabsContent value="daily" className="space-y-6">

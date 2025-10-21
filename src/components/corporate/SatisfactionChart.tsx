@@ -47,24 +47,24 @@ export default function SatisfactionChart({
 
   return (
     <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50/50 to-yellow-100/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="h-5 w-5 text-yellow-600" />
+      <CardHeader className="pb-2 pt-3 px-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Star className="h-4 w-4 text-yellow-600" />
           Satisfação Geral
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
+      <CardContent className="px-3 pb-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="space-y-2">
             <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-600 mb-1">
+              <div className="text-2xl font-bold text-yellow-600 mb-0.5">
                 {averageRating.toFixed(1)}
               </div>
-              <div className="flex justify-center mb-2">
+              <div className="flex justify-center mb-1">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-5 w-5 ${
+                    className={`h-4 w-4 ${
                       i < Math.round(averageRating) 
                         ? "text-yellow-400 fill-current" 
                         : "text-gray-300"
@@ -72,12 +72,12 @@ export default function SatisfactionChart({
                   />
                 ))}
               </div>
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs">
                 {totalSurveys} avaliações
               </Badge>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {Object.entries(ratingDistribution).map(([rating, count]) => {
                 const percentage = totalSurveys > 0 ? (count / totalSurveys) * 100 : 0;
                 return (
@@ -101,7 +101,7 @@ export default function SatisfactionChart({
           </div>
           
           {pieData.length > 0 && (
-            <div className="h-64">
+            <div className="h-40">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -110,7 +110,7 @@ export default function SatisfactionChart({
                     cy="50%"
                     labelLine={false}
                     label={renderCustomizedLabel}
-                    outerRadius={80}
+                    outerRadius={60}
                     fill="#8884d8"
                     dataKey="value"
                   >

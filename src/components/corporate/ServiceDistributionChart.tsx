@@ -65,15 +65,15 @@ export default function ServiceDistributionChart({
 
   return (
     <Card className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-indigo-100/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-indigo-600" />
+      <CardHeader className="pb-2 pt-3 px-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <TrendingUp className="h-4 w-4 text-indigo-600" />
           Distribuição por Canal
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 pb-3">
         {pieData.length > 0 && (
-          <div className="h-64 mb-6">
+          <div className="h-40 mb-3">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -82,7 +82,7 @@ export default function ServiceDistributionChart({
                   cy="50%"
                   labelLine={false}
                   label={renderCustomizedLabel}
-                  outerRadius={100}
+                  outerRadius={60}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -98,14 +98,14 @@ export default function ServiceDistributionChart({
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-3 gap-2 mt-3">
           {barData.map((item, index) => (
             <div key={item.name} className="text-center">
               <div 
-                className="w-4 h-4 rounded-full mx-auto mb-1"
+                className="w-3 h-3 rounded-full mx-auto mb-0.5"
                 style={{ backgroundColor: item.color }}
               />
-              <div className="text-sm font-medium">{item.name}</div>
+              <div className="text-xs font-medium">{item.name}</div>
               <div className="text-xs text-muted-foreground">
                 {item.value} ({item.percentage}%)
               </div>

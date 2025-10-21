@@ -41,28 +41,28 @@ export default function ServiceTypeDistributionChart({
 
   return (
     <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-purple-100/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-purple-600" />
+      <CardHeader className="pb-2 pt-3 px-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <BarChart3 className="h-4 w-4 text-purple-600" />
           Distribuição por Tipo de Serviço
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 pb-3">
         {displayData.length > 0 ? (
-          <div className="h-96">
+          <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={displayData}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" />
+                <XAxis type="number" tick={{ fontSize: 9 }} />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={120}
-                  tick={{ fontSize: 12 }}
+                  width={100}
+                  tick={{ fontSize: 9 }}
                 />
                 <Tooltip 
                   formatter={(value: number) => [`${value} atendimentos`, 'Quantidade']}
