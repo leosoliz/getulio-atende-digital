@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +11,6 @@ import SatisfactionChart from "@/components/corporate/SatisfactionChart";
 import ServiceDistributionChart from "@/components/corporate/ServiceDistributionChart";
 import ServiceTypeDistributionChart from "@/components/corporate/ServiceTypeDistributionChart";
 import TrendChart from "@/components/corporate/TrendChart";
-
 interface ServiceStats {
   total: number;
   today: number;
@@ -23,31 +21,28 @@ interface ServiceStats {
   averageServiceTime: number;
   averageWaitTime: number;
 }
-
 interface ServiceTypeData {
   name: string;
   value: number;
   percentage: number;
   color: string;
 }
-
 interface MonthlyData {
   month: string;
   services: number;
   fullMonth: string;
 }
-
 interface SatisfactionStats {
   totalSurveys: number;
   averageRating: number;
-  ratingDistribution: { [key: string]: number };
+  ratingDistribution: {
+    [key: string]: number;
+  };
 }
-
 interface Targets {
   daily: number;
   monthly: number;
 }
-
 export default function Corporate() {
   const [serviceStats, setServiceStats] = useState<ServiceStats>({
     total: 0,
@@ -57,22 +52,23 @@ export default function Corporate() {
     whatsappServices: 0,
     identityServices: 0,
     averageServiceTime: 0,
-    averageWaitTime: 0,
+    averageWaitTime: 0
   });
   const [satisfactionStats, setSatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
     averageRating: 0,
-    ratingDistribution: {},
+    ratingDistribution: {}
   });
   const [targets, setTargets] = useState<Targets>({
     daily: 150,
-    monthly: 3000,
+    monthly: 3000
   });
   const [serviceTypeData, setServiceTypeData] = useState<ServiceTypeData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     fetchCorporateData();
     // Carregar metas salvas do localStorage
@@ -81,21 +77,21 @@ export default function Corporate() {
       setTargets(JSON.parse(savedTargets));
     }
   }, []);
-
   const updateTarget = (type: 'daily' | 'monthly', value: number) => {
-    const newTargets = { ...targets, [type]: value };
+    const newTargets = {
+      ...targets,
+      [type]: value
+    };
     setTargets(newTargets);
     localStorage.setItem('corporate-targets', JSON.stringify(newTargets));
     toast({
       title: "Meta atualizada",
-      description: `Meta ${type === 'daily' ? 'diária' : 'mensal'} atualizada para ${value}`,
+      description: `Meta ${type === 'daily' ? 'diária' : 'mensal'} atualizada para ${value}`
     });
   };
-
   const fetchCorporateData = async () => {
     try {
       setLoading(true);
-      
       const today = new Date();
       const startOfToday = startOfDay(today);
       const endOfToday = endOfDay(today);
@@ -103,65 +99,45 @@ export default function Corporate() {
       const endOfThisMonth = endOfMonth(today);
 
       // Buscar dados da fila normal
-      const { data: queueData } = await supabase
-        .from('queue_customers')
-        .select('*');
-
-      const { data: queueTodayData } = await supabase
-        .from('queue_customers')
-        .select('*')
-        .gte('created_at', startOfToday.toISOString())
-        .lte('created_at', endOfToday.toISOString());
-
-      const { data: queueMonthData } = await supabase
-        .from('queue_customers')
-        .select('*')
-        .gte('created_at', startOfThisMonth.toISOString())
-        .lte('created_at', endOfThisMonth.toISOString());
+      const {
+        data: queueData
+      } = await supabase.from('queue_customers').select('*');
+      const {
+        data: queueTodayData
+      } = await supabase.from('queue_customers').select('*').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+      const {
+        data: queueMonthData
+      } = await supabase.from('queue_customers').select('*').gte('created_at', startOfThisMonth.toISOString()).lte('created_at', endOfThisMonth.toISOString());
 
       // Buscar dados do WhatsApp
-      const { data: whatsappData } = await supabase
-        .from('whatsapp_services')
-        .select('*');
-
-      const { data: whatsappTodayData } = await supabase
-        .from('whatsapp_services')
-        .select('*')
-        .gte('created_at', startOfToday.toISOString())
-        .lte('created_at', endOfToday.toISOString());
-
-      const { data: whatsappMonthData } = await supabase
-        .from('whatsapp_services')
-        .select('*')
-        .gte('created_at', startOfThisMonth.toISOString())
-        .lte('created_at', endOfThisMonth.toISOString());
+      const {
+        data: whatsappData
+      } = await supabase.from('whatsapp_services').select('*');
+      const {
+        data: whatsappTodayData
+      } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+      const {
+        data: whatsappMonthData
+      } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfThisMonth.toISOString()).lte('created_at', endOfThisMonth.toISOString());
 
       // Buscar dados de agendamento de identidade
-      const { data: identityData } = await supabase
-        .from('identity_appointments')
-        .select('*');
-
-      const { data: identityTodayData } = await supabase
-        .from('identity_appointments')
-        .select('*')
-        .gte('created_at', startOfToday.toISOString())
-        .lte('created_at', endOfToday.toISOString());
-
-      const { data: identityMonthData } = await supabase
-        .from('identity_appointments')
-        .select('*')
-        .gte('created_at', startOfThisMonth.toISOString())
-        .lte('created_at', endOfThisMonth.toISOString());
+      const {
+        data: identityData
+      } = await supabase.from('identity_appointments').select('*');
+      const {
+        data: identityTodayData
+      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+      const {
+        data: identityMonthData
+      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisMonth.toISOString()).lte('created_at', endOfThisMonth.toISOString());
 
       // Calcular estatísticas de serviços
       const queueCount = queueData?.length || 0;
       const whatsappCount = whatsappData?.length || 0;
       const identityCount = identityData?.length || 0;
-
       const queueTodayCount = queueTodayData?.length || 0;
       const whatsappTodayCount = whatsappTodayData?.length || 0;
       const identityTodayCount = identityTodayData?.length || 0;
-
       const queueMonthCount = queueMonthData?.length || 0;
       const whatsappMonthCount = whatsappMonthData?.length || 0;
       const identityMonthCount = identityMonthData?.length || 0;
@@ -175,7 +151,7 @@ export default function Corporate() {
         if (service.started_at && service.completed_at) {
           const startTime = new Date(service.started_at).getTime();
           const endTime = new Date(service.completed_at).getTime();
-          totalServiceTime += (endTime - startTime);
+          totalServiceTime += endTime - startTime;
           completedServices++;
         }
       });
@@ -185,14 +161,11 @@ export default function Corporate() {
         if (appointment.started_at && appointment.completed_at) {
           const startTime = new Date(appointment.started_at).getTime();
           const endTime = new Date(appointment.completed_at).getTime();
-          totalServiceTime += (endTime - startTime);
+          totalServiceTime += endTime - startTime;
           completedServices++;
         }
       });
-
-      const averageServiceTimeMinutes = completedServices > 0 
-        ? Math.round(totalServiceTime / completedServices / 1000 / 60) 
-        : 0;
+      const averageServiceTimeMinutes = completedServices > 0 ? Math.round(totalServiceTime / completedServices / 1000 / 60) : 0;
 
       // Calcular tempo médio de espera (em minutos)
       let totalWaitTime = 0;
@@ -203,7 +176,7 @@ export default function Corporate() {
         if (service.created_at && service.called_at) {
           const createdTime = new Date(service.created_at).getTime();
           const calledTime = new Date(service.called_at).getTime();
-          totalWaitTime += (calledTime - createdTime);
+          totalWaitTime += calledTime - createdTime;
           waitingCustomers++;
         }
       });
@@ -213,15 +186,11 @@ export default function Corporate() {
         if (appointment.created_at && appointment.called_at) {
           const createdTime = new Date(appointment.created_at).getTime();
           const calledTime = new Date(appointment.called_at).getTime();
-          totalWaitTime += (calledTime - createdTime);
+          totalWaitTime += calledTime - createdTime;
           waitingCustomers++;
         }
       });
-
-      const averageWaitTimeMinutes = waitingCustomers > 0 
-        ? Math.round(totalWaitTime / waitingCustomers / 1000 / 60) 
-        : 0;
-
+      const averageWaitTimeMinutes = waitingCustomers > 0 ? Math.round(totalWaitTime / waitingCustomers / 1000 / 60) : 0;
       setServiceStats({
         total: queueCount + whatsappCount + identityCount,
         today: queueTodayCount + whatsappTodayCount + identityTodayCount,
@@ -230,31 +199,30 @@ export default function Corporate() {
         whatsappServices: whatsappCount,
         identityServices: identityCount,
         averageServiceTime: averageServiceTimeMinutes,
-        averageWaitTime: averageWaitTimeMinutes,
+        averageWaitTime: averageWaitTimeMinutes
       });
 
       // Buscar todos os serviços disponíveis
-      const { data: servicesData } = await supabase
-        .from('services')
-        .select('id, name')
-        .eq('active', true);
+      const {
+        data: servicesData
+      } = await supabase.from('services').select('id, name').eq('active', true);
 
       // Buscar todos os atendimentos com seus service_id
-      const { data: allQueueServices } = await supabase
-        .from('queue_customers')
-        .select('service_id');
-      
-      const { data: allWhatsappServices } = await supabase
-        .from('whatsapp_services')
-        .select('service_id');
-      
-      const { data: allIdentityAppointments } = await supabase
-        .from('identity_appointments')
-        .select('id');
+      const {
+        data: allQueueServices
+      } = await supabase.from('queue_customers').select('service_id');
+      const {
+        data: allWhatsappServices
+      } = await supabase.from('whatsapp_services').select('service_id');
+      const {
+        data: allIdentityAppointments
+      } = await supabase.from('identity_appointments').select('id');
 
       // Criar distribuição por tipo de serviço
-      const serviceTypeDistribution: { [key: string]: number } = {};
-      
+      const serviceTypeDistribution: {
+        [key: string]: number;
+      } = {};
+
       // Contar atendimentos por service_id da fila
       allQueueServices?.forEach(service => {
         const serviceId = service.service_id;
@@ -276,16 +244,15 @@ export default function Corporate() {
       // Mapear para o formato do componente
       const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"];
       const totalServices = Object.values(serviceTypeDistribution).reduce((a, b) => a + b, 0);
-      
       const serviceTypesArray: ServiceTypeData[] = [];
-      
+
       // Adicionar serviços regulares
       Object.entries(serviceTypeDistribution).forEach(([serviceId, count], index) => {
         if (serviceId === 'identity') {
           serviceTypesArray.push({
             name: 'Agendamento de Identidade',
             value: count,
-            percentage: totalServices > 0 ? Math.round((count / totalServices) * 100) : 0,
+            percentage: totalServices > 0 ? Math.round(count / totalServices * 100) : 0,
             color: COLORS[index % COLORS.length]
           });
         } else {
@@ -293,7 +260,7 @@ export default function Corporate() {
           serviceTypesArray.push({
             name: serviceName,
             value: count,
-            percentage: totalServices > 0 ? Math.round((count / totalServices) * 100) : 0,
+            percentage: totalServices > 0 ? Math.round(count / totalServices * 100) : 0,
             color: COLORS[index % COLORS.length]
           });
         }
@@ -301,60 +268,51 @@ export default function Corporate() {
 
       // Ordenar por quantidade (decrescente)
       serviceTypesArray.sort((a, b) => b.value - a.value);
-      
       setServiceTypeData(serviceTypesArray);
 
       // Buscar dados dos últimos 12 meses
       const monthlyDataArray: MonthlyData[] = [];
-      
       for (let i = 11; i >= 0; i--) {
         const monthDate = subMonths(new Date(), i);
         const startOfMonthDate = startOfMonth(monthDate);
         const endOfMonthDate = endOfMonth(monthDate);
 
         // Buscar atendimentos da fila
-        const { data: queueMonthData } = await supabase
-          .from('queue_customers')
-          .select('id')
-          .gte('created_at', startOfMonthDate.toISOString())
-          .lte('created_at', endOfMonthDate.toISOString());
+        const {
+          data: queueMonthData
+        } = await supabase.from('queue_customers').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
 
         // Buscar atendimentos do WhatsApp
-        const { data: whatsappMonthData } = await supabase
-          .from('whatsapp_services')
-          .select('id')
-          .gte('created_at', startOfMonthDate.toISOString())
-          .lte('created_at', endOfMonthDate.toISOString());
+        const {
+          data: whatsappMonthData
+        } = await supabase.from('whatsapp_services').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
 
         // Buscar agendamentos de identidade
-        const { data: identityMonthData } = await supabase
-          .from('identity_appointments')
-          .select('id')
-          .gte('created_at', startOfMonthDate.toISOString())
-          .lte('created_at', endOfMonthDate.toISOString());
-
-        const totalMonthServices = 
-          (queueMonthData?.length || 0) + 
-          (whatsappMonthData?.length || 0) + 
-          (identityMonthData?.length || 0);
-
+        const {
+          data: identityMonthData
+        } = await supabase.from('identity_appointments').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
+        const totalMonthServices = (queueMonthData?.length || 0) + (whatsappMonthData?.length || 0) + (identityMonthData?.length || 0);
         monthlyDataArray.push({
-          month: format(monthDate, "MMM/yy", { locale: ptBR }),
+          month: format(monthDate, "MMM/yy", {
+            locale: ptBR
+          }),
           services: totalMonthServices,
-          fullMonth: format(monthDate, "MMMM 'de' yyyy", { locale: ptBR })
+          fullMonth: format(monthDate, "MMMM 'de' yyyy", {
+            locale: ptBR
+          })
         });
       }
-
       setMonthlyData(monthlyDataArray);
 
       // Buscar dados de satisfação
-      const { data: satisfactionData } = await supabase
-        .from('satisfaction_surveys')
-        .select('overall_rating, problem_resolved');
-
+      const {
+        data: satisfactionData
+      } = await supabase.from('satisfaction_surveys').select('overall_rating, problem_resolved');
       if (satisfactionData && satisfactionData.length > 0) {
         // Mapear valores de avaliação (normalizado para 0-100)
-        const ratingValues: { [key: string]: number } = {
+        const ratingValues: {
+          [key: string]: number;
+        } = {
           'excelente': 100,
           'bom': 75,
           'regular': 50,
@@ -363,7 +321,9 @@ export default function Corporate() {
         };
 
         // Mapear valores de resolução de problema
-        const resolvedValues: { [key: string]: number } = {
+        const resolvedValues: {
+          [key: string]: number;
+        } = {
           'sim': 100,
           'parcialmente': 50,
           'não': 0,
@@ -373,62 +333,52 @@ export default function Corporate() {
         // Calcular score ponderado: 70% avaliação geral + 30% resolução de problema
         let totalScore = 0;
         let validSurveys = 0;
-
         satisfactionData.forEach(survey => {
           const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
           const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
-          
+
           // Equação ponderada de satisfação
-          const satisfactionScore = (ratingScore * 0.7) + (resolvedScore * 0.3);
+          const satisfactionScore = ratingScore * 0.7 + resolvedScore * 0.3;
           totalScore += satisfactionScore;
           validSurveys++;
         });
-
         const averageRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
-
         const distribution = satisfactionData.reduce((acc, survey) => {
           const rating = survey.overall_rating || 'sem avaliação';
           acc[rating] = (acc[rating] || 0) + 1;
           return acc;
-        }, {} as { [key: string]: number });
-
+        }, {} as {
+          [key: string]: number;
+        });
         setSatisfactionStats({
           totalSurveys: satisfactionData.length,
           averageRating,
-          ratingDistribution: distribution,
+          ratingDistribution: distribution
         });
       }
-
     } catch (error) {
       console.error('Erro ao buscar dados corporativos:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dados corporativos.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando indicadores corporativos...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
+  return <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
       <div className="container mx-auto p-4 flex-1 flex flex-col overflow-hidden">
         <div className="mb-4 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Indicadores Corporativos
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
           <p className="text-muted-foreground text-sm">
             Visão estratégica dos indicadores de performance organizacional
           </p>
@@ -457,87 +407,29 @@ export default function Corporate() {
           <TabsContent value="overview" className="flex-1 overflow-y-auto">
             <div className="space-y-3">
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-              <MetricsCard
-                title="Total de Atendimentos"
-                value={serviceStats.total}
-                icon={<Users className="h-8 w-8" />}
-                subtitle="Todos os tipos de atendimento"
-                color="blue"
-              />
-              <MetricsCard
-                title="Tempo Médio de Atendimento"
-                value={serviceStats.averageServiceTime}
-                icon={<Clock className="h-8 w-8" />}
-                subtitle="Minutos por atendimento"
-                color="green"
-              />
-              <MetricsCard
-                title="Tempo Médio de Espera"
-                value={serviceStats.averageWaitTime}
-                icon={<Timer className="h-8 w-8" />}
-                subtitle="Minutos até ser chamado"
-                color="purple"
-              />
-              <MetricsCard
-                title="Satisfação"
-                value={Math.round(satisfactionStats.averageRating * 20)}
-                icon={<Star className="h-8 w-8" />}
-                subtitle={`${satisfactionStats.totalSurveys} avaliações`}
-                color="orange"
-                isPercentage={true}
-              />
+              <MetricsCard title="Total de Atendimentos" value={serviceStats.total} icon={<Users className="h-8 w-8" />} subtitle="Todos os tipos de atendimento" color="blue" />
+              <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-8 w-8" />} subtitle="Minutos por atendimento" color="green" />
+              <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-8 w-8" />} subtitle="Minutos até ser chamado" color="purple" />
+              <MetricsCard title="Satisfação" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-8 w-8" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
               </div>
 
               <div className="grid gap-3 lg:grid-cols-3">
-                <SatisfactionChart
-                  averageRating={satisfactionStats.averageRating}
-                  totalSurveys={satisfactionStats.totalSurveys}
-                  ratingDistribution={satisfactionStats.ratingDistribution}
-                />
-                <ServiceDistributionChart
-                  queueServices={serviceStats.queueServices}
-                  whatsappServices={serviceStats.whatsappServices}
-                  identityServices={serviceStats.identityServices}
-                  total={serviceStats.total}
-                />
-                <ServiceTypeDistributionChart
-                  serviceTypes={serviceTypeData}
-                  total={serviceStats.total}
-                />
+                <SatisfactionChart averageRating={satisfactionStats.averageRating} totalSurveys={satisfactionStats.totalSurveys} ratingDistribution={satisfactionStats.ratingDistribution} />
+                <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
+                <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
 
-              <TrendChart 
-                monthlyData={monthlyData}
-              />
+              <TrendChart monthlyData={monthlyData} />
             </div>
           </TabsContent>
 
           <TabsContent value="daily" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <MetricsCard
-                title="Atendimentos Hoje"
-                value={serviceStats.today}
-                target={targets.daily}
-                icon={<CalendarDays className="h-8 w-8" />}
-                subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                color="blue"
-                isEditable={true}
-                onTargetUpdate={(value) => updateTarget('daily', value)}
-              />
-              <MetricsCard
-                title="Eficiência Diária"
-                value={serviceStats.today > 0 ? Math.round((serviceStats.today / targets.daily) * 100) : 0}
-                icon={<Clock className="h-8 w-8" />}
-                subtitle="% da meta diária"
-                color="green"
-              />
-              <MetricsCard
-                title="Status da Meta"
-                value={Math.max(0, targets.daily - serviceStats.today)}
-                icon={<Target className="h-8 w-8" />}
-                subtitle={serviceStats.today >= targets.daily ? "Meta atingida! 🎉" : "Restantes para a meta"}
-                color={serviceStats.today >= targets.daily ? "green" : "orange"}
-              />
+              <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} target={targets.daily} icon={<CalendarDays className="h-8 w-8" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
+              locale: ptBR
+            })} color="blue" isEditable={true} onTargetUpdate={value => updateTarget('daily', value)} />
+              <MetricsCard title="Eficiência Diária" value={serviceStats.today > 0 ? Math.round(serviceStats.today / targets.daily * 100) : 0} icon={<Clock className="h-8 w-8" />} subtitle="% da meta diária" color="green" />
+              <MetricsCard title="Status da Meta" value={Math.max(0, targets.daily - serviceStats.today)} icon={<Target className="h-8 w-8" />} subtitle={serviceStats.today >= targets.daily ? "Meta atingida! 🎉" : "Restantes para a meta"} color={serviceStats.today >= targets.daily ? "green" : "orange"} />
             </div>
 
             <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 to-blue-100/50">
@@ -556,13 +448,12 @@ export default function Corporate() {
                     </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-4">
-                    <div
-                      className="h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000"
-                      style={{ width: `${Math.min((serviceStats.today / targets.daily) * 100, 100)}%` }}
-                    />
+                    <div className="h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000" style={{
+                    width: `${Math.min(serviceStats.today / targets.daily * 100, 100)}%`
+                  }} />
                   </div>
                   <div className="text-center text-2xl font-bold text-blue-600">
-                    {Math.round((serviceStats.today / targets.daily) * 100)}%
+                    {Math.round(serviceStats.today / targets.daily * 100)}%
                   </div>
                 </div>
               </CardContent>
@@ -571,30 +462,11 @@ export default function Corporate() {
 
           <TabsContent value="monthly" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <MetricsCard
-                title="Atendimentos Este Mês"
-                value={serviceStats.thisMonth}
-                target={targets.monthly}
-                icon={<CalendarDays className="h-8 w-8" />}
-                subtitle={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-                color="purple"
-                isEditable={true}
-                onTargetUpdate={(value) => updateTarget('monthly', value)}
-              />
-              <MetricsCard
-                title="Performance Mensal"
-                value={serviceStats.thisMonth > 0 ? Math.round((serviceStats.thisMonth / targets.monthly) * 100) : 0}
-                icon={<TrendingUp className="h-8 w-8" />}
-                subtitle="% da meta mensal"
-                color="green"
-              />
-              <MetricsCard
-                title="Projeção do Mês"
-                value={Math.round((serviceStats.thisMonth / new Date().getDate()) * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate())}
-                icon={<Target className="h-8 w-8" />}
-                subtitle="Estimativa baseada na média diária"
-                color="orange"
-              />
+              <MetricsCard title="Atendimentos Este Mês" value={serviceStats.thisMonth} target={targets.monthly} icon={<CalendarDays className="h-8 w-8" />} subtitle={format(new Date(), "MMMM 'de' yyyy", {
+              locale: ptBR
+            })} color="purple" isEditable={true} onTargetUpdate={value => updateTarget('monthly', value)} />
+              <MetricsCard title="Performance Mensal" value={serviceStats.thisMonth > 0 ? Math.round(serviceStats.thisMonth / targets.monthly * 100) : 0} icon={<TrendingUp className="h-8 w-8" />} subtitle="% da meta mensal" color="green" />
+              <MetricsCard title="Projeção do Mês" value={Math.round(serviceStats.thisMonth / new Date().getDate() * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate())} icon={<Target className="h-8 w-8" />} subtitle="Estimativa baseada na média diária" color="orange" />
             </div>
 
             <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-purple-100/50">
@@ -613,15 +485,14 @@ export default function Corporate() {
                     </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-4">
-                    <div
-                      className="h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000"
-                      style={{ width: `${Math.min((serviceStats.thisMonth / targets.monthly) * 100, 100)}%` }}
-                    />
+                    <div className="h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000" style={{
+                    width: `${Math.min(serviceStats.thisMonth / targets.monthly * 100, 100)}%`
+                  }} />
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-purple-600">
-                        {Math.round((serviceStats.thisMonth / targets.monthly) * 100)}%
+                        {Math.round(serviceStats.thisMonth / targets.monthly * 100)}%
                       </div>
                       <div className="text-sm text-muted-foreground">Concluído</div>
                     </div>
@@ -639,22 +510,11 @@ export default function Corporate() {
 
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <SatisfactionChart
-                averageRating={satisfactionStats.averageRating}
-                totalSurveys={satisfactionStats.totalSurveys}
-                ratingDistribution={satisfactionStats.ratingDistribution}
-              />
-              <ServiceDistributionChart
-                queueServices={serviceStats.queueServices}
-                whatsappServices={serviceStats.whatsappServices}
-                identityServices={serviceStats.identityServices}
-                total={serviceStats.total}
-              />
+              <SatisfactionChart averageRating={satisfactionStats.averageRating} totalSurveys={satisfactionStats.totalSurveys} ratingDistribution={satisfactionStats.ratingDistribution} />
+              <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
             </div>
             
-            <TrendChart 
-              monthlyData={monthlyData}
-            />
+            <TrendChart monthlyData={monthlyData} />
 
             <div className="grid gap-6 md:grid-cols-3">
               <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
@@ -663,7 +523,7 @@ export default function Corporate() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-emerald-600">
-                    {serviceStats.total > 0 ? Math.round((serviceStats.total / (serviceStats.total + 50)) * 100) : 0}%
+                    {serviceStats.total > 0 ? Math.round(serviceStats.total / (serviceStats.total + 50) * 100) : 0}%
                   </div>
                   <p className="text-sm text-muted-foreground">Atendimentos concluídos</p>
                 </CardContent>
@@ -692,6 +552,5 @@ export default function Corporate() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
