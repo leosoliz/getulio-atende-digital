@@ -10,6 +10,7 @@ import { ptBR } from "date-fns/locale";
 import MetricsCard from "@/components/corporate/MetricsCard";
 import SatisfactionChart from "@/components/corporate/SatisfactionChart";
 import ServiceDistributionChart from "@/components/corporate/ServiceDistributionChart";
+import ServiceTypeDistributionChart from "@/components/corporate/ServiceTypeDistributionChart";
 import TrendChart from "@/components/corporate/TrendChart";
 
 interface ServiceStats {
@@ -21,6 +22,13 @@ interface ServiceStats {
   identityServices: number;
   averageServiceTime: number;
   averageWaitTime: number;
+}
+
+interface ServiceTypeData {
+  name: string;
+  value: number;
+  percentage: number;
+  color: string;
 }
 
 interface SatisfactionStats {
@@ -54,6 +62,7 @@ export default function Corporate() {
     daily: 150,
     monthly: 3000,
   });
+  const [serviceTypeData, setServiceTypeData] = useState<ServiceTypeData[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -217,6 +226,77 @@ export default function Corporate() {
         averageWaitTime: averageWaitTimeMinutes,
       });
 
+      // Buscar todos os serviços disponíveis
+      const { data: servicesData } = await supabase
+        .from('services')
+        .select('id, name')
+        .eq('active', true);
+
+      // Buscar todos os atendimentos com seus service_id
+      const { data: allQueueServices } = await supabase
+        .from('queue_customers')
+        .select('service_id');
+      
+      const { data: allWhatsappServices } = await supabase
+        .from('whatsapp_services')
+        .select('service_id');
+      
+      const { data: allIdentityAppointments } = await supabase
+        .from('identity_appointments')
+        .select('id');
+
+      // Criar distribuição por tipo de serviço
+      const serviceTypeDistribution: { [key: string]: number } = {};
+      
+      // Contar atendimentos por service_id da fila
+      allQueueServices?.forEach(service => {
+        const serviceId = service.service_id;
+        serviceTypeDistribution[serviceId] = (serviceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      // Contar atendimentos por service_id do WhatsApp
+      allWhatsappServices?.forEach(service => {
+        const serviceId = service.service_id;
+        serviceTypeDistribution[serviceId] = (serviceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      // Agendamentos de identidade não têm service_id, então vamos considerar como um tipo separado
+      const identityAppointmentsCount = allIdentityAppointments?.length || 0;
+      if (identityAppointmentsCount > 0) {
+        serviceTypeDistribution['identity'] = identityAppointmentsCount;
+      }
+
+      // Mapear para o formato do componente
+      const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"];
+      const totalServices = Object.values(serviceTypeDistribution).reduce((a, b) => a + b, 0);
+      
+      const serviceTypesArray: ServiceTypeData[] = [];
+      
+      // Adicionar serviços regulares
+      Object.entries(serviceTypeDistribution).forEach(([serviceId, count], index) => {
+        if (serviceId === 'identity') {
+          serviceTypesArray.push({
+            name: 'Agendamento de Identidade',
+            value: count,
+            percentage: totalServices > 0 ? Math.round((count / totalServices) * 100) : 0,
+            color: COLORS[index % COLORS.length]
+          });
+        } else {
+          const serviceName = servicesData?.find(s => s.id === serviceId)?.name || 'Serviço não identificado';
+          serviceTypesArray.push({
+            name: serviceName,
+            value: count,
+            percentage: totalServices > 0 ? Math.round((count / totalServices) * 100) : 0,
+            color: COLORS[index % COLORS.length]
+          });
+        }
+      });
+
+      // Ordenar por quantidade (decrescente)
+      serviceTypesArray.sort((a, b) => b.value - a.value);
+      
+      setServiceTypeData(serviceTypesArray);
+
       // Buscar dados de satisfação
       const { data: satisfactionData } = await supabase
         .from('satisfaction_surveys')
@@ -370,6 +450,11 @@ export default function Corporate() {
                 total={serviceStats.total}
               />
             </div>
+
+            <ServiceTypeDistributionChart
+              serviceTypes={serviceTypeData}
+              total={serviceStats.total}
+            />
 
             <TrendChart 
               todayServices={serviceStats.today}
