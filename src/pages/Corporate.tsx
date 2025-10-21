@@ -376,14 +376,14 @@ export default function Corporate() {
       </div>;
   }
   return <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
-      <div className="container mx-auto p-4 flex-1 flex flex-col overflow-hidden">
-        <div className="mb-4 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
-          <p className="text-muted-foreground text-sm">Secretaria de Desenvolvimento Econômico e Planejamento</p>
+      <div className="container mx-auto px-3 py-2 flex-1 flex flex-col overflow-hidden">
+        <div className="mb-2 text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-0.5 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
+          <p className="text-muted-foreground text-xs">Secretaria de Desenvolvimento Econômico e Planejamento</p>
         </div>
 
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-2">
+          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-1 h-9">
             <TabsTrigger value="overview" className="flex items-center gap-2 text-sm py-2">
               <BarChart3 className="h-3 w-3" />
               Visão Geral
@@ -403,15 +403,15 @@ export default function Corporate() {
           </TabsList>
 
           <TabsContent value="overview" className="flex-1 overflow-y-auto">
-            <div className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
               <MetricsCard title="Total de Atendimentos" value={serviceStats.total} icon={<Users className="h-8 w-8" />} subtitle="Todos os tipos de atendimento" color="blue" />
               <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-8 w-8" />} subtitle="Minutos por atendimento" color="green" />
               <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-8 w-8" />} subtitle="Minutos até ser chamado" color="purple" />
               <MetricsCard title="Satisfação" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-8 w-8" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-3">
+              <div className="grid gap-2 lg:grid-cols-3">
                 <SatisfactionChart averageRating={satisfactionStats.averageRating} totalSurveys={satisfactionStats.totalSurveys} ratingDistribution={satisfactionStats.ratingDistribution} />
                 <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
@@ -421,8 +421,8 @@ export default function Corporate() {
             </div>
           </TabsContent>
 
-          <TabsContent value="daily" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <TabsContent value="daily" className="space-y-3">
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} target={targets.daily} icon={<CalendarDays className="h-8 w-8" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
               locale: ptBR
             })} color="blue" isEditable={true} onTargetUpdate={value => updateTarget('daily', value)} />
@@ -458,8 +458,8 @@ export default function Corporate() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="monthly" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <TabsContent value="monthly" className="space-y-3">
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               <MetricsCard title="Atendimentos Este Mês" value={serviceStats.thisMonth} target={targets.monthly} icon={<CalendarDays className="h-8 w-8" />} subtitle={format(new Date(), "MMMM 'de' yyyy", {
               locale: ptBR
             })} color="purple" isEditable={true} onTargetUpdate={value => updateTarget('monthly', value)} />
@@ -506,15 +506,15 @@ export default function Corporate() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
+          <TabsContent value="analytics" className="space-y-3">
+            <div className="grid gap-2 lg:grid-cols-2">
               <SatisfactionChart averageRating={satisfactionStats.averageRating} totalSurveys={satisfactionStats.totalSurveys} ratingDistribution={satisfactionStats.ratingDistribution} />
               <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
             </div>
             
             <TrendChart monthlyData={monthlyData} />
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-2 md:grid-cols-3">
               <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
                 <CardHeader>
                   <CardTitle className="text-emerald-600">Taxa de Conversão</CardTitle>
