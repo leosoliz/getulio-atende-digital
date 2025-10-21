@@ -477,9 +477,9 @@ export default function Corporate() {
       setDailyWhatsappServices(whatsappTodayCount);
       setDailyIdentityServices(identityTodayCount);
 
-      // Buscar dados por hora do dia atual
+      // Buscar dados por hora do dia atual (06h às 18h)
       const hourlyDataArray: MonthlyData[] = [];
-      for (let hour = 0; hour < 24; hour++) {
+      for (let hour = 6; hour <= 18; hour++) {
         const startHour = new Date(today);
         startHour.setHours(hour, 0, 0, 0);
         const endHour = new Date(today);
