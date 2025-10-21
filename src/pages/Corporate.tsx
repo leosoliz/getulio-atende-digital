@@ -495,29 +495,60 @@ export default function Corporate() {
       setDailyAverageServiceTime(dailyAverageServiceTimeMinutes);
 
       // Calcular tempo médio de espera DIÁRIO (em minutos)
+      // Buscar atendimentos chamados hoje
+      const { data: queueCalledTodayData } = await supabase
+        .from('queue_customers')
+        .select('*')
+        .gte('called_at', startOfToday.toISOString())
+        .lte('called_at', endOfToday.toISOString())
+        .not('created_at', 'is', null);
+
+      const { data: identityCalledTodayData } = await supabase
+        .from('identity_appointments')
+        .select('*')
+        .gte('called_at', startOfToday.toISOString())
+        .lte('called_at', endOfToday.toISOString())
+        .not('created_at', 'is', null);
+
       let dailyTotalWaitTime = 0;
       let dailyWaitingCustomers = 0;
 
       // Calcular tempo de espera da fila presencial de hoje
-      queueTodayData?.forEach(service => {
+      queueCalledTodayData?.forEach(service => {
         if (service.created_at && service.called_at) {
           const createdTime = new Date(service.created_at).getTime();
           const calledTime = new Date(service.called_at).getTime();
-          dailyTotalWaitTime += calledTime - createdTime;
-          dailyWaitingCustomers++;
+          const waitTime = calledTime - createdTime;
+          // Apenas considerar tempos de espera razoáveis (menos de 24 horas)
+          if (waitTime > 0 && waitTime < 24 * 60 * 60 * 1000) {
+            dailyTotalWaitTime += waitTime;
+            dailyWaitingCustomers++;
+          }
         }
       });
 
       // Calcular tempo de espera dos agendamentos de hoje
-      identityTodayData?.forEach(appointment => {
+      identityCalledTodayData?.forEach(appointment => {
         if (appointment.created_at && appointment.called_at) {
           const createdTime = new Date(appointment.created_at).getTime();
           const calledTime = new Date(appointment.called_at).getTime();
-          dailyTotalWaitTime += calledTime - createdTime;
-          dailyWaitingCustomers++;
+          const waitTime = calledTime - createdTime;
+          // Apenas considerar tempos de espera razoáveis (menos de 24 horas)
+          if (waitTime > 0 && waitTime < 24 * 60 * 60 * 1000) {
+            dailyTotalWaitTime += waitTime;
+            dailyWaitingCustomers++;
+          }
         }
       });
+      
       const dailyAverageWaitTimeMinutes = dailyWaitingCustomers > 0 ? Math.round(dailyTotalWaitTime / dailyWaitingCustomers / 1000 / 60) : 0;
+      
+      console.log('Tempo de espera diário:', {
+        totalWaitTime: dailyTotalWaitTime,
+        waitingCustomers: dailyWaitingCustomers,
+        averageMinutes: dailyAverageWaitTimeMinutes
+      });
+      
       setDailyAverageWaitTime(dailyAverageWaitTimeMinutes);
 
       // Buscar dados de satisfação (todos)
