@@ -85,6 +85,22 @@ export default function Corporate() {
     ratingDistribution: {}
   });
   const [hourlyData, setHourlyData] = useState<MonthlyData[]>([]);
+  
+  // Estados para dados mensais
+  const [monthlyQueueServices, setMonthlyQueueServices] = useState(0);
+  const [monthlyWhatsappServices, setMonthlyWhatsappServices] = useState(0);
+  const [monthlyIdentityServices, setMonthlyIdentityServices] = useState(0);
+  const [monthlyAverageServiceTime, setMonthlyAverageServiceTime] = useState(0);
+  const [monthlyAverageWaitTime, setMonthlyAverageWaitTime] = useState(0);
+  const [monthlySatisfactionStats, setMonthlySatisfactionStats] = useState<SatisfactionStats>({
+    totalSurveys: 0,
+    averageRating: 0,
+    ratingDistribution: {}
+  });
+  const [monthlyAttendantData, setMonthlyAttendantData] = useState<AttendantData[]>([]);
+  const [monthlyServiceTypeData, setMonthlyServiceTypeData] = useState<ServiceTypeData[]>([]);
+  const [dailyMonthData, setDailyMonthData] = useState<MonthlyData[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -600,6 +616,267 @@ export default function Corporate() {
       
       setDailyAverageWaitTime(dailyAverageWaitTimeMinutes);
 
+      // === DADOS MENSAIS ===
+      // Armazenar contagens de serviços mensais
+      setMonthlyQueueServices(queueMonthCount);
+      setMonthlyWhatsappServices(whatsappMonthCount);
+      setMonthlyIdentityServices(identityMonthCount);
+
+      // Distribuição por tipo de serviço do mês
+      const monthlyServiceTypeDistribution: { [key: string]: number } = {};
+
+      // Contar atendimentos do mês por service_id da fila
+      queueMonthData?.forEach(service => {
+        const serviceId = service.service_id;
+        monthlyServiceTypeDistribution[serviceId] = (monthlyServiceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      // Contar atendimentos do mês por service_id do WhatsApp
+      whatsappMonthData?.forEach(service => {
+        const serviceId = service.service_id;
+        monthlyServiceTypeDistribution[serviceId] = (monthlyServiceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      // Agendamentos de identidade do mês
+      const monthlyIdentityAppointmentsCount = identityMonthData?.length || 0;
+      if (monthlyIdentityAppointmentsCount > 0) {
+        monthlyServiceTypeDistribution['identity'] = monthlyIdentityAppointmentsCount;
+      }
+
+      // Mapear para o formato do componente
+      const totalMonthlyServices = Object.values(monthlyServiceTypeDistribution).reduce((a, b) => a + b, 0);
+      const monthlyServiceTypesArray: ServiceTypeData[] = [];
+
+      // Adicionar serviços regulares
+      Object.entries(monthlyServiceTypeDistribution).forEach(([serviceId, count], index) => {
+        if (serviceId === 'identity') {
+          monthlyServiceTypesArray.push({
+            name: 'Agendamento de Identidade',
+            value: count,
+            percentage: totalMonthlyServices > 0 ? Math.round(count / totalMonthlyServices * 100) : 0,
+            color: COLORS[index % COLORS.length]
+          });
+        } else {
+          const serviceName = servicesData?.find(s => s.id === serviceId)?.name || 'Serviço não identificado';
+          monthlyServiceTypesArray.push({
+            name: serviceName,
+            value: count,
+            percentage: totalMonthlyServices > 0 ? Math.round(count / totalMonthlyServices * 100) : 0,
+            color: COLORS[index % COLORS.length]
+          });
+        }
+      });
+
+      // Ordenar por quantidade (decrescente)
+      monthlyServiceTypesArray.sort((a, b) => b.value - a.value);
+      setMonthlyServiceTypeData(monthlyServiceTypesArray);
+
+      // Distribuição por atendente do mês
+      const monthlyAttendantDistribution: { [key: string]: number } = {};
+
+      // Contar atendimentos do mês por attendant_id da fila
+      queueMonthData?.forEach(service => {
+        const key = service.attendant_id || 'no_attendant';
+        monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
+      });
+
+      // Contar atendimentos do mês por attendant_id do WhatsApp
+      whatsappMonthData?.forEach(service => {
+        const key = service.attendant_id || 'no_attendant';
+        monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
+      });
+
+      // Contar atendimentos do mês por attendant_id dos agendamentos de identidade
+      identityMonthData?.forEach(appointment => {
+        const key = appointment.attendant_id || 'no_attendant';
+        monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
+      });
+
+      // Mapear para o formato do componente
+      const monthlyAttendantsArray: AttendantData[] = Object.entries(monthlyAttendantDistribution).map(([attendantId, count], index) => {
+        let attendantName: string;
+        if (attendantId === 'no_attendant') {
+          attendantName = 'Sem atendente';
+        } else {
+          attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        }
+        return {
+          name: attendantName,
+          value: count,
+          color: attendantColors[index % attendantColors.length]
+        };
+      });
+
+      // Ordenar por quantidade (decrescente)
+      monthlyAttendantsArray.sort((a, b) => b.value - a.value);
+      setMonthlyAttendantData(monthlyAttendantsArray);
+
+      // Calcular tempo médio de atendimento MENSAL (em minutos)
+      let monthlyTotalServiceTime = 0;
+      let monthlyCompletedServices = 0;
+
+      // Calcular tempo da fila presencial do mês
+      queueMonthData?.forEach(service => {
+        if (service.started_at && service.completed_at) {
+          const startTime = new Date(service.started_at).getTime();
+          const endTime = new Date(service.completed_at).getTime();
+          monthlyTotalServiceTime += endTime - startTime;
+          monthlyCompletedServices++;
+        }
+      });
+
+      // Calcular tempo dos agendamentos de identidade do mês
+      identityMonthData?.forEach(appointment => {
+        if (appointment.started_at && appointment.completed_at) {
+          const startTime = new Date(appointment.started_at).getTime();
+          const endTime = new Date(appointment.completed_at).getTime();
+          monthlyTotalServiceTime += endTime - startTime;
+          monthlyCompletedServices++;
+        }
+      });
+      const monthlyAverageServiceTimeMinutes = monthlyCompletedServices > 0 ? Math.round(monthlyTotalServiceTime / monthlyCompletedServices / 1000 / 60) : 0;
+      setMonthlyAverageServiceTime(monthlyAverageServiceTimeMinutes);
+
+      // Calcular tempo médio de espera MENSAL (em minutos)
+      const { data: queueCalledMonthData } = await supabase
+        .from('queue_customers')
+        .select('*')
+        .gte('called_at', startOfThisMonth.toISOString())
+        .lte('called_at', endOfThisMonth.toISOString())
+        .not('created_at', 'is', null);
+
+      const { data: identityCalledMonthData } = await supabase
+        .from('identity_appointments')
+        .select('*')
+        .gte('called_at', startOfThisMonth.toISOString())
+        .lte('called_at', endOfThisMonth.toISOString())
+        .not('created_at', 'is', null);
+
+      let monthlyTotalWaitTime = 0;
+      let monthlyWaitingCustomers = 0;
+
+      // Calcular tempo de espera da fila presencial do mês
+      queueCalledMonthData?.forEach(service => {
+        if (service.created_at && service.called_at) {
+          const createdTime = new Date(service.created_at).getTime();
+          const calledTime = new Date(service.called_at).getTime();
+          const waitTime = calledTime - createdTime;
+          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+            monthlyTotalWaitTime += waitTime;
+            monthlyWaitingCustomers++;
+          }
+        }
+      });
+
+      // Calcular tempo de espera dos agendamentos do mês
+      identityCalledMonthData?.forEach(appointment => {
+        if (appointment.created_at && appointment.called_at) {
+          const createdTime = new Date(appointment.created_at).getTime();
+          const calledTime = new Date(appointment.called_at).getTime();
+          const waitTime = calledTime - createdTime;
+          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+            monthlyTotalWaitTime += waitTime;
+            monthlyWaitingCustomers++;
+          }
+        }
+      });
+      
+      const monthlyAverageWaitTimeMinutes = monthlyWaitingCustomers > 0 ? Math.round(monthlyTotalWaitTime / monthlyWaitingCustomers / 1000 / 60) : 0;
+      setMonthlyAverageWaitTime(monthlyAverageWaitTimeMinutes);
+
+      // Buscar dados por dia do mês atual
+      const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      const dailyMonthDataArray: MonthlyData[] = [];
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayDate = new Date(today.getFullYear(), today.getMonth(), day);
+        const startOfDayDate = startOfDay(dayDate);
+        const endOfDayDate = endOfDay(dayDate);
+
+        // Contar atendimentos da fila neste dia
+        const dayQueueCount = queueMonthData?.filter(service => {
+          const serviceTime = new Date(service.created_at);
+          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+        }).length || 0;
+
+        // Contar atendimentos do WhatsApp neste dia
+        const dayWhatsappCount = whatsappMonthData?.filter(service => {
+          const serviceTime = new Date(service.created_at);
+          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+        }).length || 0;
+
+        // Contar agendamentos de identidade neste dia
+        const dayIdentityCount = identityMonthData?.filter(appointment => {
+          const appointmentTime = new Date(appointment.created_at);
+          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+        }).length || 0;
+
+        const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
+
+        dailyMonthDataArray.push({
+          month: day.toString().padStart(2, '0'),
+          services: totalDayServices,
+          fullMonth: format(dayDate, "dd 'de' MMMM", { locale: ptBR })
+        });
+      }
+      setDailyMonthData(dailyMonthDataArray);
+
+      // Buscar dados de satisfação MENSAL
+      const {
+        data: monthlySatisfactionData
+      } = await supabase.from('satisfaction_surveys').select('overall_rating, problem_resolved').gte('created_at', startOfThisMonth.toISOString()).lte('created_at', endOfThisMonth.toISOString());
+      
+      if (monthlySatisfactionData && monthlySatisfactionData.length > 0) {
+        // Mapear valores de avaliação (normalizado para 0-100)
+        const ratingValues: {
+          [key: string]: number;
+        } = {
+          'excelente': 100,
+          'bom': 75,
+          'regular': 50,
+          'ruim': 25,
+          'pessimo': 0
+        };
+
+        // Mapear valores de resolução de problema
+        const resolvedValues: {
+          [key: string]: number;
+        } = {
+          'sim': 100,
+          'parcialmente': 50,
+          'não': 0,
+          'nao': 0
+        };
+
+        // Calcular score ponderado: 70% avaliação geral + 30% resolução de problema
+        let totalScore = 0;
+        let validSurveys = 0;
+        monthlySatisfactionData.forEach(survey => {
+          const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
+          const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
+
+          // Equação ponderada de satisfação
+          const satisfactionScore = ratingScore * 0.7 + resolvedScore * 0.3;
+          totalScore += satisfactionScore;
+          validSurveys++;
+        });
+        const monthlyAverageRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
+        const monthlyDistribution = monthlySatisfactionData.reduce((acc, survey) => {
+          const rating = survey.overall_rating || 'sem avaliação';
+          acc[rating] = (acc[rating] || 0) + 1;
+          return acc;
+        }, {} as {
+          [key: string]: number;
+        });
+        setMonthlySatisfactionStats({
+          totalSurveys: monthlySatisfactionData.length,
+          averageRating: monthlyAverageRating,
+          ratingDistribution: monthlyDistribution
+        });
+      }
+
       // Buscar dados de satisfação (todos)
       const {
         data: satisfactionData
@@ -792,52 +1069,25 @@ export default function Corporate() {
             </div>
           </TabsContent>
 
-          <TabsContent value="monthly" className="space-y-1">
-            <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-3">
-              <MetricsCard title="Atendimentos Este Mês" value={serviceStats.thisMonth} target={targets.monthly} icon={<CalendarDays className="h-6 w-6" />} subtitle={format(new Date(), "MMMM 'de' yyyy", {
-              locale: ptBR
-            })} color="purple" isEditable={true} onTargetUpdate={value => updateTarget('monthly', value)} />
-              <MetricsCard title="Performance Mensal" value={serviceStats.thisMonth > 0 ? Math.round(serviceStats.thisMonth / targets.monthly * 100) : 0} icon={<TrendingUp className="h-6 w-6" />} subtitle="% da meta mensal" color="green" />
-              <MetricsCard title="Projeção do Mês" value={Math.round(serviceStats.thisMonth / new Date().getDate() * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate())} icon={<Target className="h-6 w-6" />} subtitle="Estimativa baseada na média diária" color="orange" />
-            </div>
+          <TabsContent value="monthly" className="flex-1 overflow-y-auto">
+            <div className="space-y-1">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+                <MetricsCard title="Atendimentos Este Mês" value={serviceStats.thisMonth} icon={<Users className="h-6 w-6" />} subtitle={format(new Date(), "MMMM 'de' yyyy", {
+                  locale: ptBR
+                })} color="blue" />
+                <MetricsCard title="Tempo Médio de Atendimento" value={monthlyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento no mês" color="green" />
+                <MetricsCard title="Tempo Médio de Espera" value={monthlyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado no mês" color="purple" />
+                <MetricsCard title="Satisfação do Mês" value={Math.round(monthlySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${monthlySatisfactionStats.totalSurveys} avaliações no mês`} color="orange" isPercentage={true} />
+              </div>
 
-            <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-purple-100/50">
-              <CardHeader className="pb-1 pt-2 px-3">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
-                  Análise Mensal
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-2">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">Progresso da Meta Mensal</span>
-                    <span className="text-xs text-muted-foreground">
-                      {serviceStats.thisMonth} / {targets.monthly}
-                    </span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-3">
-                    <div className="h-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000" style={{
-                    width: `${Math.min(serviceStats.thisMonth / targets.monthly * 100, 100)}%`
-                  }} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-center">
-                    <div>
-                      <div className="text-xl font-bold text-purple-600">
-                        {Math.round(serviceStats.thisMonth / targets.monthly * 100)}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">Concluído</div>
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-orange-600">
-                        {Math.max(0, targets.monthly - serviceStats.thisMonth)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Restante</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <div className="grid gap-1 lg:grid-cols-3">
+                <SatisfactionChart attendants={monthlyAttendantData} total={serviceStats.thisMonth} />
+                <ServiceDistributionChart queueServices={monthlyQueueServices} whatsappServices={monthlyWhatsappServices} identityServices={monthlyIdentityServices} total={serviceStats.thisMonth} />
+                <ServiceTypeDistributionChart serviceTypes={monthlyServiceTypeData} total={serviceStats.thisMonth} />
+              </div>
+
+              <TrendChart monthlyData={dailyMonthData} />
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-1">
