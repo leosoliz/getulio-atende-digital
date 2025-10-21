@@ -79,6 +79,11 @@ export default function Corporate() {
   const [dailyIdentityServices, setDailyIdentityServices] = useState(0);
   const [dailyAverageServiceTime, setDailyAverageServiceTime] = useState(0);
   const [dailyAverageWaitTime, setDailyAverageWaitTime] = useState(0);
+  const [dailySatisfactionStats, setDailySatisfactionStats] = useState<SatisfactionStats>({
+    totalSurveys: 0,
+    averageRating: 0,
+    ratingDistribution: {}
+  });
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -515,7 +520,7 @@ export default function Corporate() {
       const dailyAverageWaitTimeMinutes = dailyWaitingCustomers > 0 ? Math.round(dailyTotalWaitTime / dailyWaitingCustomers / 1000 / 60) : 0;
       setDailyAverageWaitTime(dailyAverageWaitTimeMinutes);
 
-      // Buscar dados de satisfação
+      // Buscar dados de satisfação (todos)
       const {
         data: satisfactionData
       } = await supabase.from('satisfaction_surveys').select('overall_rating, problem_resolved');
@@ -565,6 +570,60 @@ export default function Corporate() {
           totalSurveys: satisfactionData.length,
           averageRating,
           ratingDistribution: distribution
+        });
+      }
+
+      // Buscar dados de satisfação DIÁRIA
+      const {
+        data: dailySatisfactionData
+      } = await supabase.from('satisfaction_surveys').select('overall_rating, problem_resolved').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+      
+      if (dailySatisfactionData && dailySatisfactionData.length > 0) {
+        // Mapear valores de avaliação (normalizado para 0-100)
+        const ratingValues: {
+          [key: string]: number;
+        } = {
+          'excelente': 100,
+          'bom': 75,
+          'regular': 50,
+          'ruim': 25,
+          'pessimo': 0
+        };
+
+        // Mapear valores de resolução de problema
+        const resolvedValues: {
+          [key: string]: number;
+        } = {
+          'sim': 100,
+          'parcialmente': 50,
+          'não': 0,
+          'nao': 0
+        };
+
+        // Calcular score ponderado: 70% avaliação geral + 30% resolução de problema
+        let totalScore = 0;
+        let validSurveys = 0;
+        dailySatisfactionData.forEach(survey => {
+          const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
+          const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
+
+          // Equação ponderada de satisfação
+          const satisfactionScore = ratingScore * 0.7 + resolvedScore * 0.3;
+          totalScore += satisfactionScore;
+          validSurveys++;
+        });
+        const dailyAverageRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
+        const dailyDistribution = dailySatisfactionData.reduce((acc, survey) => {
+          const rating = survey.overall_rating || 'sem avaliação';
+          acc[rating] = (acc[rating] || 0) + 1;
+          return acc;
+        }, {} as {
+          [key: string]: number;
+        });
+        setDailySatisfactionStats({
+          totalSurveys: dailySatisfactionData.length,
+          averageRating: dailyAverageRating,
+          ratingDistribution: dailyDistribution
         });
       }
     } catch (error) {
@@ -640,7 +699,7 @@ export default function Corporate() {
                 })} color="blue" />
                 <MetricsCard title="Tempo Médio de Atendimento" value={dailyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento hoje" color="green" />
                 <MetricsCard title="Tempo Médio de Espera" value={dailyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado hoje" color="purple" />
-                <MetricsCard title="Satisfação Hoje" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
+                <MetricsCard title="Satisfação Hoje" value={Math.round(dailySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${dailySatisfactionStats.totalSurveys} avaliações hoje`} color="orange" isPercentage={true} />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
