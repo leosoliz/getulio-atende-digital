@@ -9,7 +9,6 @@ import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns
 import { ptBR } from "date-fns/locale";
 import MetricsCard from "@/components/corporate/MetricsCard";
 import SatisfactionChart from "@/components/corporate/SatisfactionChart";
-import ServiceDistributionChart from "@/components/corporate/ServiceDistributionChart";
 import TrendChart from "@/components/corporate/TrendChart";
 
 interface ServiceStats {
@@ -357,17 +356,11 @@ export default function Corporate() {
               />
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6">
               <SatisfactionChart
                 averageRating={satisfactionStats.averageRating}
                 totalSurveys={satisfactionStats.totalSurveys}
                 ratingDistribution={satisfactionStats.ratingDistribution}
-              />
-              <ServiceDistributionChart
-                queueServices={serviceStats.queueServices}
-                whatsappServices={serviceStats.whatsappServices}
-                identityServices={serviceStats.identityServices}
-                total={serviceStats.total}
               />
             </div>
 
@@ -503,17 +496,11 @@ export default function Corporate() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6">
               <SatisfactionChart
                 averageRating={satisfactionStats.averageRating}
                 totalSurveys={satisfactionStats.totalSurveys}
                 ratingDistribution={satisfactionStats.ratingDistribution}
-              />
-              <ServiceDistributionChart
-                queueServices={serviceStats.queueServices}
-                whatsappServices={serviceStats.whatsappServices}
-                identityServices={serviceStats.identityServices}
-                total={serviceStats.total}
               />
             </div>
             
