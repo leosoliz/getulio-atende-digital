@@ -195,8 +195,12 @@ export default function Corporate() {
         if (service.created_at && service.called_at) {
           const createdTime = new Date(service.created_at).getTime();
           const calledTime = new Date(service.called_at).getTime();
-          totalWaitTime += calledTime - createdTime;
-          waitingCustomers++;
+          const waitTime = calledTime - createdTime;
+          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+            totalWaitTime += waitTime;
+            waitingCustomers++;
+          }
         }
       });
 
@@ -205,8 +209,12 @@ export default function Corporate() {
         if (appointment.created_at && appointment.called_at) {
           const createdTime = new Date(appointment.created_at).getTime();
           const calledTime = new Date(appointment.called_at).getTime();
-          totalWaitTime += calledTime - createdTime;
-          waitingCustomers++;
+          const waitTime = calledTime - createdTime;
+          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+            totalWaitTime += waitTime;
+            waitingCustomers++;
+          }
         }
       });
       const averageWaitTimeMinutes = waitingCustomers > 0 ? Math.round(totalWaitTime / waitingCustomers / 1000 / 60) : 0;
@@ -519,8 +527,8 @@ export default function Corporate() {
           const createdTime = new Date(service.created_at).getTime();
           const calledTime = new Date(service.called_at).getTime();
           const waitTime = calledTime - createdTime;
-          // Apenas considerar tempos de espera razoáveis (menos de 24 horas)
-          if (waitTime > 0 && waitTime < 24 * 60 * 60 * 1000) {
+          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
             dailyTotalWaitTime += waitTime;
             dailyWaitingCustomers++;
           }
@@ -533,8 +541,8 @@ export default function Corporate() {
           const createdTime = new Date(appointment.created_at).getTime();
           const calledTime = new Date(appointment.called_at).getTime();
           const waitTime = calledTime - createdTime;
-          // Apenas considerar tempos de espera razoáveis (menos de 24 horas)
-          if (waitTime > 0 && waitTime < 24 * 60 * 60 * 1000) {
+          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
             dailyTotalWaitTime += waitTime;
             dailyWaitingCustomers++;
           }
