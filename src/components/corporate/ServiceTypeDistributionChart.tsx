@@ -42,7 +42,24 @@ export default function ServiceTypeDistributionChart({
   serviceTypes,
   total 
 }: ServiceTypeDistributionChartProps) {
-  const pieData = serviceTypes.filter(item => item.value > 0);
+  const filteredData = serviceTypes.filter(item => item.value > 0);
+  
+  // Get top 10 and group the rest as "Outros"
+  const top10 = filteredData.slice(0, 10);
+  const others = filteredData.slice(10);
+  
+  let displayData = [...top10];
+  
+  if (others.length > 0) {
+    const othersSum = others.reduce((sum, item) => sum + item.value, 0);
+    const othersPercentage = ((othersSum / total) * 100).toFixed(1);
+    displayData.push({
+      name: 'Outros',
+      value: othersSum,
+      percentage: parseFloat(othersPercentage),
+      color: '#94a3b8' // slate-400
+    });
+  }
 
   return (
     <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-purple-100/50">
@@ -53,13 +70,13 @@ export default function ServiceTypeDistributionChart({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {pieData.length > 0 ? (
+        {displayData.length > 0 ? (
           <>
             <div className="h-64 mb-6">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData}
+                    data={displayData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -68,8 +85,8 @@ export default function ServiceTypeDistributionChart({
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {displayData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip 
@@ -80,7 +97,7 @@ export default function ServiceTypeDistributionChart({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {serviceTypes.map((item, index) => (
+              {displayData.map((item, index) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0"
