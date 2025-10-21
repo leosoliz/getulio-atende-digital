@@ -1,72 +1,69 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { UserCheck } from "lucide-react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
 
-interface SatisfactionChartProps {
-  averageRating: number;
-  totalSurveys: number;
-  ratingDistribution: { [key: string]: number };
+interface AttendantData {
+  name: string;
+  value: number;
+  color: string;
 }
 
+interface AttendantDistributionChartProps {
+  attendants: AttendantData[];
+  total: number;
+}
+
+const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#94a3b8", "#f97316", "#84cc16"];
+
 export default function SatisfactionChart({ 
-  averageRating, 
-  totalSurveys, 
-  ratingDistribution 
-}: SatisfactionChartProps) {
+  attendants,
+  total 
+}: AttendantDistributionChartProps) {
+  const top10 = attendants.slice(0, 10);
+
   return (
     <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50/50 to-yellow-100/50">
       <CardHeader className="pb-2 pt-3 px-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Star className="h-4 w-4 text-yellow-600" />
-          Satisfação Geral
+          <UserCheck className="h-4 w-4 text-yellow-600" />
+          Distribuição por Atendente
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 pb-3">
-        <div className="space-y-2">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600 mb-0.5">
-                {averageRating.toFixed(1)}
-              </div>
-              <div className="flex justify-center mb-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-4 w-4 ${
-                      i < Math.round(averageRating) 
-                        ? "text-yellow-400 fill-current" 
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <Badge variant="outline" className="text-xs">
-                {totalSurveys} avaliações
-              </Badge>
-            </div>
-            
-            <div className="space-y-1.5">
-              {Object.entries(ratingDistribution).map(([rating, count]) => {
-                const percentage = totalSurveys > 0 ? (count / totalSurveys) * 100 : 0;
-                return (
-                  <div key={rating} className="flex items-center justify-between text-sm">
-                    <span className="capitalize min-w-0 flex-1">{rating}</span>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-16 bg-secondary rounded-full h-2">
-                        <div
-                          className="h-2 bg-yellow-500 rounded-full transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground min-w-fit">
-                        {count}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-        </div>
+        {top10.length > 0 ? (
+          <div className="h-full min-h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={top10}
+                layout="vertical"
+                margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis type="number" tick={{ fontSize: 9 }} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={100}
+                  tick={{ fontSize: 9 }}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value} atendimentos`, 'Quantidade']}
+                  labelStyle={{ fontWeight: 'bold' }}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {top10.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-8">
+            Nenhum dado disponível
+          </div>
+        )}
       </CardContent>
     </Card>
   );

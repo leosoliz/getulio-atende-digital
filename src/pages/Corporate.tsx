@@ -39,6 +39,12 @@ interface SatisfactionStats {
     [key: string]: number;
   };
 }
+
+interface AttendantData {
+  name: string;
+  value: number;
+  color: string;
+}
 interface Targets {
   daily: number;
   monthly: number;
@@ -65,6 +71,7 @@ export default function Corporate() {
   });
   const [serviceTypeData, setServiceTypeData] = useState<ServiceTypeData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [attendantData, setAttendantData] = useState<AttendantData[]>([]);
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -304,6 +311,50 @@ export default function Corporate() {
       }
       setMonthlyData(monthlyDataArray);
 
+      // Buscar dados de atendentes
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('user_type', 'attendant');
+
+      // Criar distribuição por atendente
+      const attendantDistribution: { [key: string]: number } = {};
+
+      // Contar atendimentos por attendant_id da fila
+      queueData?.forEach(service => {
+        if (service.attendant_id) {
+          attendantDistribution[service.attendant_id] = (attendantDistribution[service.attendant_id] || 0) + 1;
+        }
+      });
+
+      // Contar atendimentos por attendant_id do WhatsApp
+      whatsappData?.forEach(service => {
+        if (service.attendant_id) {
+          attendantDistribution[service.attendant_id] = (attendantDistribution[service.attendant_id] || 0) + 1;
+        }
+      });
+
+      // Contar atendimentos por attendant_id dos agendamentos de identidade
+      identityData?.forEach(appointment => {
+        if (appointment.attendant_id) {
+          attendantDistribution[appointment.attendant_id] = (attendantDistribution[appointment.attendant_id] || 0) + 1;
+        }
+      });
+
+      // Mapear para o formato do componente
+      const attendantsArray: AttendantData[] = Object.entries(attendantDistribution).map(([attendantId, count], index) => {
+        const attendantName = profilesData?.find(p => p.id === attendantId)?.full_name || 'Atendente não identificado';
+        return {
+          name: attendantName,
+          value: count,
+          color: COLORS[index % COLORS.length]
+        };
+      });
+
+      // Ordenar por quantidade (decrescente)
+      attendantsArray.sort((a, b) => b.value - a.value);
+      setAttendantData(attendantsArray);
+
       // Buscar dados de satisfação
       const {
         data: satisfactionData
@@ -412,7 +463,7 @@ export default function Corporate() {
               </div>
 
               <div className="grid gap-2 lg:grid-cols-3">
-                <SatisfactionChart averageRating={satisfactionStats.averageRating} totalSurveys={satisfactionStats.totalSurveys} ratingDistribution={satisfactionStats.ratingDistribution} />
+                <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
                 <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
@@ -508,7 +559,7 @@ export default function Corporate() {
 
           <TabsContent value="analytics" className="space-y-3">
             <div className="grid gap-2 lg:grid-cols-2">
-              <SatisfactionChart averageRating={satisfactionStats.averageRating} totalSurveys={satisfactionStats.totalSurveys} ratingDistribution={satisfactionStats.ratingDistribution} />
+              <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
               <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
             </div>
             
