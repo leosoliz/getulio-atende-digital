@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { CalendarDays } from "lucide-react";
 
 interface MonthlyData {
@@ -25,13 +25,7 @@ export default function TrendChart({ monthlyData }: TrendChartProps) {
       <CardContent className="px-3 pb-3">
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorServices" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-                </linearGradient>
-              </defs>
+            <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
                 dataKey="month" 
@@ -48,14 +42,12 @@ export default function TrendChart({ monthlyData }: TrendChartProps) {
                   return data ? data.fullMonth : label;
                 }}
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="services"
-                stroke="#10b981"
-                strokeWidth={3}
-                fill="url(#colorServices)"
+                fill="#10b981"
+                radius={[4, 4, 0, 0]}
               />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
