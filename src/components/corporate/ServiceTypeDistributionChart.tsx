@@ -49,7 +49,7 @@ export default function ServiceTypeDistributionChart({
       </CardHeader>
       <CardContent className="px-3 pb-3">
         {displayData.length > 0 ? (
-          <div className="h-full min-h-[240px]">
+          <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={displayData}
