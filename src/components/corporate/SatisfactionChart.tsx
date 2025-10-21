@@ -32,7 +32,7 @@ export default function SatisfactionChart({
       </CardHeader>
       <CardContent className="px-3 pb-3">
         {top10.length > 0 ? (
-          <div className="h-full min-h-[240px]">
+          <div className="h-60 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={top10}
