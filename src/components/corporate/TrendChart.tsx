@@ -14,6 +14,22 @@ interface TrendChartProps {
 }
 
 export default function TrendChart({ monthlyData }: TrendChartProps) {
+  const renderCustomLabel = (props: any) => {
+    const { x, y, width, value } = props;
+    return (
+      <text 
+        x={x + width / 2} 
+        y={y - 5} 
+        fill="#10b981" 
+        textAnchor="middle" 
+        fontSize="10"
+        fontWeight="bold"
+      >
+        {value}
+      </text>
+    );
+  };
+
   return (
     <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
       <CardHeader className="pb-2 pt-3 px-3">
@@ -46,6 +62,7 @@ export default function TrendChart({ monthlyData }: TrendChartProps) {
                 dataKey="services"
                 fill="#10b981"
                 radius={[4, 4, 0, 0]}
+                label={renderCustomLabel}
               />
             </BarChart>
           </ResponsiveContainer>
