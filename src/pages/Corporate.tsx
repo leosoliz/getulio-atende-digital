@@ -39,7 +39,6 @@ interface SatisfactionStats {
     [key: string]: number;
   };
 }
-
 interface AttendantData {
   name: string;
   value: number;
@@ -312,15 +311,15 @@ export default function Corporate() {
       setMonthlyData(monthlyDataArray);
 
       // Buscar dados de atendentes
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('user_type', 'attendant');
-
+      const {
+        data: profilesData
+      } = await supabase.from('profiles').select('id, full_name').eq('user_type', 'attendant');
       console.log('Profiles data:', profilesData);
 
       // Criar distribuição por atendente
-      const attendantDistribution: { [key: string]: number } = {};
+      const attendantDistribution: {
+        [key: string]: number;
+      } = {};
 
       // Contar atendimentos por attendant_id da fila
       queueData?.forEach(service => {
@@ -342,7 +341,6 @@ export default function Corporate() {
           attendantDistribution[appointment.attendant_id] = (attendantDistribution[appointment.attendant_id] || 0) + 1;
         }
       });
-
       console.log('Attendant distribution:', attendantDistribution);
 
       // Cores para o gráfico
@@ -437,8 +435,8 @@ export default function Corporate() {
   return <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
       <div className="container mx-auto px-3 py-2 flex-1 flex flex-col overflow-hidden">
         <div className="mb-2 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-0.5 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
-          <p className="text-muted-foreground text-xs">Secretaria de Desenvolvimento Econômico e Planejamento</p>
+          
+          
         </div>
 
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
