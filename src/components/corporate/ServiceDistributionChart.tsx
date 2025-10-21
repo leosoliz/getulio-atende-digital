@@ -73,7 +73,7 @@ export default function ServiceDistributionChart({
       </CardHeader>
       <CardContent className="px-3 pb-3">
         {pieData.length > 0 && (
-          <div className="h-58 mb-3">
+          <div className="h-60 mb-3">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
