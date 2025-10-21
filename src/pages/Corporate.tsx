@@ -379,9 +379,7 @@ export default function Corporate() {
       <div className="container mx-auto p-4 flex-1 flex flex-col overflow-hidden">
         <div className="mb-4 text-center">
           <h1 className="text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
-          <p className="text-muted-foreground text-sm">
-            Visão estratégica dos indicadores de performance organizacional
-          </p>
+          <p className="text-muted-foreground text-sm">Secretaria de Desenvolvimento Econômico e Planejamento</p>
         </div>
 
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
