@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, TrendingUp, Star, Clock, Phone, UserCheck, Calendar, Target, BarChart3, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MetricsCard from "@/components/corporate/MetricsCard";
 import SatisfactionChart from "@/components/corporate/SatisfactionChart";
@@ -29,6 +29,12 @@ interface ServiceTypeData {
   value: number;
   percentage: number;
   color: string;
+}
+
+interface MonthlyData {
+  month: string;
+  services: number;
+  fullMonth: string;
 }
 
 interface SatisfactionStats {
@@ -63,6 +69,7 @@ export default function Corporate() {
     monthly: 3000,
   });
   const [serviceTypeData, setServiceTypeData] = useState<ServiceTypeData[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -297,6 +304,49 @@ export default function Corporate() {
       
       setServiceTypeData(serviceTypesArray);
 
+      // Buscar dados dos últimos 12 meses
+      const monthlyDataArray: MonthlyData[] = [];
+      
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = subMonths(new Date(), i);
+        const startOfMonthDate = startOfMonth(monthDate);
+        const endOfMonthDate = endOfMonth(monthDate);
+
+        // Buscar atendimentos da fila
+        const { data: queueMonthData } = await supabase
+          .from('queue_customers')
+          .select('id')
+          .gte('created_at', startOfMonthDate.toISOString())
+          .lte('created_at', endOfMonthDate.toISOString());
+
+        // Buscar atendimentos do WhatsApp
+        const { data: whatsappMonthData } = await supabase
+          .from('whatsapp_services')
+          .select('id')
+          .gte('created_at', startOfMonthDate.toISOString())
+          .lte('created_at', endOfMonthDate.toISOString());
+
+        // Buscar agendamentos de identidade
+        const { data: identityMonthData } = await supabase
+          .from('identity_appointments')
+          .select('id')
+          .gte('created_at', startOfMonthDate.toISOString())
+          .lte('created_at', endOfMonthDate.toISOString());
+
+        const totalMonthServices = 
+          (queueMonthData?.length || 0) + 
+          (whatsappMonthData?.length || 0) + 
+          (identityMonthData?.length || 0);
+
+        monthlyDataArray.push({
+          month: format(monthDate, "MMM/yy", { locale: ptBR }),
+          services: totalMonthServices,
+          fullMonth: format(monthDate, "MMMM 'de' yyyy", { locale: ptBR })
+        });
+      }
+
+      setMonthlyData(monthlyDataArray);
+
       // Buscar dados de satisfação
       const { data: satisfactionData } = await supabase
         .from('satisfaction_surveys')
@@ -457,8 +507,7 @@ export default function Corporate() {
             />
 
             <TrendChart 
-              todayServices={serviceStats.today}
-              monthServices={serviceStats.thisMonth}
+              monthlyData={monthlyData}
             />
           </TabsContent>
 
@@ -603,8 +652,7 @@ export default function Corporate() {
             </div>
             
             <TrendChart 
-              todayServices={serviceStats.today}
-              monthServices={serviceStats.thisMonth}
+              monthlyData={monthlyData}
             />
 
             <div className="grid gap-6 md:grid-cols-3">
