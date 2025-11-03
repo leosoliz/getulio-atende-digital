@@ -111,6 +111,9 @@ export default function Corporate() {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   });
   
+  // Estado para controlar a aba ativa
+  const [activeTab, setActiveTab] = useState('overview');
+  
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -1051,7 +1054,7 @@ export default function Corporate() {
           <p className="text-muted-foreground text-[10px]">Secretaria de Desenvolvimento Econômico e Planejamento</p>
         </div>
 
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-1 h-7">
             <TabsTrigger value="overview" className="flex items-center gap-1 text-xs py-1">
               <BarChart3 className="h-3 w-3" />
@@ -1116,7 +1119,10 @@ export default function Corporate() {
               {/* Filtro de mês */}
               <div className="mb-2 flex items-center gap-2">
                 <label className="text-sm font-medium text-foreground">Selecionar mês:</label>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <Select value={selectedMonth} onValueChange={(value) => {
+                  setSelectedMonth(value);
+                  setActiveTab('monthly');
+                }}>
                   <SelectTrigger className="w-[200px] h-8 text-xs">
                     <SelectValue placeholder="Selecione o mês" />
                   </SelectTrigger>
