@@ -279,7 +279,18 @@ export default function Corporate() {
       };
 
 
-      // Buscar dados da fila normal
+      // Buscar CONTAGENS TOTAIS usando count para evitar limite de 1000 linhas
+      const { count: queueTotalCount } = await supabase
+        .from('queue_customers')
+        .select('*', { count: 'exact', head: true });
+      const { count: whatsappTotalCount } = await supabase
+        .from('whatsapp_services')
+        .select('*', { count: 'exact', head: true });
+      const { count: identityTotalCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true });
+
+      // Buscar dados da fila normal (para cálculos de tempo)
       const {
         data: queueData
       } = await supabase.from('queue_customers').select('*');
@@ -330,10 +341,10 @@ export default function Corporate() {
         data: identitySelectedMonthData
       } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
 
-      // Calcular estatísticas de serviços
-      const queueCount = queueData?.length || 0;
-      const whatsappCount = whatsappData?.length || 0;
-      const identityCount = identityData?.length || 0;
+      // Usar contagens exatas para totais (evita limite de 1000 linhas)
+      const queueCount = queueTotalCount || 0;
+      const whatsappCount = whatsappTotalCount || 0;
+      const identityCount = identityTotalCount || 0;
       const queueWeekCount = queueWeekData?.length || 0;
       const whatsappWeekCount = whatsappWeekData?.length || 0;
       const identityWeekCount = identityWeekData?.length || 0;
