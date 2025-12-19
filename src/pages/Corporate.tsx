@@ -171,6 +171,49 @@ export default function Corporate() {
     if (savedTargets) {
       setTargets(JSON.parse(savedTargets));
     }
+
+    // Subscriptions em tempo real para atualizar os dados automaticamente
+    const queueChannel = supabase
+      .channel('corporate-queue-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'queue_customers' },
+        () => {
+          console.log('Queue customers changed, refetching data...');
+          fetchCorporateData();
+        }
+      )
+      .subscribe();
+
+    const whatsappChannel = supabase
+      .channel('corporate-whatsapp-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'whatsapp_services' },
+        () => {
+          console.log('WhatsApp services changed, refetching data...');
+          fetchCorporateData();
+        }
+      )
+      .subscribe();
+
+    const identityChannel = supabase
+      .channel('corporate-identity-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'identity_appointments' },
+        () => {
+          console.log('Identity appointments changed, refetching data...');
+          fetchCorporateData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(queueChannel);
+      supabase.removeChannel(whatsappChannel);
+      supabase.removeChannel(identityChannel);
+    };
   }, [selectedMonth, selectedAttendant, selectedAttendantMonth, selectedWeek]);
   const updateTarget = (type: 'daily' | 'monthly', value: number) => {
     const newTargets = {
