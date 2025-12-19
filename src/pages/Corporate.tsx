@@ -50,6 +50,23 @@ interface Targets {
   daily: number;
   monthly: number;
 }
+
+interface AttendantOption {
+  id: string;
+  name: string;
+}
+
+interface AttendantStats {
+  total: number;
+  queueServices: number;
+  whatsappServices: number;
+  identityServices: number;
+  averageServiceTime: number;
+  averageWaitTime: number;
+  satisfactionStats: SatisfactionStats;
+  serviceTypeData: ServiceTypeData[];
+  dailyData: MonthlyData[];
+}
 export default function Corporate() {
   const [serviceStats, setServiceStats] = useState<ServiceStats>({
     total: 0,
@@ -114,6 +131,25 @@ export default function Corporate() {
   // Estado para controlar a aba ativa
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Estados para a aba Servidor
+  const [selectedAttendant, setSelectedAttendant] = useState<string>('all');
+  const [selectedAttendantMonth, setSelectedAttendantMonth] = useState(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [attendantList, setAttendantList] = useState<AttendantOption[]>([]);
+  const [attendantStats, setAttendantStats] = useState<AttendantStats>({
+    total: 0,
+    queueServices: 0,
+    whatsappServices: 0,
+    identityServices: 0,
+    averageServiceTime: 0,
+    averageWaitTime: 0,
+    satisfactionStats: { totalSurveys: 0, averageRating: 0, ratingDistribution: {} },
+    serviceTypeData: [],
+    dailyData: []
+  });
+  
   const [loading, setLoading] = useState(true);
   const {
     toast
@@ -125,7 +161,7 @@ export default function Corporate() {
     if (savedTargets) {
       setTargets(JSON.parse(savedTargets));
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedAttendant, selectedAttendantMonth]);
   const updateTarget = (type: 'daily' | 'monthly', value: number) => {
     const newTargets = {
       ...targets,
@@ -459,6 +495,14 @@ export default function Corporate() {
       attendantsArray.sort((a, b) => b.value - a.value);
       console.log('Attendants array:', attendantsArray);
       setAttendantData(attendantsArray);
+      
+      // Popula lista de atendentes para o filtro da aba Servidor
+      const attendantOptions: AttendantOption[] = profilesData?.map(p => ({
+        id: p.id,
+        name: p.full_name
+      })) || [];
+      attendantOptions.sort((a, b) => a.name.localeCompare(b.name));
+      setAttendantList(attendantOptions);
 
       // === DADOS DIÁRIOS ===
       // Buscar atendimentos de hoje para distribuição por tipo de serviço
@@ -1040,6 +1084,265 @@ export default function Corporate() {
           ratingDistribution: dailyDistribution
         });
       }
+
+      // === DADOS DO SERVIDOR (ATENDENTE ESPECÍFICO) ===
+      const [attYear, attMonth] = selectedAttendantMonth.split('-').map(Number);
+      const attStartDate = startOfMonth(new Date(attYear, attMonth - 1, 1));
+      const attEndDate = endOfMonth(new Date(attYear, attMonth - 1, 1));
+
+      // Buscar dados para o atendente selecionado
+      let attQueueData: any[] = [];
+      let attWhatsappData: any[] = [];
+      let attIdentityData: any[] = [];
+
+      if (selectedAttendant === 'all') {
+        // Se "todos", pega todos os atendimentos do mês
+        const { data: qd } = await supabase.from('queue_customers').select('*')
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+        const { data: wd } = await supabase.from('whatsapp_services').select('*')
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+        const { data: id } = await supabase.from('identity_appointments').select('*')
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+        attQueueData = qd || [];
+        attWhatsappData = wd || [];
+        attIdentityData = id || [];
+      } else {
+        // Filtra pelo atendente selecionado
+        const { data: qd } = await supabase.from('queue_customers').select('*')
+          .eq('attendant_id', selectedAttendant)
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+        const { data: wd } = await supabase.from('whatsapp_services').select('*')
+          .eq('attendant_id', selectedAttendant)
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+        const { data: id } = await supabase.from('identity_appointments').select('*')
+          .eq('attendant_id', selectedAttendant)
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+        attQueueData = qd || [];
+        attWhatsappData = wd || [];
+        attIdentityData = id || [];
+      }
+
+      const attQueueCount = attQueueData.length;
+      const attWhatsappCount = attWhatsappData.length;
+      const attIdentityCount = attIdentityData.length;
+      const attTotal = attQueueCount + attWhatsappCount + attIdentityCount;
+
+      // Tempo médio de atendimento do atendente
+      let attTotalServiceTime = 0;
+      let attCompletedServices = 0;
+
+      attQueueData.forEach(service => {
+        if (service.started_at && service.completed_at) {
+          const startTime = new Date(service.started_at).getTime();
+          const endTime = new Date(service.completed_at).getTime();
+          attTotalServiceTime += endTime - startTime;
+          attCompletedServices++;
+        }
+      });
+
+      attIdentityData.forEach(appointment => {
+        if (appointment.started_at && appointment.completed_at) {
+          const startTime = new Date(appointment.started_at).getTime();
+          const endTime = new Date(appointment.completed_at).getTime();
+          attTotalServiceTime += endTime - startTime;
+          attCompletedServices++;
+        }
+      });
+
+      const attAvgServiceTime = attCompletedServices > 0 ? Math.round(attTotalServiceTime / attCompletedServices / 1000 / 60) : 0;
+
+      // Tempo médio de espera do atendente
+      let attTotalWaitTime = 0;
+      let attWaitingCustomers = 0;
+
+      attQueueData.forEach(service => {
+        if (service.created_at && service.called_at) {
+          const createdTime = new Date(service.created_at).getTime();
+          const calledTime = new Date(service.called_at).getTime();
+          const waitTime = calledTime - createdTime;
+          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+            attTotalWaitTime += waitTime;
+            attWaitingCustomers++;
+          }
+        }
+      });
+
+      attIdentityData.forEach((appointment: any) => {
+        const waitTime = getIdentityWaitTimeMs(appointment);
+        if (waitTime !== null && waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+          attTotalWaitTime += waitTime;
+          attWaitingCustomers++;
+        }
+      });
+
+      const attAvgWaitTime = attWaitingCustomers > 0 ? Math.round(attTotalWaitTime / attWaitingCustomers / 1000 / 60) : 0;
+
+      // Distribuição por tipo de serviço do atendente
+      const attServiceTypeDistribution: { [key: string]: number } = {};
+
+      attQueueData.forEach(service => {
+        const serviceId = service.service_id;
+        attServiceTypeDistribution[serviceId] = (attServiceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      attWhatsappData.forEach(service => {
+        const serviceId = service.service_id;
+        attServiceTypeDistribution[serviceId] = (attServiceTypeDistribution[serviceId] || 0) + 1;
+      });
+
+      if (attIdentityCount > 0) {
+        attServiceTypeDistribution['identity'] = attIdentityCount;
+      }
+
+      const attTotalServices = Object.values(attServiceTypeDistribution).reduce((a, b) => a + b, 0);
+      const attServiceTypesArray: ServiceTypeData[] = Object.entries(attServiceTypeDistribution).map(([serviceId, count], index) => {
+        let serviceName: string;
+        if (serviceId === 'identity') {
+          serviceName = 'Agendamento de Identidade';
+        } else {
+          serviceName = servicesData?.find(s => s.id === serviceId)?.name || 'Serviço não identificado';
+        }
+        return {
+          name: serviceName,
+          value: count,
+          percentage: attTotalServices > 0 ? Math.round(count / attTotalServices * 100) : 0,
+          color: COLORS[index % COLORS.length]
+        };
+      });
+      attServiceTypesArray.sort((a, b) => b.value - a.value);
+
+      // Dados diários do mês para o atendente
+      const daysInAttMonth = new Date(attYear, attMonth, 0).getDate();
+      const attDailyData: MonthlyData[] = [];
+
+      for (let day = 1; day <= daysInAttMonth; day++) {
+        const dayDate = new Date(attYear, attMonth - 1, day);
+        const startOfDayDate = startOfDay(dayDate);
+        const endOfDayDate = endOfDay(dayDate);
+
+        const dayQueueCount = attQueueData.filter(service => {
+          const serviceTime = new Date(service.created_at);
+          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+        }).length;
+
+        const dayWhatsappCount = attWhatsappData.filter(service => {
+          const serviceTime = new Date(service.created_at);
+          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+        }).length;
+
+        const dayIdentityCount = attIdentityData.filter(appointment => {
+          const appointmentTime = new Date(appointment.created_at);
+          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+        }).length;
+
+        attDailyData.push({
+          month: day.toString().padStart(2, '0'),
+          services: dayQueueCount + dayWhatsappCount + dayIdentityCount,
+          fullMonth: format(dayDate, "dd 'de' MMMM", { locale: ptBR })
+        });
+      }
+
+      // Satisfação do atendente
+      let attSatisfactionStats: SatisfactionStats = { totalSurveys: 0, averageRating: 0, ratingDistribution: {} };
+
+      if (selectedAttendant !== 'all') {
+        const { data: attSatisfactionData } = await supabase
+          .from('satisfaction_surveys')
+          .select('overall_rating, problem_resolved')
+          .eq('attendant_id', selectedAttendant)
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+
+        if (attSatisfactionData && attSatisfactionData.length > 0) {
+          const ratingValues: { [key: string]: number } = {
+            'excelente': 100, 'bom': 75, 'regular': 50, 'ruim': 25, 'pessimo': 0
+          };
+          const resolvedValues: { [key: string]: number } = {
+            'sim': 100, 'parcialmente': 50, 'não': 0, 'nao': 0
+          };
+
+          let totalScore = 0;
+          let validSurveys = 0;
+          attSatisfactionData.forEach(survey => {
+            const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
+            const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
+            const satisfactionScore = ratingScore * 0.7 + resolvedScore * 0.3;
+            totalScore += satisfactionScore;
+            validSurveys++;
+          });
+
+          const attAvgRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
+          const attDistribution = attSatisfactionData.reduce((acc, survey) => {
+            const rating = survey.overall_rating || 'sem avaliação';
+            acc[rating] = (acc[rating] || 0) + 1;
+            return acc;
+          }, {} as { [key: string]: number });
+
+          attSatisfactionStats = {
+            totalSurveys: attSatisfactionData.length,
+            averageRating: attAvgRating,
+            ratingDistribution: attDistribution
+          };
+        }
+      } else {
+        // Se todos, usa a satisfação do mês selecionado
+        const { data: allSatisfactionData } = await supabase
+          .from('satisfaction_surveys')
+          .select('overall_rating, problem_resolved')
+          .gte('created_at', attStartDate.toISOString())
+          .lte('created_at', attEndDate.toISOString());
+
+        if (allSatisfactionData && allSatisfactionData.length > 0) {
+          const ratingValues: { [key: string]: number } = {
+            'excelente': 100, 'bom': 75, 'regular': 50, 'ruim': 25, 'pessimo': 0
+          };
+          const resolvedValues: { [key: string]: number } = {
+            'sim': 100, 'parcialmente': 50, 'não': 0, 'nao': 0
+          };
+
+          let totalScore = 0;
+          let validSurveys = 0;
+          allSatisfactionData.forEach(survey => {
+            const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
+            const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
+            const satisfactionScore = ratingScore * 0.7 + resolvedScore * 0.3;
+            totalScore += satisfactionScore;
+            validSurveys++;
+          });
+
+          const avgRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
+          const distribution = allSatisfactionData.reduce((acc, survey) => {
+            const rating = survey.overall_rating || 'sem avaliação';
+            acc[rating] = (acc[rating] || 0) + 1;
+            return acc;
+          }, {} as { [key: string]: number });
+
+          attSatisfactionStats = {
+            totalSurveys: allSatisfactionData.length,
+            averageRating: avgRating,
+            ratingDistribution: distribution
+          };
+        }
+      }
+
+      setAttendantStats({
+        total: attTotal,
+        queueServices: attQueueCount,
+        whatsappServices: attWhatsappCount,
+        identityServices: attIdentityCount,
+        averageServiceTime: attAvgServiceTime,
+        averageWaitTime: attAvgWaitTime,
+        satisfactionStats: attSatisfactionStats,
+        serviceTypeData: attServiceTypesArray,
+        dailyData: attDailyData
+      });
+
     } catch (error) {
       console.error('Erro ao buscar dados corporativos:', error);
       toast({
@@ -1080,9 +1383,9 @@ export default function Corporate() {
               <TrendingUp className="h-3 w-3" />
               Mensal
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-1 text-xs py-1">
-              <Target className="h-3 w-3" />
-              Analytics
+            <TabsTrigger value="servidor" className="flex items-center gap-1 text-xs py-1">
+              <UserCheck className="h-3 w-3" />
+              Servidor
             </TabsTrigger>
           </TabsList>
 
@@ -1175,46 +1478,101 @@ export default function Corporate() {
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-1">
-            <div className="grid gap-1 lg:grid-cols-2">
-              <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
-              <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
-            </div>
-            
-            <TrendChart monthlyData={monthlyData} />
+          <TabsContent value="servidor" className="flex-1 overflow-y-auto">
+            <div className="space-y-1">
+              {/* Filtros de atendente e mês */}
+              <div className="mb-2 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground">Servidor:</label>
+                  <Select value={selectedAttendant} onValueChange={(value) => {
+                    setSelectedAttendant(value);
+                    setActiveTab('servidor');
+                  }}>
+                    <SelectTrigger className="w-[220px] h-8 text-xs">
+                      <SelectValue placeholder="Selecione o servidor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os servidores</SelectItem>
+                      {attendantList.map(att => (
+                        <SelectItem key={att.id} value={att.id}>
+                          {att.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground">Mês:</label>
+                  <Select value={selectedAttendantMonth} onValueChange={(value) => {
+                    setSelectedAttendantMonth(value);
+                    setActiveTab('servidor');
+                  }}>
+                    <SelectTrigger className="w-[200px] h-8 text-xs">
+                      <SelectValue placeholder="Selecione o mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const date = new Date();
+                        date.setMonth(date.getMonth() - i);
+                        const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        const label = format(date, "MMMM 'de' yyyy", { locale: ptBR });
+                        return (
+                          <SelectItem key={value} value={value}>
+                            {label.charAt(0).toUpperCase() + label.slice(1)}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+                <MetricsCard 
+                  title="Total de Atendimentos" 
+                  value={attendantStats.total} 
+                  icon={<Users className="h-6 w-6" />} 
+                  subtitle={selectedAttendant === 'all' ? 'Todos os servidores' : attendantList.find(a => a.id === selectedAttendant)?.name || ''} 
+                  color="blue" 
+                />
+                <MetricsCard 
+                  title="Tempo Médio de Atendimento" 
+                  value={attendantStats.averageServiceTime} 
+                  icon={<Clock className="h-6 w-6" />} 
+                  subtitle="Minutos por atendimento" 
+                  color="green" 
+                />
+                <MetricsCard 
+                  title="Tempo Médio de Espera" 
+                  value={attendantStats.averageWaitTime} 
+                  icon={<Timer className="h-6 w-6" />} 
+                  subtitle="Minutos até ser chamado" 
+                  color="purple" 
+                />
+                <MetricsCard 
+                  title="Satisfação" 
+                  value={Math.round(attendantStats.satisfactionStats.averageRating * 20)} 
+                  icon={<Star className="h-6 w-6" />} 
+                  subtitle={`${attendantStats.satisfactionStats.totalSurveys} avaliações`} 
+                  color="orange" 
+                  isPercentage={true} 
+                />
+              </div>
 
-            <div className="grid gap-1 md:grid-cols-3">
-              <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
-                <CardHeader className="pb-1 pt-2 px-3">
-                  <CardTitle className="text-emerald-600 text-sm">Taxa de Conversão</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-2">
-                  <div className="text-xl font-bold text-emerald-600">
-                    {serviceStats.total > 0 ? Math.round(serviceStats.total / (serviceStats.total + 50) * 100) : 0}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">Atendimentos concluídos</p>
-                </CardContent>
-              </Card>
+              <div className="grid gap-1 lg:grid-cols-2">
+                <ServiceDistributionChart 
+                  queueServices={attendantStats.queueServices} 
+                  whatsappServices={attendantStats.whatsappServices} 
+                  identityServices={attendantStats.identityServices} 
+                  total={attendantStats.total} 
+                />
+                <ServiceTypeDistributionChart 
+                  serviceTypes={attendantStats.serviceTypeData} 
+                  total={attendantStats.total} 
+                />
+              </div>
 
-              <Card className="border-2 border-rose-200 bg-gradient-to-br from-rose-50/50 to-rose-100/50">
-                <CardHeader className="pb-1 pt-2 px-3">
-                  <CardTitle className="text-rose-600 text-sm">Tempo Médio</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-2">
-                  <div className="text-xl font-bold text-rose-600">15min</div>
-                  <p className="text-xs text-muted-foreground">Por atendimento</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 border-cyan-200 bg-gradient-to-br from-cyan-50/50 to-cyan-100/50">
-                <CardHeader className="pb-1 pt-2 px-3">
-                  <CardTitle className="text-cyan-600 text-sm">Pico de Demanda</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-2">
-                  <div className="text-xl font-bold text-cyan-600">14h-16h</div>
-                  <p className="text-xs text-muted-foreground">Horário de pico</p>
-                </CardContent>
-              </Card>
+              <TrendChart monthlyData={attendantStats.dailyData} />
             </div>
           </TabsContent>
         </Tabs>
