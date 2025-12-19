@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, TrendingUp, Star, Clock, Phone, UserCheck, Calendar, Target, BarChart3, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, startOfWeek, endOfWeek } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, startOfWeek, endOfWeek, subWeeks, getWeek, getYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MetricsCard from "@/components/corporate/MetricsCard";
 import SatisfactionChart from "@/components/corporate/SatisfactionChart";
@@ -104,6 +104,15 @@ export default function Corporate() {
   });
   const [weeklyDailyData, setWeeklyDailyData] = useState<MonthlyData[]>([]);
   const [weekPeriod, setWeekPeriod] = useState('');
+  const [weeklyHistoryData, setWeeklyHistoryData] = useState<MonthlyData[]>([]);
+  
+  // Estado para semana selecionada (formato: "ano-semana", ex: "2024-51")
+  const [selectedWeek, setSelectedWeek] = useState(() => {
+    const today = new Date();
+    const weekNum = getWeek(today, { weekStartsOn: 1 });
+    const year = getYear(today);
+    return `${year}-${String(weekNum).padStart(2, '0')}`;
+  });
   
   // Estados para dados mensais
   const [monthlyQueueServices, setMonthlyQueueServices] = useState(0);
@@ -162,7 +171,7 @@ export default function Corporate() {
     if (savedTargets) {
       setTargets(JSON.parse(savedTargets));
     }
-  }, [selectedMonth, selectedAttendant, selectedAttendantMonth]);
+  }, [selectedMonth, selectedAttendant, selectedAttendantMonth, selectedWeek]);
   const updateTarget = (type: 'daily' | 'monthly', value: number) => {
     const newTargets = {
       ...targets,
@@ -180,9 +189,15 @@ export default function Corporate() {
       setLoading(true);
       const today = new Date();
       
-      // Semana atual (segunda a domingo)
-      const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Segunda-feira
-      const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
+      // Semana selecionada (baseada no filtro)
+      const [selWeekYear, selWeekNum] = selectedWeek.split('-').map(Number);
+      // Calcular a data de início da semana selecionada
+      const jan1 = new Date(selWeekYear, 0, 1);
+      const daysToAdd = (selWeekNum - 1) * 7;
+      const weekDate = new Date(jan1);
+      weekDate.setDate(jan1.getDate() + daysToAdd);
+      const startOfThisWeek = startOfWeek(weekDate, { weekStartsOn: 1 }); // 1 = Segunda-feira
+      const endOfThisWeek = endOfWeek(weekDate, { weekStartsOn: 1 });
       
       // Formato do período da semana
       const weekPeriodStr = `${format(startOfThisWeek, "dd/MM", { locale: ptBR })} a ${format(endOfThisWeek, "dd/MM/yyyy", { locale: ptBR })}`;
@@ -644,7 +659,41 @@ export default function Corporate() {
       }
       setWeeklyDailyData(weeklyDailyDataArray);
 
-      // Calcular tempo médio de atendimento SEMANAL (em minutos)
+      // Buscar dados das últimas 12 semanas para o histórico
+      const weeklyHistoryArray: MonthlyData[] = [];
+      for (let i = 11; i >= 0; i--) {
+        const histWeekDate = subWeeks(startOfThisWeek, i);
+        const histStartOfWeek = startOfWeek(histWeekDate, { weekStartsOn: 1 });
+        const histEndOfWeek = endOfWeek(histWeekDate, { weekStartsOn: 1 });
+        const histWeekNum = getWeek(histStartOfWeek, { weekStartsOn: 1 });
+
+        // Buscar atendimentos da fila nesta semana
+        const { data: histQueueData } = await supabase.from('queue_customers').select('id')
+          .gte('created_at', histStartOfWeek.toISOString())
+          .lte('created_at', histEndOfWeek.toISOString());
+
+        // Buscar atendimentos do WhatsApp nesta semana
+        const { data: histWhatsappData } = await supabase.from('whatsapp_services').select('id')
+          .gte('created_at', histStartOfWeek.toISOString())
+          .lte('created_at', histEndOfWeek.toISOString());
+
+        // Buscar agendamentos de identidade nesta semana
+        const { data: histIdentityData } = await supabase.from('identity_appointments').select('id')
+          .gte('created_at', histStartOfWeek.toISOString())
+          .lte('created_at', histEndOfWeek.toISOString());
+
+        const totalWeekServices = (histQueueData?.length || 0) + (histWhatsappData?.length || 0) + (histIdentityData?.length || 0);
+        const weekLabel = `S${histWeekNum}`;
+        const weekPeriodLabel = `${format(histStartOfWeek, "dd/MM", { locale: ptBR })} a ${format(histEndOfWeek, "dd/MM", { locale: ptBR })}`;
+
+        weeklyHistoryArray.push({
+          month: weekLabel,
+          services: totalWeekServices,
+          fullMonth: weekPeriodLabel
+        });
+      }
+      setWeeklyHistoryData(weeklyHistoryArray);
+
       let weeklyTotalServiceTime = 0;
       let weeklyCompletedServices = 0;
 
@@ -1419,6 +1468,35 @@ export default function Corporate() {
 
           <TabsContent value="weekly" className="flex-1 overflow-y-auto">
             <div className="space-y-1">
+              {/* Filtro de semana */}
+              <div className="mb-2 flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground">Selecionar semana:</label>
+                <Select value={selectedWeek} onValueChange={(value) => {
+                  setSelectedWeek(value);
+                  setActiveTab('weekly');
+                }}>
+                  <SelectTrigger className="w-[280px] h-8 text-xs">
+                    <SelectValue placeholder="Selecione a semana" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 52 }, (_, i) => {
+                      const weekDate = subWeeks(new Date(), i);
+                      const weekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
+                      const weekEnd = endOfWeek(weekDate, { weekStartsOn: 1 });
+                      const weekNum = getWeek(weekStart, { weekStartsOn: 1 });
+                      const year = getYear(weekStart);
+                      const value = `${year}-${String(weekNum).padStart(2, '0')}`;
+                      const label = `Semana ${weekNum} - ${format(weekStart, "dd/MM", { locale: ptBR })} a ${format(weekEnd, "dd/MM/yyyy", { locale: ptBR })}`;
+                      return (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
                 <MetricsCard title="Atendimentos da Semana" value={serviceStats.thisWeek} icon={<Users className="h-6 w-6" />} subtitle={weekPeriod} color="blue" />
                 <MetricsCard title="Tempo Médio de Atendimento" value={weeklyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento na semana" color="green" />
@@ -1432,7 +1510,7 @@ export default function Corporate() {
                 <ServiceTypeDistributionChart serviceTypes={weeklyServiceTypeData} total={serviceStats.thisWeek} />
               </div>
 
-              <TrendChart monthlyData={weeklyDailyData} />
+              <TrendChart monthlyData={weeklyHistoryData} title="Histórico das Últimas 12 Semanas" />
             </div>
           </TabsContent>
 
