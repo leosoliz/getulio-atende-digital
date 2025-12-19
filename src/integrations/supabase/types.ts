@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -49,6 +49,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      boletins: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          mensagem: string
+          payload: Json | null
+          stop_reason: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          mensagem: string
+          payload?: Json | null
+          stop_reason: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          mensagem?: string
+          payload?: Json | null
+          stop_reason?: string
+        }
+        Relationships: []
+      }
+      cancelled_surveys: {
+        Row: {
+          attendant_id: string
+          cancelled_at: string
+          created_at: string
+          id: string
+          identity_appointment_id: string | null
+          queue_customer_id: string | null
+          whatsapp_service_id: string | null
+        }
+        Insert: {
+          attendant_id: string
+          cancelled_at?: string
+          created_at?: string
+          id?: string
+          identity_appointment_id?: string | null
+          queue_customer_id?: string | null
+          whatsapp_service_id?: string | null
+        }
+        Update: {
+          attendant_id?: string
+          cancelled_at?: string
+          created_at?: string
+          id?: string
+          identity_appointment_id?: string | null
+          queue_customer_id?: string | null
+          whatsapp_service_id?: string | null
+        }
+        Relationships: []
+      }
+      emergency_alerts: {
+        Row: {
+          affected_zones: string[] | null
+          alert_type: string
+          coordinates: Json | null
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          radius_km: number | null
+          severity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_zones?: string[] | null
+          alert_type?: string
+          coordinates?: Json | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          radius_km?: number | null
+          severity?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_zones?: string[] | null
+          alert_type?: string
+          coordinates?: Json | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          radius_km?: number | null
+          severity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       fleet_vehicles: {
         Row: {
@@ -150,6 +255,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      identity_appointments_public_backup_20251219_000000: {
+        Row: {
+          appointment_date: string | null
+          appointment_time: string | null
+          attendant_id: string | null
+          called_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_date?: string | null
+          appointment_time?: string | null
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_date?: string | null
+          appointment_time?: string | null
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       obra_vistorias: {
         Row: {
@@ -268,26 +412,32 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          employee_id: string | null
           full_name: string
           id: string
           location: string | null
           location_id: string | null
+          qr_code: string | null
           user_type: string
         }
         Insert: {
           created_at?: string | null
+          employee_id?: string | null
           full_name: string
           id: string
           location?: string | null
           location_id?: string | null
+          qr_code?: string | null
           user_type: string
         }
         Update: {
           created_at?: string | null
+          employee_id?: string | null
           full_name?: string
           id?: string
           location?: string | null
           location_id?: string | null
+          qr_code?: string | null
           user_type?: string
         }
         Relationships: [
@@ -300,11 +450,41 @@ export type Database = {
           },
         ]
       }
+      project_observations: {
+        Row: {
+          created_at: string
+          id: string
+          observation: string
+          project_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          observation: string
+          project_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          observation?: string
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           created_at: string
+          custo: number | null
+          custo_realizado_percentual: number | null
           deadline: string | null
           description: string | null
+          fiscal_obra: string | null
           id: string
           name: string
           priority: string
@@ -315,8 +495,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custo?: number | null
+          custo_realizado_percentual?: number | null
           deadline?: string | null
           description?: string | null
+          fiscal_obra?: string | null
           id?: string
           name: string
           priority?: string
@@ -327,8 +510,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custo?: number | null
+          custo_realizado_percentual?: number | null
           deadline?: string | null
           description?: string | null
+          fiscal_obra?: string | null
           id?: string
           name?: string
           priority?: string
@@ -409,6 +595,102 @@ export type Database = {
           },
         ]
       }
+      queue_customers_backup_over_4h_20251219_000000: {
+        Row: {
+          attendant_id: string | null
+          called_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string | null
+          is_priority: boolean | null
+          location_id: string | null
+          name: string | null
+          phone: string | null
+          queue_number: number | null
+          service_id: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_priority?: boolean | null
+          location_id?: string | null
+          name?: string | null
+          phone?: string | null
+          queue_number?: number | null
+          service_id?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_priority?: boolean | null
+          location_id?: string | null
+          name?: string | null
+          phone?: string | null
+          queue_number?: number | null
+          service_id?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      risk_zones: {
+        Row: {
+          coordinates: Json
+          created_at: string
+          description: string | null
+          elevation_max: number | null
+          elevation_min: number | null
+          id: string
+          is_active: boolean | null
+          last_incident_date: string | null
+          name: string
+          population_estimate: number | null
+          risk_level: string
+          updated_at: string
+          zone_type: string
+        }
+        Insert: {
+          coordinates: Json
+          created_at?: string
+          description?: string | null
+          elevation_max?: number | null
+          elevation_min?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_incident_date?: string | null
+          name: string
+          population_estimate?: number | null
+          risk_level?: string
+          updated_at?: string
+          zone_type?: string
+        }
+        Update: {
+          coordinates?: Json
+          created_at?: string
+          description?: string | null
+          elevation_max?: number | null
+          elevation_min?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_incident_date?: string | null
+          name?: string
+          population_estimate?: number | null
+          risk_level?: string
+          updated_at?: string
+          zone_type?: string
+        }
+        Relationships: []
+      }
       satisfaction_surveys: {
         Row: {
           attendant_id: string
@@ -462,6 +744,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "satisfaction_surveys_identity_appointment_id_fkey"
+            columns: ["identity_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "identity_appointments_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "satisfaction_surveys_queue_customer_id_fkey"
             columns: ["queue_customer_id"]
             isOneToOne: false
@@ -469,10 +758,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "satisfaction_surveys_queue_customer_id_fkey"
+            columns: ["queue_customer_id"]
+            isOneToOne: false
+            referencedRelation: "queue_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "satisfaction_surveys_whatsapp_service_id_fkey"
             columns: ["whatsapp_service_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_whatsapp_service_id_fkey"
+            columns: ["whatsapp_service_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_services_public"
             referencedColumns: ["id"]
           },
         ]
@@ -522,6 +825,147 @@ export type Database = {
         }
         Relationships: []
       }
+      shelters: {
+        Row: {
+          address: string
+          amenities: string[] | null
+          capacity: number | null
+          contact_person: string | null
+          created_at: string
+          description: string | null
+          elevation: number | null
+          id: string
+          is_active: boolean | null
+          latitude: number
+          longitude: number
+          max_water_level: number | null
+          name: string
+          operational_hours: string | null
+          phone: string | null
+          risk_level: string | null
+          shelter_type: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          amenities?: string[] | null
+          capacity?: number | null
+          contact_person?: string | null
+          created_at?: string
+          description?: string | null
+          elevation?: number | null
+          id?: string
+          is_active?: boolean | null
+          latitude: number
+          longitude: number
+          max_water_level?: number | null
+          name: string
+          operational_hours?: string | null
+          phone?: string | null
+          risk_level?: string | null
+          shelter_type?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          amenities?: string[] | null
+          capacity?: number | null
+          contact_person?: string | null
+          created_at?: string
+          description?: string | null
+          elevation?: number | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number
+          longitude?: number
+          max_water_level?: number | null
+          name?: string
+          operational_hours?: string | null
+          phone?: string | null
+          risk_level?: string | null
+          shelter_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stations_history: {
+        Row: {
+          atm_pressure: number | null
+          created_at: string
+          feels_like: number | null
+          humidity: number | null
+          id: number
+          rainfall_12h: number | null
+          rainfall_168h: number | null
+          rainfall_1h: number | null
+          rainfall_24h: number | null
+          rainfall_3h: number | null
+          rainfall_48h: number | null
+          rainfall_6h: number | null
+          rainfall_72h: number | null
+          rainfall_96h: number | null
+          river_level: number | null
+          solar_radiation: number | null
+          sta_code: string | null
+          sta_name: string | null
+          sta_timestamp: string | null
+          temperature: number | null
+          wind_direction: number | null
+          wind_guts: number | null
+          wind_speed: number | null
+        }
+        Insert: {
+          atm_pressure?: number | null
+          created_at?: string
+          feels_like?: number | null
+          humidity?: number | null
+          id?: number
+          rainfall_12h?: number | null
+          rainfall_168h?: number | null
+          rainfall_1h?: number | null
+          rainfall_24h?: number | null
+          rainfall_3h?: number | null
+          rainfall_48h?: number | null
+          rainfall_6h?: number | null
+          rainfall_72h?: number | null
+          rainfall_96h?: number | null
+          river_level?: number | null
+          solar_radiation?: number | null
+          sta_code?: string | null
+          sta_name?: string | null
+          sta_timestamp?: string | null
+          temperature?: number | null
+          wind_direction?: number | null
+          wind_guts?: number | null
+          wind_speed?: number | null
+        }
+        Update: {
+          atm_pressure?: number | null
+          created_at?: string
+          feels_like?: number | null
+          humidity?: number | null
+          id?: number
+          rainfall_12h?: number | null
+          rainfall_168h?: number | null
+          rainfall_1h?: number | null
+          rainfall_24h?: number | null
+          rainfall_3h?: number | null
+          rainfall_48h?: number | null
+          rainfall_6h?: number | null
+          rainfall_72h?: number | null
+          rainfall_96h?: number | null
+          river_level?: number | null
+          solar_radiation?: number | null
+          sta_code?: string | null
+          sta_name?: string | null
+          sta_timestamp?: string | null
+          temperature?: number | null
+          wind_direction?: number | null
+          wind_guts?: number | null
+          wind_speed?: number | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -532,6 +976,7 @@ export type Database = {
           id: string
           priority: string
           project_id: string
+          project_phase: string | null
           status: string
           title: string
           updated_at: string
@@ -546,6 +991,7 @@ export type Database = {
           id?: string
           priority?: string
           project_id: string
+          project_phase?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -560,6 +1006,7 @@ export type Database = {
           id?: string
           priority?: string
           project_id?: string
+          project_phase?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -611,6 +1058,44 @@ export type Database = {
         }
         Relationships: []
       }
+      time_records: {
+        Row: {
+          created_at: string | null
+          id: string
+          location: Json | null
+          notes: string | null
+          record_type: string
+          timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          record_type: string
+          timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          record_type?: string
+          timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           created_at: string
@@ -644,6 +1129,48 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string
+          employee_id: string
+          full_name: string
+          id: string
+          is_active: boolean | null
+          position: string | null
+          qr_code: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email: string
+          employee_id: string
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          position?: string | null
+          qr_code: string
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          employee_id?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          position?: string | null
+          qr_code?: string
+          role?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -762,6 +1289,83 @@ export type Database = {
           },
         ]
       }
+      waypoint_sessions: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          prefix: string
+          started_at: string
+          total_waypoints: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          prefix: string
+          started_at?: string
+          total_waypoints?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          prefix?: string
+          started_at?: string
+          total_waypoints?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      waypoints: {
+        Row: {
+          accuracy: number | null
+          captured_at: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          sequence_number: number
+          session_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          captured_at?: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          sequence_number: number
+          session_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          captured_at?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          sequence_number?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waypoints_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "waypoint_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_services: {
         Row: {
           attendant_id: string
@@ -809,40 +1413,181 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      identity_appointments_public: {
+        Row: {
+          appointment_date: string | null
+          appointment_time: string | null
+          attendant_id: string | null
+          called_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_date?: string | null
+          appointment_time?: string | null
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_date?: string | null
+          appointment_time?: string | null
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_appointments_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queue_public: {
+        Row: {
+          attendant_id: string | null
+          called_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string | null
+          is_priority: boolean | null
+          location_id: string | null
+          queue_number: number | null
+          service_id: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_priority?: boolean | null
+          location_id?: string | null
+          queue_number?: number | null
+          service_id?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          attendant_id?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_priority?: boolean | null
+          location_id?: string | null
+          queue_number?: number | null
+          service_id?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_customers_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_customers_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "service_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_customers_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_services_public: {
+        Row: {
+          attendant_id: string | null
+          created_at: string | null
+          id: string | null
+          service_id: string | null
+        }
+        Insert: {
+          attendant_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          service_id?: string | null
+        }
+        Update: {
+          attendant_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          service_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_services_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_update_user_type: {
-        Args: { target_user_id: string; new_user_type: string }
+        Args: { new_user_type: string; target_user_id: string }
         Returns: boolean
       }
-      check_survey_rate_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_next_queue_number: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      check_survey_rate_limit: { Args: never; Returns: boolean }
+      generate_unique_qr_code: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
+      get_next_queue_number: { Args: never; Returns: number }
       get_next_queue_number_by_location: {
         Args: { location_uuid?: string }
         Returns: number
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
+      is_admin: { Args: never; Returns: boolean }
+      is_attendant_or_admin: { Args: never; Returns: boolean }
+      is_receptionist_or_admin: { Args: never; Returns: boolean }
+      lookup_profile_by_qr_code: {
+        Args: { qr_code_input: string }
+        Returns: {
+          full_name: string
+          id: string
+          user_type: string
+        }[]
       }
-      is_attendant_or_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_receptionist_or_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
+      register_time_record: {
+        Args: { p_location?: Json; p_notes?: string; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {
