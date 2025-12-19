@@ -66,26 +66,29 @@ export default function ServiceTypeDistributionChart({
       </CardHeader>
       <CardContent className="px-2 pb-1.5">
         {displayData.length > 0 ? (
-          <div className="h-52">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={displayData}
                 layout="vertical"
-                margin={{ top: 0, right: 30, left: 5, bottom: 0 }}
+                margin={{ top: 5, right: 40, left: 10, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 8 }} />
+                <XAxis type="number" tick={{ fontSize: 9 }} />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={80}
-                  tick={{ fontSize: 8 }}
+                  width={120}
+                  tick={{ fontSize: 9 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
                 />
                 <Tooltip 
                   formatter={(value: number) => [`${value} atendimentos`, 'Quantidade']}
                   labelStyle={{ fontWeight: 'bold' }}
                 />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} label={renderCustomLabel}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} label={renderCustomLabel} barSize={18}>
                   {displayData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
