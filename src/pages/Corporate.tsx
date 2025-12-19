@@ -154,6 +154,30 @@ export default function Corporate() {
       const startOfThisMonth = startOfMonth(today);
       const endOfThisMonth = endOfMonth(today);
 
+      // Para agendamentos: tempo de espera = called_at - (called_at::date + appointment_time)
+      const getIdentityWaitTimeMs = (appointment: {
+        called_at?: string | null;
+        appointment_time?: string | null;
+      }) => {
+        if (!appointment?.called_at || !appointment?.appointment_time) return null;
+
+        const calledAt = new Date(appointment.called_at);
+        if (Number.isNaN(calledAt.getTime())) return null;
+
+        const [hoursRaw, minutesRaw, secondsRaw] = appointment.appointment_time.split(':');
+        const hours = Number(hoursRaw);
+        const minutes = Number(minutesRaw);
+        const seconds = Number(secondsRaw ?? 0);
+
+        if (Number.isNaN(hours) || Number.isNaN(minutes) || Number.isNaN(seconds)) return null;
+
+        const scheduledAt = new Date(calledAt);
+        scheduledAt.setHours(hours, minutes, seconds, 0);
+
+        return calledAt.getTime() - scheduledAt.getTime();
+      };
+
+
       // Buscar dados da fila normal
       const {
         data: queueData
@@ -259,17 +283,13 @@ export default function Corporate() {
         }
       });
 
-      // Calcular tempo de espera dos agendamentos
-      identityData?.forEach(appointment => {
-        if (appointment.created_at && appointment.called_at) {
-          const createdTime = new Date(appointment.created_at).getTime();
-          const calledTime = new Date(appointment.called_at).getTime();
-          const waitTime = calledTime - createdTime;
-          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
-          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
-            totalWaitTime += waitTime;
-            waitingCustomers++;
-          }
+      // Calcular tempo de espera dos agendamentos (chamado_at - horário agendado)
+      identityData?.forEach((appointment: any) => {
+        const waitTime = getIdentityWaitTimeMs(appointment);
+        // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+        if (waitTime !== null && waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+          totalWaitTime += waitTime;
+          waitingCustomers++;
         }
       });
       const averageWaitTimeMinutes = waitingCustomers > 0 ? Math.round(totalWaitTime / waitingCustomers / 1000 / 60) : 0;
@@ -630,17 +650,13 @@ export default function Corporate() {
         }
       });
 
-      // Calcular tempo de espera dos agendamentos de hoje
-      identityCalledTodayData?.forEach(appointment => {
-        if (appointment.created_at && appointment.called_at) {
-          const createdTime = new Date(appointment.created_at).getTime();
-          const calledTime = new Date(appointment.called_at).getTime();
-          const waitTime = calledTime - createdTime;
-          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
-          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
-            dailyTotalWaitTime += waitTime;
-            dailyWaitingCustomers++;
-          }
+      // Calcular tempo de espera dos agendamentos de hoje (chamado_at - horário agendado)
+      identityCalledTodayData?.forEach((appointment: any) => {
+        const waitTime = getIdentityWaitTimeMs(appointment);
+        // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+        if (waitTime !== null && waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+          dailyTotalWaitTime += waitTime;
+          dailyWaitingCustomers++;
         }
       });
       
@@ -814,17 +830,13 @@ export default function Corporate() {
         }
       });
 
-      // Calcular tempo de espera dos agendamentos do mês selecionado
-      identityCalledSelectedMonthData?.forEach(appointment => {
-        if (appointment.created_at && appointment.called_at) {
-          const createdTime = new Date(appointment.created_at).getTime();
-          const calledTime = new Date(appointment.called_at).getTime();
-          const waitTime = calledTime - createdTime;
-          // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
-          if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
-            monthlyTotalWaitTime += waitTime;
-            monthlyWaitingCustomers++;
-          }
+      // Calcular tempo de espera dos agendamentos do mês selecionado (chamado_at - horário agendado)
+      identityCalledSelectedMonthData?.forEach((appointment: any) => {
+        const waitTime = getIdentityWaitTimeMs(appointment);
+        // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
+        if (waitTime !== null && waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
+          monthlyTotalWaitTime += waitTime;
+          monthlyWaitingCustomers++;
         }
       });
       
