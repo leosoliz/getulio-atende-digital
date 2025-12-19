@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, TrendingUp, Star, Clock, Phone, UserCheck, Calendar, Target, BarChart3, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MetricsCard from "@/components/corporate/MetricsCard";
 import SatisfactionChart from "@/components/corporate/SatisfactionChart";
@@ -14,7 +14,7 @@ import ServiceTypeDistributionChart from "@/components/corporate/ServiceTypeDist
 import TrendChart from "@/components/corporate/TrendChart";
 interface ServiceStats {
   total: number;
-  today: number;
+  thisWeek: number;
   thisMonth: number;
   queueServices: number;
   whatsappServices: number;
@@ -70,7 +70,7 @@ interface AttendantStats {
 export default function Corporate() {
   const [serviceStats, setServiceStats] = useState<ServiceStats>({
     total: 0,
-    today: 0,
+    thisWeek: 0,
     thisMonth: 0,
     queueServices: 0,
     whatsappServices: 0,
@@ -88,21 +88,22 @@ export default function Corporate() {
     monthly: 3000
   });
   const [serviceTypeData, setServiceTypeData] = useState<ServiceTypeData[]>([]);
-  const [dailyServiceTypeData, setDailyServiceTypeData] = useState<ServiceTypeData[]>([]);
+  const [weeklyServiceTypeData, setWeeklyServiceTypeData] = useState<ServiceTypeData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [attendantData, setAttendantData] = useState<AttendantData[]>([]);
-  const [dailyAttendantData, setDailyAttendantData] = useState<AttendantData[]>([]);
-  const [dailyQueueServices, setDailyQueueServices] = useState(0);
-  const [dailyWhatsappServices, setDailyWhatsappServices] = useState(0);
-  const [dailyIdentityServices, setDailyIdentityServices] = useState(0);
-  const [dailyAverageServiceTime, setDailyAverageServiceTime] = useState(0);
-  const [dailyAverageWaitTime, setDailyAverageWaitTime] = useState(0);
-  const [dailySatisfactionStats, setDailySatisfactionStats] = useState<SatisfactionStats>({
+  const [weeklyAttendantData, setWeeklyAttendantData] = useState<AttendantData[]>([]);
+  const [weeklyQueueServices, setWeeklyQueueServices] = useState(0);
+  const [weeklyWhatsappServices, setWeeklyWhatsappServices] = useState(0);
+  const [weeklyIdentityServices, setWeeklyIdentityServices] = useState(0);
+  const [weeklyAverageServiceTime, setWeeklyAverageServiceTime] = useState(0);
+  const [weeklyAverageWaitTime, setWeeklyAverageWaitTime] = useState(0);
+  const [weeklySatisfactionStats, setWeeklySatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
     averageRating: 0,
     ratingDistribution: {}
   });
-  const [hourlyData, setHourlyData] = useState<MonthlyData[]>([]);
+  const [weeklyDailyData, setWeeklyDailyData] = useState<MonthlyData[]>([]);
+  const [weekPeriod, setWeekPeriod] = useState('');
   
   // Estados para dados mensais
   const [monthlyQueueServices, setMonthlyQueueServices] = useState(0);
@@ -178,8 +179,14 @@ export default function Corporate() {
     try {
       setLoading(true);
       const today = new Date();
-      const startOfToday = startOfDay(today);
-      const endOfToday = endOfDay(today);
+      
+      // Semana atual (segunda a domingo)
+      const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Segunda-feira
+      const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
+      
+      // Formato do período da semana
+      const weekPeriodStr = `${format(startOfThisWeek, "dd/MM", { locale: ptBR })} a ${format(endOfThisWeek, "dd/MM/yyyy", { locale: ptBR })}`;
+      setWeekPeriod(weekPeriodStr);
       
       // Usar o mês selecionado para cálculos mensais
       const [selectedYear, selectedMonthNum] = selectedMonth.split('-').map(Number);
@@ -219,8 +226,8 @@ export default function Corporate() {
         data: queueData
       } = await supabase.from('queue_customers').select('*');
       const {
-        data: queueTodayData
-      } = await supabase.from('queue_customers').select('*').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+        data: queueWeekData
+      } = await supabase.from('queue_customers').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
       // Buscar dados do mês atual para estatísticas gerais
       const {
         data: queueMonthData
@@ -236,8 +243,8 @@ export default function Corporate() {
         data: whatsappData
       } = await supabase.from('whatsapp_services').select('*');
       const {
-        data: whatsappTodayData
-      } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+        data: whatsappWeekData
+      } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
       // Buscar dados do mês atual para estatísticas gerais
       const {
         data: whatsappMonthData
@@ -253,8 +260,8 @@ export default function Corporate() {
         data: identityData
       } = await supabase.from('identity_appointments').select('*');
       const {
-        data: identityTodayData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+        data: identityWeekData
+      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
       // Buscar dados do mês atual para estatísticas gerais
       const {
         data: identityMonthData
@@ -269,9 +276,9 @@ export default function Corporate() {
       const queueCount = queueData?.length || 0;
       const whatsappCount = whatsappData?.length || 0;
       const identityCount = identityData?.length || 0;
-      const queueTodayCount = queueTodayData?.length || 0;
-      const whatsappTodayCount = whatsappTodayData?.length || 0;
-      const identityTodayCount = identityTodayData?.length || 0;
+      const queueWeekCount = queueWeekData?.length || 0;
+      const whatsappWeekCount = whatsappWeekData?.length || 0;
+      const identityWeekCount = identityWeekData?.length || 0;
       const queueMonthCount = queueMonthData?.length || 0;
       const whatsappMonthCount = whatsappMonthData?.length || 0;
       const identityMonthCount = identityMonthData?.length || 0;
@@ -331,7 +338,7 @@ export default function Corporate() {
       const averageWaitTimeMinutes = waitingCustomers > 0 ? Math.round(totalWaitTime / waitingCustomers / 1000 / 60) : 0;
       setServiceStats({
         total: queueCount + whatsappCount + identityCount,
-        today: queueTodayCount + whatsappTodayCount + identityTodayCount,
+        thisWeek: queueWeekCount + whatsappWeekCount + identityWeekCount,
         thisMonth: queueMonthCount + whatsappMonthCount + identityMonthCount,
         queueServices: queueCount,
         whatsappServices: whatsappCount,
@@ -504,79 +511,79 @@ export default function Corporate() {
       attendantOptions.sort((a, b) => a.name.localeCompare(b.name));
       setAttendantList(attendantOptions);
 
-      // === DADOS DIÁRIOS ===
-      // Buscar atendimentos de hoje para distribuição por tipo de serviço
-      const dailyServiceTypeDistribution: { [key: string]: number } = {};
+      // === DADOS SEMANAIS ===
+      // Buscar atendimentos da semana para distribuição por tipo de serviço
+      const weeklyServiceTypeDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos de hoje por service_id da fila
-      queueTodayData?.forEach(service => {
+      // Contar atendimentos da semana por service_id da fila
+      queueWeekData?.forEach(service => {
         const serviceId = service.service_id;
-        dailyServiceTypeDistribution[serviceId] = (dailyServiceTypeDistribution[serviceId] || 0) + 1;
+        weeklyServiceTypeDistribution[serviceId] = (weeklyServiceTypeDistribution[serviceId] || 0) + 1;
       });
 
-      // Contar atendimentos de hoje por service_id do WhatsApp
-      whatsappTodayData?.forEach(service => {
+      // Contar atendimentos da semana por service_id do WhatsApp
+      whatsappWeekData?.forEach(service => {
         const serviceId = service.service_id;
-        dailyServiceTypeDistribution[serviceId] = (dailyServiceTypeDistribution[serviceId] || 0) + 1;
+        weeklyServiceTypeDistribution[serviceId] = (weeklyServiceTypeDistribution[serviceId] || 0) + 1;
       });
 
-      // Agendamentos de identidade de hoje
-      const dailyIdentityAppointmentsCount = identityTodayData?.length || 0;
-      if (dailyIdentityAppointmentsCount > 0) {
-        dailyServiceTypeDistribution['identity'] = dailyIdentityAppointmentsCount;
+      // Agendamentos de identidade da semana
+      const weeklyIdentityAppointmentsCount = identityWeekData?.length || 0;
+      if (weeklyIdentityAppointmentsCount > 0) {
+        weeklyServiceTypeDistribution['identity'] = weeklyIdentityAppointmentsCount;
       }
 
       // Mapear para o formato do componente
-      const totalDailyServices = Object.values(dailyServiceTypeDistribution).reduce((a, b) => a + b, 0);
-      const dailyServiceTypesArray: ServiceTypeData[] = [];
+      const totalWeeklyServices = Object.values(weeklyServiceTypeDistribution).reduce((a, b) => a + b, 0);
+      const weeklyServiceTypesArray: ServiceTypeData[] = [];
 
       // Adicionar serviços regulares
-      Object.entries(dailyServiceTypeDistribution).forEach(([serviceId, count], index) => {
+      Object.entries(weeklyServiceTypeDistribution).forEach(([serviceId, count], index) => {
         if (serviceId === 'identity') {
-          dailyServiceTypesArray.push({
+          weeklyServiceTypesArray.push({
             name: 'Agendamento de Identidade',
             value: count,
-            percentage: totalDailyServices > 0 ? Math.round(count / totalDailyServices * 100) : 0,
+            percentage: totalWeeklyServices > 0 ? Math.round(count / totalWeeklyServices * 100) : 0,
             color: COLORS[index % COLORS.length]
           });
         } else {
           const serviceName = servicesData?.find(s => s.id === serviceId)?.name || 'Serviço não identificado';
-          dailyServiceTypesArray.push({
+          weeklyServiceTypesArray.push({
             name: serviceName,
             value: count,
-            percentage: totalDailyServices > 0 ? Math.round(count / totalDailyServices * 100) : 0,
+            percentage: totalWeeklyServices > 0 ? Math.round(count / totalWeeklyServices * 100) : 0,
             color: COLORS[index % COLORS.length]
           });
         }
       });
 
       // Ordenar por quantidade (decrescente)
-      dailyServiceTypesArray.sort((a, b) => b.value - a.value);
-      setDailyServiceTypeData(dailyServiceTypesArray);
+      weeklyServiceTypesArray.sort((a, b) => b.value - a.value);
+      setWeeklyServiceTypeData(weeklyServiceTypesArray);
 
-      // Distribuição por atendente de hoje
-      const dailyAttendantDistribution: { [key: string]: number } = {};
+      // Distribuição por atendente da semana
+      const weeklyAttendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos de hoje por attendant_id da fila
-      queueTodayData?.forEach(service => {
+      // Contar atendimentos da semana por attendant_id da fila
+      queueWeekData?.forEach(service => {
         const key = service.attendant_id || 'no_attendant';
-        dailyAttendantDistribution[key] = (dailyAttendantDistribution[key] || 0) + 1;
+        weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos de hoje por attendant_id do WhatsApp
-      whatsappTodayData?.forEach(service => {
+      // Contar atendimentos da semana por attendant_id do WhatsApp
+      whatsappWeekData?.forEach(service => {
         const key = service.attendant_id || 'no_attendant';
-        dailyAttendantDistribution[key] = (dailyAttendantDistribution[key] || 0) + 1;
+        weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos de hoje por attendant_id dos agendamentos de identidade
-      identityTodayData?.forEach(appointment => {
+      // Contar atendimentos da semana por attendant_id dos agendamentos de identidade
+      identityWeekData?.forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
-        dailyAttendantDistribution[key] = (dailyAttendantDistribution[key] || 0) + 1;
+        weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
 
       // Mapear para o formato do componente
-      const dailyAttendantsArray: AttendantData[] = Object.entries(dailyAttendantDistribution).map(([attendantId, count], index) => {
+      const weeklyAttendantsArray: AttendantData[] = Object.entries(weeklyAttendantDistribution).map(([attendantId, count], index) => {
         let attendantName: string;
         if (attendantId === 'no_attendant') {
           attendantName = 'Sem atendente';
@@ -591,128 +598,130 @@ export default function Corporate() {
       });
 
       // Ordenar por quantidade (decrescente)
-      dailyAttendantsArray.sort((a, b) => b.value - a.value);
-      setDailyAttendantData(dailyAttendantsArray);
+      weeklyAttendantsArray.sort((a, b) => b.value - a.value);
+      setWeeklyAttendantData(weeklyAttendantsArray);
 
-      // Armazenar contagens de serviços diários
-      setDailyQueueServices(queueTodayCount);
-      setDailyWhatsappServices(whatsappTodayCount);
-      setDailyIdentityServices(identityTodayCount);
+      // Armazenar contagens de serviços semanais
+      setWeeklyQueueServices(queueWeekCount);
+      setWeeklyWhatsappServices(whatsappWeekCount);
+      setWeeklyIdentityServices(identityWeekCount);
 
-      // Buscar dados por hora do dia atual (06h às 18h)
-      const hourlyDataArray: MonthlyData[] = [];
-      for (let hour = 6; hour <= 18; hour++) {
-        const startHour = new Date(today);
-        startHour.setHours(hour, 0, 0, 0);
-        const endHour = new Date(today);
-        endHour.setHours(hour, 59, 59, 999);
+      // Buscar dados por dia da semana atual (Segunda a Domingo)
+      const weeklyDailyDataArray: MonthlyData[] = [];
+      const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+      
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const dayDate = new Date(startOfThisWeek);
+        dayDate.setDate(dayDate.getDate() + dayOffset);
+        const startOfDayDate = startOfDay(dayDate);
+        const endOfDayDate = endOfDay(dayDate);
 
-        // Contar atendimentos da fila nesta hora
-        const hourQueueCount = queueTodayData?.filter(service => {
+        // Contar atendimentos da fila neste dia
+        const dayQueueCount = queueWeekData?.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startHour && serviceTime <= endHour;
+          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
-        // Contar atendimentos do WhatsApp nesta hora
-        const hourWhatsappCount = whatsappTodayData?.filter(service => {
+        // Contar atendimentos do WhatsApp neste dia
+        const dayWhatsappCount = whatsappWeekData?.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startHour && serviceTime <= endHour;
+          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
-        // Contar agendamentos de identidade nesta hora
-        const hourIdentityCount = identityTodayData?.filter(appointment => {
+        // Contar agendamentos de identidade neste dia
+        const dayIdentityCount = identityWeekData?.filter(appointment => {
           const appointmentTime = new Date(appointment.created_at);
-          return appointmentTime >= startHour && appointmentTime <= endHour;
+          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
         }).length || 0;
 
-        const totalHourServices = hourQueueCount + hourWhatsappCount + hourIdentityCount;
+        const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
 
-        hourlyDataArray.push({
-          month: `${hour.toString().padStart(2, '0')}:00`,
-          services: totalHourServices,
-          fullMonth: `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:59`
+        weeklyDailyDataArray.push({
+          month: dayNames[dayOffset],
+          services: totalDayServices,
+          fullMonth: format(dayDate, "EEEE, dd/MM", { locale: ptBR })
         });
       }
-      setHourlyData(hourlyDataArray);
+      setWeeklyDailyData(weeklyDailyDataArray);
 
-      // Calcular tempo médio de atendimento DIÁRIO (em minutos)
-      let dailyTotalServiceTime = 0;
-      let dailyCompletedServices = 0;
+      // Calcular tempo médio de atendimento SEMANAL (em minutos)
+      let weeklyTotalServiceTime = 0;
+      let weeklyCompletedServices = 0;
 
-      // Calcular tempo da fila presencial de hoje
-      queueTodayData?.forEach(service => {
+      // Calcular tempo da fila presencial da semana
+      queueWeekData?.forEach(service => {
         if (service.started_at && service.completed_at) {
           const startTime = new Date(service.started_at).getTime();
           const endTime = new Date(service.completed_at).getTime();
-          dailyTotalServiceTime += endTime - startTime;
-          dailyCompletedServices++;
+          weeklyTotalServiceTime += endTime - startTime;
+          weeklyCompletedServices++;
         }
       });
 
-      // Calcular tempo dos agendamentos de identidade de hoje
-      identityTodayData?.forEach(appointment => {
+      // Calcular tempo dos agendamentos de identidade da semana
+      identityWeekData?.forEach(appointment => {
         if (appointment.started_at && appointment.completed_at) {
           const startTime = new Date(appointment.started_at).getTime();
           const endTime = new Date(appointment.completed_at).getTime();
-          dailyTotalServiceTime += endTime - startTime;
-          dailyCompletedServices++;
+          weeklyTotalServiceTime += endTime - startTime;
+          weeklyCompletedServices++;
         }
       });
-      const dailyAverageServiceTimeMinutes = dailyCompletedServices > 0 ? Math.round(dailyTotalServiceTime / dailyCompletedServices / 1000 / 60) : 0;
-      setDailyAverageServiceTime(dailyAverageServiceTimeMinutes);
+      const weeklyAverageServiceTimeMinutes = weeklyCompletedServices > 0 ? Math.round(weeklyTotalServiceTime / weeklyCompletedServices / 1000 / 60) : 0;
+      setWeeklyAverageServiceTime(weeklyAverageServiceTimeMinutes);
 
-      // Calcular tempo médio de espera DIÁRIO (em minutos)
-      // Buscar atendimentos chamados hoje
-      const { data: queueCalledTodayData } = await supabase
+      // Calcular tempo médio de espera SEMANAL (em minutos)
+      // Buscar atendimentos chamados na semana
+      const { data: queueCalledWeekData } = await supabase
         .from('queue_customers')
         .select('*')
-        .gte('called_at', startOfToday.toISOString())
-        .lte('called_at', endOfToday.toISOString())
+        .gte('called_at', startOfThisWeek.toISOString())
+        .lte('called_at', endOfThisWeek.toISOString())
         .not('created_at', 'is', null);
 
-      const { data: identityCalledTodayData } = await supabase
+      const { data: identityCalledWeekData } = await supabase
         .from('identity_appointments')
         .select('*')
-        .gte('called_at', startOfToday.toISOString())
-        .lte('called_at', endOfToday.toISOString())
+        .gte('called_at', startOfThisWeek.toISOString())
+        .lte('called_at', endOfThisWeek.toISOString())
         .not('created_at', 'is', null);
 
-      let dailyTotalWaitTime = 0;
-      let dailyWaitingCustomers = 0;
+      let weeklyTotalWaitTime = 0;
+      let weeklyWaitingCustomers = 0;
 
-      // Calcular tempo de espera da fila presencial de hoje
-      queueCalledTodayData?.forEach(service => {
+      // Calcular tempo de espera da fila presencial da semana
+      queueCalledWeekData?.forEach(service => {
         if (service.created_at && service.called_at) {
           const createdTime = new Date(service.created_at).getTime();
           const calledTime = new Date(service.called_at).getTime();
           const waitTime = calledTime - createdTime;
           // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
           if (waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
-            dailyTotalWaitTime += waitTime;
-            dailyWaitingCustomers++;
+            weeklyTotalWaitTime += waitTime;
+            weeklyWaitingCustomers++;
           }
         }
       });
 
-      // Calcular tempo de espera dos agendamentos de hoje (chamado_at - horário agendado)
-      identityCalledTodayData?.forEach((appointment: any) => {
+      // Calcular tempo de espera dos agendamentos da semana (chamado_at - horário agendado)
+      identityCalledWeekData?.forEach((appointment: any) => {
         const waitTime = getIdentityWaitTimeMs(appointment);
         // Apenas considerar tempos de espera razoáveis (menos de 4 horas)
         if (waitTime !== null && waitTime > 0 && waitTime < 4 * 60 * 60 * 1000) {
-          dailyTotalWaitTime += waitTime;
-          dailyWaitingCustomers++;
+          weeklyTotalWaitTime += waitTime;
+          weeklyWaitingCustomers++;
         }
       });
       
-      const dailyAverageWaitTimeMinutes = dailyWaitingCustomers > 0 ? Math.round(dailyTotalWaitTime / dailyWaitingCustomers / 1000 / 60) : 0;
+      const weeklyAverageWaitTimeMinutes = weeklyWaitingCustomers > 0 ? Math.round(weeklyTotalWaitTime / weeklyWaitingCustomers / 1000 / 60) : 0;
       
-      console.log('Tempo de espera diário:', {
-        totalWaitTime: dailyTotalWaitTime,
-        waitingCustomers: dailyWaitingCustomers,
-        averageMinutes: dailyAverageWaitTimeMinutes
+      console.log('Tempo de espera semanal:', {
+        totalWaitTime: weeklyTotalWaitTime,
+        waitingCustomers: weeklyWaitingCustomers,
+        averageMinutes: weeklyAverageWaitTimeMinutes
       });
       
-      setDailyAverageWaitTime(dailyAverageWaitTimeMinutes);
+      setWeeklyAverageWaitTime(weeklyAverageWaitTimeMinutes);
 
       // === DADOS MENSAIS (MÊS SELECIONADO) ===
       const queueSelectedMonthCount = queueSelectedMonthData?.length || 0;
@@ -1031,12 +1040,12 @@ export default function Corporate() {
         });
       }
 
-      // Buscar dados de satisfação DIÁRIA
+      // Buscar dados de satisfação SEMANAL
       const {
-        data: dailySatisfactionData
-      } = await supabase.from('satisfaction_surveys').select('overall_rating, problem_resolved').gte('created_at', startOfToday.toISOString()).lte('created_at', endOfToday.toISOString());
+        data: weeklySatisfactionData
+      } = await supabase.from('satisfaction_surveys').select('overall_rating, problem_resolved').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
       
-      if (dailySatisfactionData && dailySatisfactionData.length > 0) {
+      if (weeklySatisfactionData && weeklySatisfactionData.length > 0) {
         // Mapear valores de avaliação (normalizado para 0-100)
         const ratingValues: {
           [key: string]: number;
@@ -1061,7 +1070,7 @@ export default function Corporate() {
         // Calcular score ponderado: 70% avaliação geral + 30% resolução de problema
         let totalScore = 0;
         let validSurveys = 0;
-        dailySatisfactionData.forEach(survey => {
+        weeklySatisfactionData.forEach(survey => {
           const ratingScore = ratingValues[survey.overall_rating?.toLowerCase()] ?? 0;
           const resolvedScore = resolvedValues[survey.problem_resolved?.toLowerCase()] ?? 0;
 
@@ -1070,18 +1079,18 @@ export default function Corporate() {
           totalScore += satisfactionScore;
           validSurveys++;
         });
-        const dailyAverageRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
-        const dailyDistribution = dailySatisfactionData.reduce((acc, survey) => {
+        const weeklyAverageRating = validSurveys > 0 ? totalScore / validSurveys / 20 : 0;
+        const weeklyDistribution = weeklySatisfactionData.reduce((acc, survey) => {
           const rating = survey.overall_rating || 'sem avaliação';
           acc[rating] = (acc[rating] || 0) + 1;
           return acc;
         }, {} as {
           [key: string]: number;
         });
-        setDailySatisfactionStats({
-          totalSurveys: dailySatisfactionData.length,
-          averageRating: dailyAverageRating,
-          ratingDistribution: dailyDistribution
+        setWeeklySatisfactionStats({
+          totalSurveys: weeklySatisfactionData.length,
+          averageRating: weeklyAverageRating,
+          ratingDistribution: weeklyDistribution
         });
       }
 
@@ -1375,9 +1384,9 @@ export default function Corporate() {
               <BarChart3 className="h-3 w-3" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="daily" className="flex items-center gap-1 text-xs py-1">
+            <TabsTrigger value="weekly" className="flex items-center gap-1 text-xs py-1">
               <CalendarDays className="h-3 w-3" />
-              Diário
+              Semanal
             </TabsTrigger>
             <TabsTrigger value="monthly" className="flex items-center gap-1 text-xs py-1">
               <TrendingUp className="h-3 w-3" />
@@ -1408,24 +1417,22 @@ export default function Corporate() {
             </div>
           </TabsContent>
 
-          <TabsContent value="daily" className="flex-1 overflow-y-auto">
+          <TabsContent value="weekly" className="flex-1 overflow-y-auto">
             <div className="space-y-1">
               <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
-                <MetricsCard title="Atendimentos Hoje" value={serviceStats.today} icon={<Users className="h-6 w-6" />} subtitle={format(new Date(), "dd 'de' MMMM 'de' yyyy", {
-                  locale: ptBR
-                })} color="blue" />
-                <MetricsCard title="Tempo Médio de Atendimento" value={dailyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento hoje" color="green" />
-                <MetricsCard title="Tempo Médio de Espera" value={dailyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado hoje" color="purple" />
-                <MetricsCard title="Satisfação Hoje" value={Math.round(dailySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${dailySatisfactionStats.totalSurveys} avaliações hoje`} color="orange" isPercentage={true} />
+                <MetricsCard title="Atendimentos da Semana" value={serviceStats.thisWeek} icon={<Users className="h-6 w-6" />} subtitle={weekPeriod} color="blue" />
+                <MetricsCard title="Tempo Médio de Atendimento" value={weeklyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento na semana" color="green" />
+                <MetricsCard title="Tempo Médio de Espera" value={weeklyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado na semana" color="purple" />
+                <MetricsCard title="Satisfação da Semana" value={Math.round(weeklySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${weeklySatisfactionStats.totalSurveys} avaliações na semana`} color="orange" isPercentage={true} />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
-                <SatisfactionChart attendants={dailyAttendantData} total={serviceStats.today} />
-                <ServiceDistributionChart queueServices={dailyQueueServices} whatsappServices={dailyWhatsappServices} identityServices={dailyIdentityServices} total={serviceStats.today} />
-                <ServiceTypeDistributionChart serviceTypes={dailyServiceTypeData} total={serviceStats.today} />
+                <SatisfactionChart attendants={weeklyAttendantData} total={serviceStats.thisWeek} />
+                <ServiceDistributionChart queueServices={weeklyQueueServices} whatsappServices={weeklyWhatsappServices} identityServices={weeklyIdentityServices} total={serviceStats.thisWeek} />
+                <ServiceTypeDistributionChart serviceTypes={weeklyServiceTypeData} total={serviceStats.thisWeek} />
               </div>
 
-              <TrendChart monthlyData={hourlyData} />
+              <TrendChart monthlyData={weeklyDailyData} />
             </div>
           </TabsContent>
 
