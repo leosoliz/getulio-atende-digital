@@ -78,11 +78,12 @@ export default function ServiceTypeDistributionChart({
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={120}
-                  tick={{ fontSize: 9 }}
+                  width={140}
+                  tick={{ fontSize: 9, dx: -5 }}
                   tickLine={false}
                   axisLine={false}
                   interval={0}
+                  tickMargin={10}
                 />
                 <Tooltip 
                   formatter={(value: number) => [`${value} atendimentos`, 'Quantidade']}
