@@ -130,97 +130,42 @@ const Admin: React.FC = () => {
     setLoading(true);
 
     try {
-      if (editingUser) {
-        // Atualizar usuário existente
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            full_name: formData.full_name,
-            user_type: formData.user_type,
-            location: formData.location || null
-          })
-          .eq('id', editingUser.id);
+      const action = editingUser ? 'update' : 'create';
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          action,
+          userId: editingUser?.id,
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.full_name,
+          user_type: formData.user_type,
+          location: formData.location || null,
+          services: formData.user_type === 'attendant' ? formData.services : [],
+        },
+      });
 
-        if (error) throw error;
-
-        // Atualizar serviços do atendente se for atendente
-        if (formData.user_type === 'attendant') {
-          await updateUserServices(editingUser.id, formData.services);
-        }
-
-        toast({
-          title: "Usuário atualizado",
-          description: "As informações do usuário foram atualizadas com sucesso",
-        });
-      } else {
-        // Criar novo usuário via edge function (não afeta a sessão do admin)
-        const { data: sessionData } = await supabase.auth.getSession();
-        const response = await fetch(
-          `https://uizatcahxcyscjbkxnzp.supabase.co/functions/v1/create-user`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${sessionData.session?.access_token}`,
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password,
-              full_name: formData.full_name,
-              user_type: formData.user_type,
-              location: formData.location || null,
-            }),
-          }
-        );
-
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Erro ao criar usuário');
-
-        // Adicionar serviços do atendente se for atendente
-        if (formData.user_type === 'attendant' && result.user?.id) {
-          await updateUserServices(result.user.id, formData.services);
-        }
-
-        toast({
-          title: "Usuário criado",
-          description: "O novo usuário foi criado com sucesso",
-        });
+      if (error) {
+        throw new Error(error.message || 'Erro ao salvar usuário');
       }
+
+      toast({
+        title: editingUser ? 'Usuário atualizado' : 'Usuário criado',
+        description: editingUser
+          ? 'As informações do usuário foram atualizadas com sucesso'
+          : 'O novo usuário foi criado com sucesso',
+      });
 
       setIsDialogOpen(false);
       resetForm();
-      fetchUsers();
-      fetchUserServices();
+      await Promise.all([fetchUsers(), fetchUserServices()]);
     } catch (error: any) {
       toast({
-        title: "Erro ao salvar usuário",
+        title: 'Erro ao salvar usuário',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
-    }
-
-    setLoading(false);
-  };
-
-  const updateUserServices = async (userId: string, serviceIds: string[]) => {
-    // Remover serviços existentes
-    await supabase
-      .from('attendant_services')
-      .delete()
-      .eq('attendant_id', userId);
-
-    // Adicionar novos serviços
-    if (serviceIds.length > 0) {
-      const servicesData = serviceIds.map(serviceId => ({
-        attendant_id: userId,
-        service_id: serviceId
-      }));
-
-      const { error } = await supabase
-        .from('attendant_services')
-        .insert(servicesData);
-
-      if (error) throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
