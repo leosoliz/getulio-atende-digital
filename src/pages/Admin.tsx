@@ -153,24 +153,32 @@ const Admin: React.FC = () => {
           description: "As informações do usuário foram atualizadas com sucesso",
         });
       } else {
-        // Criar novo usuário
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
+        // Criar novo usuário via edge function (não afeta a sessão do admin)
+        const { data: sessionData } = await supabase.auth.getSession();
+        const response = await fetch(
+          `https://uizatcahxcyscjbkxnzp.supabase.co/functions/v1/create-user`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionData.session?.access_token}`,
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              password: formData.password,
               full_name: formData.full_name,
               user_type: formData.user_type,
-              location: formData.location || null
-            }
+              location: formData.location || null,
+            }),
           }
-        });
+        );
 
-        if (authError) throw authError;
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Erro ao criar usuário');
 
-        // Adicionar serviços do atendente se for atendente e tiver user_id
-        if (formData.user_type === 'attendant' && authData.user?.id) {
-          await updateUserServices(authData.user.id, formData.services);
+        // Adicionar serviços do atendente se for atendente
+        if (formData.user_type === 'attendant' && result.user?.id) {
+          await updateUserServices(result.user.id, formData.services);
         }
 
         toast({
