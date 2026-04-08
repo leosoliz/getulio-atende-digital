@@ -891,8 +891,8 @@ export default function Corporate() {
       // Distribuição por atendente do mês selecionado
       const monthlyAttendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos do mês selecionado por attendant_id da fila
-      queueSelectedMonthData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS do mês selecionado por attendant_id da fila
+      queueSelectedMonthData?.filter(s => s.completed_at).forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
       });
@@ -903,8 +903,8 @@ export default function Corporate() {
         monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos do mês selecionado por attendant_id dos agendamentos de identidade
-      identitySelectedMonthData?.forEach(appointment => {
+      // Contar atendimentos CONCLUÍDOS do mês selecionado por attendant_id dos agendamentos de identidade
+      identitySelectedMonthData?.filter(a => a.completed_at).forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
         monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
       });
