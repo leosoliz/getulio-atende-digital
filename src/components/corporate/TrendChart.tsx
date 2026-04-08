@@ -14,7 +14,7 @@ interface TrendChartProps {
   title?: string;
 }
 
-export default function TrendChart({ monthlyData, title = "Histórico dos Últimos 12 Meses" }: TrendChartProps) {
+export default function TrendChart({ monthlyData, title = "Histórico do Mês\n\n" }: TrendChartProps) {
   const renderCustomLabel = (props: any) => {
     const { x, y, width, value } = props;
     return (
@@ -34,7 +34,7 @@ export default function TrendChart({ monthlyData, title = "Histórico dos Últim
   return (
     <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50">
       <CardHeader className="pb-1 pt-1.5 px-2">
-        <CardTitle className="flex items-center gap-2 text-xs">
+        <CardTitle className="flex items-center gap-2 text-xs whitespace-pre-line">
           <CalendarDays className="h-3 w-3 text-emerald-600" />
           {title}
         </CardTitle>
