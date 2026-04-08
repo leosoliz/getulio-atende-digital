@@ -827,9 +827,9 @@ export default function Corporate() {
       setWeeklyAverageWaitTime(weeklyAverageWaitTimeMinutes);
 
       // === DADOS MENSAIS (MÊS SELECIONADO) ===
-      const queueSelectedMonthCount = queueSelectedMonthData?.length || 0;
+      const queueSelectedMonthCount = queueSelectedMonthData?.filter(s => s.completed_at).length || 0;
       const whatsappSelectedMonthCount = whatsappSelectedMonthData?.length || 0;
-      const identitySelectedMonthCount = identitySelectedMonthData?.length || 0;
+      const identitySelectedMonthCount = identitySelectedMonthData?.filter(a => a.completed_at).length || 0;
       
       // Atualizar total de serviços do mês selecionado
       setSelectedMonthTotalServices(queueSelectedMonthCount + whatsappSelectedMonthCount + identitySelectedMonthCount);
