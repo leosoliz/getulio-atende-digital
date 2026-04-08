@@ -123,11 +123,12 @@ const SatisfactionSurvey: React.FC = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'queue_customers',
-          filter: 'status=eq.completed'
         },
-        () => {
-          console.log('Novo atendimento da fila completado');
-          loadCompletedServices();
+        (payload: any) => {
+          if (payload.new?.status === 'completed') {
+            console.log('Novo atendimento da fila completado');
+            loadCompletedServices();
+          }
         }
       )
       .on(
@@ -136,11 +137,12 @@ const SatisfactionSurvey: React.FC = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'identity_appointments',
-          filter: 'status=eq.completed'
         },
-        () => {
-          console.log('Novo agendamento de identidade completado');
-          loadCompletedServices();
+        (payload: any) => {
+          if (payload.new?.status === 'completed') {
+            console.log('Novo agendamento de identidade completado');
+            loadCompletedServices();
+          }
         }
       )
       .on(
