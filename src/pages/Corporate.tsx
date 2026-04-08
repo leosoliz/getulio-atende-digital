@@ -723,8 +723,8 @@ export default function Corporate() {
         const histEndOfWeek = endOfWeek(histWeekDate, { weekStartsOn: 1 });
         const histWeekNum = getWeek(histStartOfWeek, { weekStartsOn: 1 });
 
-        // Buscar atendimentos da fila nesta semana
-        const { data: histQueueData } = await supabase.from('queue_customers').select('id')
+        // Buscar atendimentos CONCLUÍDOS da fila nesta semana
+        const { data: histQueueData } = await supabase.from('queue_customers').select('id').not('completed_at', 'is', null)
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
@@ -733,8 +733,8 @@ export default function Corporate() {
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
-        // Buscar agendamentos de identidade nesta semana
-        const { data: histIdentityData } = await supabase.from('identity_appointments').select('id')
+        // Buscar agendamentos de identidade CONCLUÍDOS nesta semana
+        const { data: histIdentityData } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null)
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
