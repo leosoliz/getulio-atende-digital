@@ -584,8 +584,8 @@ export default function Corporate() {
       // Buscar atendimentos da semana para distribuição por tipo de serviço
       const weeklyServiceTypeDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos da semana por service_id da fila
-      queueWeekData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS da semana por service_id da fila
+      queueWeekData?.filter(s => s.completed_at).forEach(service => {
         const serviceId = service.service_id;
         weeklyServiceTypeDistribution[serviceId] = (weeklyServiceTypeDistribution[serviceId] || 0) + 1;
       });
@@ -596,8 +596,8 @@ export default function Corporate() {
         weeklyServiceTypeDistribution[serviceId] = (weeklyServiceTypeDistribution[serviceId] || 0) + 1;
       });
 
-      // Agendamentos de identidade da semana
-      const weeklyIdentityAppointmentsCount = identityWeekData?.length || 0;
+      // Agendamentos de identidade CONCLUÍDOS da semana
+      const weeklyIdentityAppointmentsCount = identityWeekData?.filter(a => a.completed_at).length || 0;
       if (weeklyIdentityAppointmentsCount > 0) {
         weeklyServiceTypeDistribution['identity'] = weeklyIdentityAppointmentsCount;
       }
