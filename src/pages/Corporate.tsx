@@ -1518,7 +1518,7 @@ export default function Corporate() {
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
 
-              <TrendChart monthlyData={monthlyData} />
+              <TrendChart monthlyData={monthlyData} title="Histórico dos Últimos 12 Meses" />
             </div>
           </TabsContent>
 
