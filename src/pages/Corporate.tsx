@@ -1242,9 +1242,9 @@ export default function Corporate() {
         attIdentityData = id || [];
       }
 
-      const attQueueCount = attQueueData.length;
+      const attQueueCount = attQueueData.filter(s => s.completed_at).length;
       const attWhatsappCount = attWhatsappData.length;
-      const attIdentityCount = attIdentityData.length;
+      const attIdentityCount = attIdentityData.filter(a => a.completed_at).length;
       const attTotal = attQueueCount + attWhatsappCount + attIdentityCount;
 
       // Tempo médio de atendimento do atendente
