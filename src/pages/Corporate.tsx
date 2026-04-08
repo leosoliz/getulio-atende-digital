@@ -842,8 +842,8 @@ export default function Corporate() {
       // Distribuição por tipo de serviço do mês selecionado
       const monthlyServiceTypeDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos do mês selecionado por service_id da fila
-      queueSelectedMonthData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS do mês selecionado por service_id da fila
+      queueSelectedMonthData?.filter(s => s.completed_at).forEach(service => {
         const serviceId = service.service_id;
         monthlyServiceTypeDistribution[serviceId] = (monthlyServiceTypeDistribution[serviceId] || 0) + 1;
       });
@@ -854,8 +854,8 @@ export default function Corporate() {
         monthlyServiceTypeDistribution[serviceId] = (monthlyServiceTypeDistribution[serviceId] || 0) + 1;
       });
 
-      // Agendamentos de identidade do mês selecionado
-      const monthlyIdentityAppointmentsCount = identitySelectedMonthData?.length || 0;
+      // Agendamentos de identidade CONCLUÍDOS do mês selecionado
+      const monthlyIdentityAppointmentsCount = identitySelectedMonthData?.filter(a => a.completed_at).length || 0;
       if (monthlyIdentityAppointmentsCount > 0) {
         monthlyServiceTypeDistribution['identity'] = monthlyIdentityAppointmentsCount;
       }
