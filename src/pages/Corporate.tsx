@@ -421,16 +421,16 @@ export default function Corporate() {
         data: servicesData
       } = await supabase.from('services').select('id, name').eq('active', true);
 
-      // Buscar todos os atendimentos com seus service_id
+      // Buscar todos os atendimentos CONCLUÍDOS com seus service_id
       const {
         data: allQueueServices
-      } = await supabase.from('queue_customers').select('service_id');
+      } = await supabase.from('queue_customers').select('service_id, completed_at').not('completed_at', 'is', null);
       const {
         data: allWhatsappServices
       } = await supabase.from('whatsapp_services').select('service_id');
       const {
         data: allIdentityAppointments
-      } = await supabase.from('identity_appointments').select('id');
+      } = await supabase.from('identity_appointments').select('id, completed_at').not('completed_at', 'is', null);
 
       // Criar distribuição por tipo de serviço
       const serviceTypeDistribution: {
