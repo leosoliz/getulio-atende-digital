@@ -279,16 +279,18 @@ export default function Corporate() {
       };
 
 
-      // Buscar CONTAGENS TOTAIS usando count para evitar limite de 1000 linhas
+      // Buscar CONTAGENS TOTAIS de concluídos usando count para evitar limite de 1000 linhas
       const { count: queueTotalCount } = await supabase
         .from('queue_customers')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .not('completed_at', 'is', null);
       const { count: whatsappTotalCount } = await supabase
         .from('whatsapp_services')
         .select('*', { count: 'exact', head: true });
       const { count: identityTotalCount } = await supabase
         .from('identity_appointments')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .not('completed_at', 'is', null);
 
       // Buscar dados da fila normal (para cálculos de tempo)
       const {
