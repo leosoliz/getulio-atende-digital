@@ -14,7 +14,7 @@ interface TrendChartProps {
   title?: string;
 }
 
-export default function TrendChart({ monthlyData, title = "Histórico dos Últimos 12 Meses" }: TrendChartProps) {
+export default function TrendChart({ monthlyData, title = "Histórico do Mês\n\n" }: TrendChartProps) {
   const renderCustomLabel = (props: any) => {
     const { x, y, width, value } = props;
     return (
