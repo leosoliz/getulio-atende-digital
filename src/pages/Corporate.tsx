@@ -421,16 +421,16 @@ export default function Corporate() {
         data: servicesData
       } = await supabase.from('services').select('id, name').eq('active', true);
 
-      // Buscar todos os atendimentos com seus service_id
+      // Buscar todos os atendimentos CONCLUÍDOS com seus service_id
       const {
         data: allQueueServices
-      } = await supabase.from('queue_customers').select('service_id');
+      } = await supabase.from('queue_customers').select('service_id, completed_at').not('completed_at', 'is', null);
       const {
         data: allWhatsappServices
       } = await supabase.from('whatsapp_services').select('service_id');
       const {
         data: allIdentityAppointments
-      } = await supabase.from('identity_appointments').select('id');
+      } = await supabase.from('identity_appointments').select('id, completed_at').not('completed_at', 'is', null);
 
       // Criar distribuição por tipo de serviço
       const serviceTypeDistribution: {
@@ -584,8 +584,8 @@ export default function Corporate() {
       // Buscar atendimentos da semana para distribuição por tipo de serviço
       const weeklyServiceTypeDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos da semana por service_id da fila
-      queueWeekData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS da semana por service_id da fila
+      queueWeekData?.filter(s => s.completed_at).forEach(service => {
         const serviceId = service.service_id;
         weeklyServiceTypeDistribution[serviceId] = (weeklyServiceTypeDistribution[serviceId] || 0) + 1;
       });
@@ -596,8 +596,8 @@ export default function Corporate() {
         weeklyServiceTypeDistribution[serviceId] = (weeklyServiceTypeDistribution[serviceId] || 0) + 1;
       });
 
-      // Agendamentos de identidade da semana
-      const weeklyIdentityAppointmentsCount = identityWeekData?.length || 0;
+      // Agendamentos de identidade CONCLUÍDOS da semana
+      const weeklyIdentityAppointmentsCount = identityWeekData?.filter(a => a.completed_at).length || 0;
       if (weeklyIdentityAppointmentsCount > 0) {
         weeklyServiceTypeDistribution['identity'] = weeklyIdentityAppointmentsCount;
       }
@@ -842,8 +842,8 @@ export default function Corporate() {
       // Distribuição por tipo de serviço do mês selecionado
       const monthlyServiceTypeDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos do mês selecionado por service_id da fila
-      queueSelectedMonthData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS do mês selecionado por service_id da fila
+      queueSelectedMonthData?.filter(s => s.completed_at).forEach(service => {
         const serviceId = service.service_id;
         monthlyServiceTypeDistribution[serviceId] = (monthlyServiceTypeDistribution[serviceId] || 0) + 1;
       });
@@ -854,8 +854,8 @@ export default function Corporate() {
         monthlyServiceTypeDistribution[serviceId] = (monthlyServiceTypeDistribution[serviceId] || 0) + 1;
       });
 
-      // Agendamentos de identidade do mês selecionado
-      const monthlyIdentityAppointmentsCount = identitySelectedMonthData?.length || 0;
+      // Agendamentos de identidade CONCLUÍDOS do mês selecionado
+      const monthlyIdentityAppointmentsCount = identitySelectedMonthData?.filter(a => a.completed_at).length || 0;
       if (monthlyIdentityAppointmentsCount > 0) {
         monthlyServiceTypeDistribution['identity'] = monthlyIdentityAppointmentsCount;
       }
