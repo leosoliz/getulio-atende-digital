@@ -529,20 +529,20 @@ export default function Corporate() {
       // Criar distribuição por atendente
       const attendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos por attendant_id da fila
-      queueData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS por attendant_id da fila
+      queueData?.filter(s => s.completed_at).forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos por attendant_id do WhatsApp
+      // Contar atendimentos por attendant_id do WhatsApp (todos são concluídos)
       whatsappData?.forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos por attendant_id dos agendamentos de identidade
-      identityData?.forEach(appointment => {
+      // Contar atendimentos CONCLUÍDOS por attendant_id dos agendamentos de identidade
+      identityData?.filter(a => a.completed_at).forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
         attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
@@ -633,8 +633,8 @@ export default function Corporate() {
       // Distribuição por atendente da semana
       const weeklyAttendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos da semana por attendant_id da fila
-      queueWeekData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS da semana por attendant_id da fila
+      queueWeekData?.filter(s => s.completed_at).forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
@@ -645,8 +645,8 @@ export default function Corporate() {
         weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos da semana por attendant_id dos agendamentos de identidade
-      identityWeekData?.forEach(appointment => {
+      // Contar atendimentos CONCLUÍDOS da semana por attendant_id dos agendamentos de identidade
+      identityWeekData?.filter(a => a.completed_at).forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
         weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
@@ -891,8 +891,8 @@ export default function Corporate() {
       // Distribuição por atendente do mês selecionado
       const monthlyAttendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos do mês selecionado por attendant_id da fila
-      queueSelectedMonthData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS do mês selecionado por attendant_id da fila
+      queueSelectedMonthData?.filter(s => s.completed_at).forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
       });
@@ -903,8 +903,8 @@ export default function Corporate() {
         monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos do mês selecionado por attendant_id dos agendamentos de identidade
-      identitySelectedMonthData?.forEach(appointment => {
+      // Contar atendimentos CONCLUÍDOS do mês selecionado por attendant_id dos agendamentos de identidade
+      identitySelectedMonthData?.filter(a => a.completed_at).forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
         monthlyAttendantDistribution[key] = (monthlyAttendantDistribution[key] || 0) + 1;
       });
