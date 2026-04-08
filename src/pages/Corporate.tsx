@@ -1300,7 +1300,7 @@ export default function Corporate() {
       // Distribuição por tipo de serviço do atendente
       const attServiceTypeDistribution: { [key: string]: number } = {};
 
-      attQueueData.forEach(service => {
+      attQueueData.filter(s => s.completed_at).forEach(service => {
         const serviceId = service.service_id;
         attServiceTypeDistribution[serviceId] = (attServiceTypeDistribution[serviceId] || 0) + 1;
       });
