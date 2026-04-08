@@ -687,10 +687,10 @@ export default function Corporate() {
         const startOfDayDate = startOfDay(dayDate);
         const endOfDayDate = endOfDay(dayDate);
 
-        // Contar atendimentos da fila neste dia
+        // Contar atendimentos CONCLUÍDOS da fila neste dia
         const dayQueueCount = queueWeekData?.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+          return service.completed_at && serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
         // Contar atendimentos do WhatsApp neste dia
@@ -699,10 +699,10 @@ export default function Corporate() {
           return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
-        // Contar agendamentos de identidade neste dia
+        // Contar agendamentos de identidade CONCLUÍDOS neste dia
         const dayIdentityCount = identityWeekData?.filter(appointment => {
           const appointmentTime = new Date(appointment.created_at);
-          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
         }).length || 0;
 
         const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
