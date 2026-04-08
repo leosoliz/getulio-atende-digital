@@ -42,7 +42,7 @@ export default function TrendChart({ monthlyData, title = "Histórico do Mês\n\
       <CardContent className="px-2 pb-1.5">
         <div className="h-24">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+            <BarChart data={monthlyData} margin={{ top: 15, right: 5, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
                 dataKey="month" 
@@ -51,7 +51,7 @@ export default function TrendChart({ monthlyData, title = "Histórico do Mês\n\
                 textAnchor="end"
                 height={30}
               />
-              <YAxis tick={{ fontSize: 8 }} />
+              <YAxis tick={{ fontSize: 8 }} domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]} />
               <Tooltip 
                 formatter={(value: number) => [`${value} atendimentos`, 'Total']}
                 labelFormatter={(label, payload) => {
