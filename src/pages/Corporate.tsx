@@ -279,16 +279,18 @@ export default function Corporate() {
       };
 
 
-      // Buscar CONTAGENS TOTAIS usando count para evitar limite de 1000 linhas
+      // Buscar CONTAGENS TOTAIS de concluídos usando count para evitar limite de 1000 linhas
       const { count: queueTotalCount } = await supabase
         .from('queue_customers')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .not('completed_at', 'is', null);
       const { count: whatsappTotalCount } = await supabase
         .from('whatsapp_services')
         .select('*', { count: 'exact', head: true });
       const { count: identityTotalCount } = await supabase
         .from('identity_appointments')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .not('completed_at', 'is', null);
 
       // Buscar dados da fila normal (para cálculos de tempo)
       const {
@@ -491,20 +493,20 @@ export default function Corporate() {
         const startOfMonthDate = startOfMonth(monthDate);
         const endOfMonthDate = endOfMonth(monthDate);
 
-        // Buscar atendimentos da fila
+        // Buscar atendimentos CONCLUÍDOS da fila
         const {
           data: queueMonthData
-        } = await supabase.from('queue_customers').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
+        } = await supabase.from('queue_customers').select('id').not('completed_at', 'is', null).gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
 
         // Buscar atendimentos do WhatsApp
         const {
           data: whatsappMonthData
         } = await supabase.from('whatsapp_services').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
 
-        // Buscar agendamentos de identidade
+        // Buscar agendamentos de identidade CONCLUÍDOS
         const {
           data: identityMonthData
-        } = await supabase.from('identity_appointments').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
+        } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null).gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
         const totalMonthServices = (queueMonthData?.length || 0) + (whatsappMonthData?.length || 0) + (identityMonthData?.length || 0);
         monthlyDataArray.push({
           month: format(monthDate, "MMM/yy", {
@@ -685,10 +687,10 @@ export default function Corporate() {
         const startOfDayDate = startOfDay(dayDate);
         const endOfDayDate = endOfDay(dayDate);
 
-        // Contar atendimentos da fila neste dia
+        // Contar atendimentos CONCLUÍDOS da fila neste dia
         const dayQueueCount = queueWeekData?.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+          return service.completed_at && serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
         // Contar atendimentos do WhatsApp neste dia
@@ -697,10 +699,10 @@ export default function Corporate() {
           return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
-        // Contar agendamentos de identidade neste dia
+        // Contar agendamentos de identidade CONCLUÍDOS neste dia
         const dayIdentityCount = identityWeekData?.filter(appointment => {
           const appointmentTime = new Date(appointment.created_at);
-          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
         }).length || 0;
 
         const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
@@ -721,8 +723,8 @@ export default function Corporate() {
         const histEndOfWeek = endOfWeek(histWeekDate, { weekStartsOn: 1 });
         const histWeekNum = getWeek(histStartOfWeek, { weekStartsOn: 1 });
 
-        // Buscar atendimentos da fila nesta semana
-        const { data: histQueueData } = await supabase.from('queue_customers').select('id')
+        // Buscar atendimentos CONCLUÍDOS da fila nesta semana
+        const { data: histQueueData } = await supabase.from('queue_customers').select('id').not('completed_at', 'is', null)
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
@@ -731,8 +733,8 @@ export default function Corporate() {
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
-        // Buscar agendamentos de identidade nesta semana
-        const { data: histIdentityData } = await supabase.from('identity_appointments').select('id')
+        // Buscar agendamentos de identidade CONCLUÍDOS nesta semana
+        const { data: histIdentityData } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null)
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
@@ -1008,10 +1010,10 @@ export default function Corporate() {
         const startOfDayDate = startOfDay(dayDate);
         const endOfDayDate = endOfDay(dayDate);
 
-        // Contar atendimentos da fila neste dia
+        // Contar atendimentos CONCLUÍDOS da fila neste dia
         const dayQueueCount = queueSelectedMonthData?.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+          return service.completed_at && serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
         // Contar atendimentos do WhatsApp neste dia
@@ -1020,10 +1022,10 @@ export default function Corporate() {
           return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length || 0;
 
-        // Contar agendamentos de identidade neste dia
+        // Contar agendamentos de identidade CONCLUÍDOS neste dia
         const dayIdentityCount = identitySelectedMonthData?.filter(appointment => {
           const appointmentTime = new Date(appointment.created_at);
-          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
         }).length || 0;
 
         const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
@@ -1240,9 +1242,9 @@ export default function Corporate() {
         attIdentityData = id || [];
       }
 
-      const attQueueCount = attQueueData.length;
+      const attQueueCount = attQueueData.filter(s => s.completed_at).length;
       const attWhatsappCount = attWhatsappData.length;
-      const attIdentityCount = attIdentityData.length;
+      const attIdentityCount = attIdentityData.filter(a => a.completed_at).length;
       const attTotal = attQueueCount + attWhatsappCount + attIdentityCount;
 
       // Tempo médio de atendimento do atendente
@@ -1298,7 +1300,7 @@ export default function Corporate() {
       // Distribuição por tipo de serviço do atendente
       const attServiceTypeDistribution: { [key: string]: number } = {};
 
-      attQueueData.forEach(service => {
+      attQueueData.filter(s => s.completed_at).forEach(service => {
         const serviceId = service.service_id;
         attServiceTypeDistribution[serviceId] = (attServiceTypeDistribution[serviceId] || 0) + 1;
       });
@@ -1340,7 +1342,7 @@ export default function Corporate() {
 
         const dayQueueCount = attQueueData.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+          return service.completed_at && serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length;
 
         const dayWhatsappCount = attWhatsappData.filter(service => {
@@ -1350,7 +1352,7 @@ export default function Corporate() {
 
         const dayIdentityCount = attIdentityData.filter(appointment => {
           const appointmentTime = new Date(appointment.created_at);
-          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
         }).length;
 
         attDailyData.push({
