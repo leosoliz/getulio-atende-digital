@@ -1342,7 +1342,7 @@ export default function Corporate() {
 
         const dayQueueCount = attQueueData.filter(service => {
           const serviceTime = new Date(service.created_at);
-          return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
+          return service.completed_at && serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length;
 
         const dayWhatsappCount = attWhatsappData.filter(service => {
@@ -1352,7 +1352,7 @@ export default function Corporate() {
 
         const dayIdentityCount = attIdentityData.filter(appointment => {
           const appointmentTime = new Date(appointment.created_at);
-          return appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
         }).length;
 
         attDailyData.push({
