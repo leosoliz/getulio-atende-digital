@@ -633,8 +633,8 @@ export default function Corporate() {
       // Distribuição por atendente da semana
       const weeklyAttendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos da semana por attendant_id da fila
-      queueWeekData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS da semana por attendant_id da fila
+      queueWeekData?.filter(s => s.completed_at).forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
@@ -645,8 +645,8 @@ export default function Corporate() {
         weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos da semana por attendant_id dos agendamentos de identidade
-      identityWeekData?.forEach(appointment => {
+      // Contar atendimentos CONCLUÍDOS da semana por attendant_id dos agendamentos de identidade
+      identityWeekData?.filter(a => a.completed_at).forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
         weeklyAttendantDistribution[key] = (weeklyAttendantDistribution[key] || 0) + 1;
       });
