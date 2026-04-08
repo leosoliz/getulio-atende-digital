@@ -345,12 +345,12 @@ export default function Corporate() {
       const queueCount = queueTotalCount || 0;
       const whatsappCount = whatsappTotalCount || 0;
       const identityCount = identityTotalCount || 0;
-      const queueWeekCount = queueWeekData?.length || 0;
+      const queueWeekCount = queueWeekData?.filter(s => s.completed_at).length || 0;
       const whatsappWeekCount = whatsappWeekData?.length || 0;
-      const identityWeekCount = identityWeekData?.length || 0;
-      const queueMonthCount = queueMonthData?.length || 0;
+      const identityWeekCount = identityWeekData?.filter(a => a.completed_at).length || 0;
+      const queueMonthCount = queueMonthData?.filter(s => s.completed_at).length || 0;
       const whatsappMonthCount = whatsappMonthData?.length || 0;
-      const identityMonthCount = identityMonthData?.length || 0;
+      const identityMonthCount = identityMonthData?.filter(a => a.completed_at).length || 0;
 
       // Calcular tempo médio de atendimento (em minutos)
       let totalServiceTime = 0;
