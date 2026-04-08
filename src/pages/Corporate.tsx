@@ -529,20 +529,20 @@ export default function Corporate() {
       // Criar distribuição por atendente
       const attendantDistribution: { [key: string]: number } = {};
 
-      // Contar atendimentos por attendant_id da fila
-      queueData?.forEach(service => {
+      // Contar atendimentos CONCLUÍDOS por attendant_id da fila
+      queueData?.filter(s => s.completed_at).forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos por attendant_id do WhatsApp
+      // Contar atendimentos por attendant_id do WhatsApp (todos são concluídos)
       whatsappData?.forEach(service => {
         const key = service.attendant_id || 'no_attendant';
         attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
 
-      // Contar atendimentos por attendant_id dos agendamentos de identidade
-      identityData?.forEach(appointment => {
+      // Contar atendimentos CONCLUÍDOS por attendant_id dos agendamentos de identidade
+      identityData?.filter(a => a.completed_at).forEach(appointment => {
         const key = appointment.attendant_id || 'no_attendant';
         attendantDistribution[key] = (attendantDistribution[key] || 0) + 1;
       });
