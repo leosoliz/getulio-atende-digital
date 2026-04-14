@@ -130,7 +130,7 @@ export default function IdentityCalendar() {
 
   const statusLabel = (status: string) => {
     if (status === 'completed') return 'Concluído';
-    return 'Agendado';
+    return 'Não compareceu';
   };
 
   return (
@@ -212,7 +212,7 @@ export default function IdentityCalendar() {
           <div className="flex items-center justify-center gap-4 mt-2 text-[10px] text-muted-foreground">
             <div className="flex items-center gap-1">
               <Badge variant="default" className="text-[7px] px-1 py-0 h-3">0</Badge>
-              Agendado
+              Não compareceu
             </div>
             <div className="flex items-center gap-1">
               <Badge variant="outline" className="text-[7px] px-1 py-0 h-3 bg-green-50 text-green-700 border-green-200">0</Badge>
@@ -265,7 +265,7 @@ export default function IdentityCalendar() {
 
       {!selectedDay && (
         <div className="text-center text-xs text-muted-foreground py-2 space-x-3">
-          <span>Agendados: <span className="font-semibold">{scheduledCount}</span></span>
+          <span>Não compareceu: <span className="font-semibold">{scheduledCount}</span></span>
           <span>Concluídos: <span className="font-semibold text-green-600">{completedCount}</span></span>
           <span>Total: <span className="font-semibold">{appointments.length}</span></span>
         </div>
