@@ -176,8 +176,9 @@ export default function IdentityCalendar() {
               const day = i + 1;
               const dayAppts = getAppointmentsForDay(day);
               const count = dayAppts.length;
-              const hasCompleted = dayAppts.some(a => a.status === 'completed');
-              const hasScheduled = dayAppts.some(a => a.status === 'scheduled');
+              const hasCompleted = dayAppts.some(a => getDisplayStatus(a) === 'completed');
+              const hasNoShow = dayAppts.some(a => getDisplayStatus(a) === 'no_show');
+              const hasScheduled = dayAppts.some(a => getDisplayStatus(a) === 'scheduled');
               const isSelected = selectedDay === day;
               const isToday = new Date().getDate() === day &&
                 new Date().getMonth() + 1 === month &&
@@ -201,7 +202,15 @@ export default function IdentityCalendar() {
                           variant={isSelected ? "secondary" : "default"}
                           className="text-[7px] px-0.5 py-0 h-3 min-w-[14px]"
                         >
-                          {dayAppts.filter(a => a.status === 'scheduled').length}
+                          {dayAppts.filter(a => getDisplayStatus(a) === 'scheduled').length}
+                        </Badge>
+                      )}
+                      {hasNoShow && (
+                        <Badge
+                          variant="destructive"
+                          className="text-[7px] px-0.5 py-0 h-3 min-w-[14px]"
+                        >
+                          {dayAppts.filter(a => getDisplayStatus(a) === 'no_show').length}
                         </Badge>
                       )}
                       {hasCompleted && (
@@ -223,6 +232,10 @@ export default function IdentityCalendar() {
           <div className="flex items-center justify-center gap-4 mt-2 text-[10px] text-muted-foreground">
             <div className="flex items-center gap-1">
               <Badge variant="default" className="text-[7px] px-1 py-0 h-3">0</Badge>
+              Agendado
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge variant="destructive" className="text-[7px] px-1 py-0 h-3">0</Badge>
               Não compareceu
             </div>
             <div className="flex items-center gap-1">
@@ -256,12 +269,17 @@ export default function IdentityCalendar() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Badge
-                        variant={appt.status === 'completed' ? 'outline' : 'default'}
-                        className={`text-[9px] ${appt.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : ''}`}
-                      >
-                        {statusLabel(appt.status)}
-                      </Badge>
+                      {(() => {
+                        const ds = getDisplayStatus(appt);
+                        return (
+                          <Badge
+                            variant={ds === 'completed' ? 'outline' : ds === 'no_show' ? 'destructive' : 'default'}
+                            className={`text-[9px] ${ds === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : ''}`}
+                          >
+                            {displayStatusLabel(ds)}
+                          </Badge>
+                        );
+                      })()}
                       <Badge variant="outline" className="text-[10px]">
                         {appt.appointment_time.slice(0, 5)}
                       </Badge>
@@ -276,7 +294,8 @@ export default function IdentityCalendar() {
 
       {!selectedDay && (
         <div className="text-center text-xs text-muted-foreground py-2 space-x-3">
-          <span>Não compareceu: <span className="font-semibold">{scheduledCount}</span></span>
+          <span>Agendados: <span className="font-semibold">{scheduledCount}</span></span>
+          <span>Não compareceu: <span className="font-semibold text-destructive">{noShowCount}</span></span>
           <span>Concluídos: <span className="font-semibold text-green-600">{completedCount}</span></span>
           <span>Total: <span className="font-semibold">{appointments.length}</span></span>
         </div>
