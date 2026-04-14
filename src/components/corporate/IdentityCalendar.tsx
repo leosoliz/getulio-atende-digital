@@ -166,6 +166,46 @@ export default function IdentityCalendar() {
         </Select>
       </div>
 
+      {/* Indicator cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <Card className="border-l-4 border-l-destructive">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium">% Não Comparecimento</p>
+                <p className="text-2xl font-bold text-destructive">{noShowPercentage}%</p>
+                <p className="text-[9px] text-muted-foreground">{noShowCount} de {resolvedTotal} resolvidos</p>
+              </div>
+              <UserX className="h-8 w-8 text-destructive/30" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium">Concluídos</p>
+                <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+                <p className="text-[9px] text-muted-foreground">atendimentos realizados</p>
+              </div>
+              <CalendarCheck className="h-8 w-8 text-green-500/30" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium">Agendados</p>
+                <p className="text-2xl font-bold text-primary">{scheduledCount}</p>
+                <p className="text-[9px] text-muted-foreground">pendentes no mês</p>
+              </div>
+              <Users className="h-8 w-8 text-primary/30" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardContent className="p-3">
           <div className="grid grid-cols-7 gap-1 text-center">
