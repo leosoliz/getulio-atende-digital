@@ -25,15 +25,20 @@ export default function IdentityCalendar() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const monthOptions = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date();
-    date.setDate(1);
-    date.setMonth(date.getMonth() - i);
-    return {
-      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-      label: format(date, "MMMM yyyy", { locale: ptBR })
-    };
-  });
+  const monthOptions = (() => {
+    const options: { value: string; label: string }[] = [];
+    // 12 meses passados + atual + 6 meses futuros
+    for (let i = -6; i <= 12; i++) {
+      const date = new Date();
+      date.setDate(1);
+      date.setMonth(date.getMonth() - i);
+      options.push({
+        value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+        label: format(date, "MMMM yyyy", { locale: ptBR })
+      });
+    }
+    return options;
+  })();
 
   useEffect(() => {
     fetchAppointments();
