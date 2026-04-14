@@ -167,7 +167,8 @@ export default function Corporate() {
     toast
   } = useToast();
   useEffect(() => {
-    fetchCorporateData();
+    const isInitial = !initialLoadDone;
+    fetchCorporateData(!isInitial);
     // Carregar metas salvas do localStorage
     const savedTargets = localStorage.getItem('corporate-targets');
     if (savedTargets) {
@@ -182,7 +183,7 @@ export default function Corporate() {
         { event: '*', schema: 'public', table: 'queue_customers' },
         () => {
           console.log('Queue customers changed, refetching data...');
-          fetchCorporateData();
+          fetchCorporateData(true);
         }
       )
       .subscribe();
@@ -194,7 +195,7 @@ export default function Corporate() {
         { event: '*', schema: 'public', table: 'whatsapp_services' },
         () => {
           console.log('WhatsApp services changed, refetching data...');
-          fetchCorporateData();
+          fetchCorporateData(true);
         }
       )
       .subscribe();
@@ -206,7 +207,7 @@ export default function Corporate() {
         { event: '*', schema: 'public', table: 'identity_appointments' },
         () => {
           console.log('Identity appointments changed, refetching data...');
-          fetchCorporateData();
+          fetchCorporateData(true);
         }
       )
       .subscribe();
