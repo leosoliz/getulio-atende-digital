@@ -162,11 +162,13 @@ export default function Corporate() {
   });
   
   const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const {
     toast
   } = useToast();
   useEffect(() => {
-    fetchCorporateData();
+    const isInitial = !initialLoadDone;
+    fetchCorporateData(!isInitial);
     // Carregar metas salvas do localStorage
     const savedTargets = localStorage.getItem('corporate-targets');
     if (savedTargets) {
@@ -181,7 +183,7 @@ export default function Corporate() {
         { event: '*', schema: 'public', table: 'queue_customers' },
         () => {
           console.log('Queue customers changed, refetching data...');
-          fetchCorporateData();
+          fetchCorporateData(true);
         }
       )
       .subscribe();
@@ -193,7 +195,7 @@ export default function Corporate() {
         { event: '*', schema: 'public', table: 'whatsapp_services' },
         () => {
           console.log('WhatsApp services changed, refetching data...');
-          fetchCorporateData();
+          fetchCorporateData(true);
         }
       )
       .subscribe();
@@ -205,7 +207,7 @@ export default function Corporate() {
         { event: '*', schema: 'public', table: 'identity_appointments' },
         () => {
           console.log('Identity appointments changed, refetching data...');
-          fetchCorporateData();
+          fetchCorporateData(true);
         }
       )
       .subscribe();
@@ -228,9 +230,9 @@ export default function Corporate() {
       description: `Meta ${type === 'daily' ? 'diária' : 'mensal'} atualizada para ${value}`
     });
   };
-  const fetchCorporateData = async () => {
+  const fetchCorporateData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const today = new Date();
       
       // Semana selecionada (baseada no filtro)
@@ -1467,9 +1469,10 @@ export default function Corporate() {
       });
     } finally {
       setLoading(false);
+      if (!initialLoadDone) setInitialLoadDone(true);
     }
   };
-  if (loading) {
+  if (loading && !initialLoadDone) {
     return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
