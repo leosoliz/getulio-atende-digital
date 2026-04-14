@@ -138,6 +138,9 @@ export default function IdentityCalendar() {
   const scheduledCount = appointments.filter(a => getDisplayStatus(a) === 'scheduled').length;
   const completedCount = appointments.filter(a => a.status === 'completed').length;
 
+  const resolvedTotal = noShowCount + completedCount;
+  const noShowPercentage = resolvedTotal > 0 ? ((noShowCount / resolvedTotal) * 100).toFixed(1) : '0.0';
+
   const displayStatusLabel = (displayStatus: string) => {
     if (displayStatus === 'completed') return 'Concluído';
     if (displayStatus === 'no_show') return 'Não compareceu';
