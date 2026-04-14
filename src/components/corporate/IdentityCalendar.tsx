@@ -125,12 +125,23 @@ export default function IdentityCalendar() {
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   const selectedDayAppointments = selectedDay ? getAppointmentsForDay(selectedDay) : [];
 
-  const scheduledCount = appointments.filter(a => a.status === 'scheduled').length;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const getDisplayStatus = (appt: Appointment) => {
+    if (appt.status === 'completed') return 'completed';
+    const apptDate = new Date(appt.appointment_date + 'T00:00:00');
+    return apptDate < today ? 'no_show' : 'scheduled';
+  };
+
+  const noShowCount = appointments.filter(a => getDisplayStatus(a) === 'no_show').length;
+  const scheduledCount = appointments.filter(a => getDisplayStatus(a) === 'scheduled').length;
   const completedCount = appointments.filter(a => a.status === 'completed').length;
 
-  const statusLabel = (status: string) => {
-    if (status === 'completed') return 'Concluído';
-    return 'Não compareceu';
+  const displayStatusLabel = (displayStatus: string) => {
+    if (displayStatus === 'completed') return 'Concluído';
+    if (displayStatus === 'no_show') return 'Não compareceu';
+    return 'Agendado';
   };
 
   return (
