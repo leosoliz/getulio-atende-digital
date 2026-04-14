@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, CheckCircle } from "lucide-react";
+import { Calendar, Clock, CheckCircle, UserX, Users, CalendarCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth, getDaysInMonth, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -138,6 +138,9 @@ export default function IdentityCalendar() {
   const scheduledCount = appointments.filter(a => getDisplayStatus(a) === 'scheduled').length;
   const completedCount = appointments.filter(a => a.status === 'completed').length;
 
+  const resolvedTotal = noShowCount + completedCount;
+  const noShowPercentage = resolvedTotal > 0 ? ((noShowCount / resolvedTotal) * 100).toFixed(1) : '0.0';
+
   const displayStatusLabel = (displayStatus: string) => {
     if (displayStatus === 'completed') return 'Concluído';
     if (displayStatus === 'no_show') return 'Não compareceu';
@@ -161,6 +164,46 @@ export default function IdentityCalendar() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Indicator cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <Card className="border-l-4 border-l-destructive">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium">% Não Comparecimento</p>
+                <p className="text-2xl font-bold text-destructive">{noShowPercentage}%</p>
+                <p className="text-[9px] text-muted-foreground">{noShowCount} de {resolvedTotal} resolvidos</p>
+              </div>
+              <UserX className="h-8 w-8 text-destructive/30" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium">Concluídos</p>
+                <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+                <p className="text-[9px] text-muted-foreground">atendimentos realizados</p>
+              </div>
+              <CalendarCheck className="h-8 w-8 text-green-500/30" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground font-medium">Agendados</p>
+                <p className="text-2xl font-bold text-primary">{scheduledCount}</p>
+                <p className="text-[9px] text-muted-foreground">pendentes no mês</p>
+              </div>
+              <Users className="h-8 w-8 text-primary/30" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
