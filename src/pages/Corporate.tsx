@@ -12,6 +12,7 @@ import SatisfactionChart from "@/components/corporate/SatisfactionChart";
 import ServiceDistributionChart from "@/components/corporate/ServiceDistributionChart";
 import ServiceTypeDistributionChart from "@/components/corporate/ServiceTypeDistributionChart";
 import TrendChart from "@/components/corporate/TrendChart";
+import IdentityCalendar from "@/components/corporate/IdentityCalendar";
 interface ServiceStats {
   total: number;
   thisWeek: number;
@@ -1484,7 +1485,7 @@ export default function Corporate() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur mb-1 h-7">
+          <TabsList className="grid w-full grid-cols-5 bg-white/70 backdrop-blur mb-1 h-7">
             <TabsTrigger value="overview" className="flex items-center gap-1 text-xs py-1">
               <BarChart3 className="h-3 w-3" />
               Visão Geral
@@ -1500,6 +1501,10 @@ export default function Corporate() {
             <TabsTrigger value="servidor" className="flex items-center gap-1 text-xs py-1">
               <UserCheck className="h-3 w-3" />
               Servidor
+            </TabsTrigger>
+            <TabsTrigger value="agenda" className="flex items-center gap-1 text-xs py-1">
+              <Calendar className="h-3 w-3" />
+              Agenda
             </TabsTrigger>
           </TabsList>
 
@@ -1715,6 +1720,10 @@ export default function Corporate() {
 
               <TrendChart monthlyData={attendantStats.dailyData} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="agenda" className="flex-1 overflow-y-auto">
+            <IdentityCalendar />
           </TabsContent>
         </Tabs>
       </div>
