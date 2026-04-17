@@ -57,22 +57,27 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
     setLoading(true);
     
     try {
-      // Calcular limites do dia atual no fuso horário local
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      const endOfToday = new Date();
-      endOfToday.setHours(23, 59, 59, 999);
-      const startISO = startOfToday.toISOString();
-      const endISO = endOfToday.toISOString();
+      // Calcular limites do dia atual no fuso de São Paulo (independente do fuso do navegador)
+      const nowSpStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+      const nowSp = new Date(nowSpStr);
+      const startOfToday = new Date(nowSp.getFullYear(), nowSp.getMonth(), nowSp.getDate(), 0, 0, 0, 0);
+      const endOfToday = new Date(nowSp.getFullYear(), nowSp.getMonth(), nowSp.getDate(), 23, 59, 59, 999);
+      // Compensar diferença entre fuso do navegador e America/Sao_Paulo
+      const tzOffsetMs = new Date().getTime() - nowSp.getTime();
+      const startISO = new Date(startOfToday.getTime() + tzOffsetMs).toISOString();
+      const endISO = new Date(endOfToday.getTime() + tzOffsetMs).toISOString();
+
+      console.log('[Performance] Profile ID:', profile.id);
+      console.log('[Performance] Janela hoje (BRT):', { startISO, endISO });
 
       // Totais usando count exato (evita o limite de 1000 linhas do Supabase)
       const [
-        { count: queueServices },
-        { count: appointmentServices },
-        { count: whatsappServices },
-        { count: queueToday },
-        { count: appointmentToday },
-        { count: whatsappToday },
+        { count: queueServices, error: e1 },
+        { count: appointmentServices, error: e2 },
+        { count: whatsappServices, error: e3 },
+        { count: queueToday, error: e4 },
+        { count: appointmentToday, error: e5 },
+        { count: whatsappToday, error: e6 },
       ] = await Promise.all([
         supabase
           .from('queue_customers')
@@ -109,6 +114,12 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
           .gte('created_at', startISO)
           .lte('created_at', endISO),
       ]);
+
+      console.log('[Performance] Counts:', {
+        queueServices, appointmentServices, whatsappServices,
+        queueToday, appointmentToday, whatsappToday,
+        errors: { e1, e2, e3, e4, e5, e6 }
+      });
 
       const totalServices = (queueServices || 0) + (appointmentServices || 0) + (whatsappServices || 0);
       const todayServices = (queueToday || 0) + (appointmentToday || 0) + (whatsappToday || 0);
