@@ -57,60 +57,91 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
     setLoading(true);
     
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Buscar estatísticas da fila normal
-      const { data: queueData } = await supabase
-        .from('queue_customers')
-        .select(`
-          *,
-          services:service_id (name)
-        `)
-        .eq('attendant_id', profile.id)
-        .eq('status', 'completed');
+      // Calcular limites do dia atual no fuso horário local
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      const startISO = startOfToday.toISOString();
+      const endISO = endOfToday.toISOString();
 
-      // Buscar estatísticas de agendamentos
-      const { data: appointmentData } = await supabase
-        .from('identity_appointments')
-        .select('*')
-        .eq('attendant_id', profile.id)
-        .eq('status', 'completed');
+      // Totais usando count exato (evita o limite de 1000 linhas do Supabase)
+      const [
+        { count: queueServices },
+        { count: appointmentServices },
+        { count: whatsappServices },
+        { count: queueToday },
+        { count: appointmentToday },
+        { count: whatsappToday },
+      ] = await Promise.all([
+        supabase
+          .from('queue_customers')
+          .select('*', { count: 'exact', head: true })
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed'),
+        supabase
+          .from('identity_appointments')
+          .select('*', { count: 'exact', head: true })
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed'),
+        supabase
+          .from('whatsapp_services')
+          .select('*', { count: 'exact', head: true })
+          .eq('attendant_id', profile.id),
+        supabase
+          .from('queue_customers')
+          .select('*', { count: 'exact', head: true })
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed')
+          .gte('completed_at', startISO)
+          .lte('completed_at', endISO),
+        supabase
+          .from('identity_appointments')
+          .select('*', { count: 'exact', head: true })
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed')
+          .gte('completed_at', startISO)
+          .lte('completed_at', endISO),
+        supabase
+          .from('whatsapp_services')
+          .select('*', { count: 'exact', head: true })
+          .eq('attendant_id', profile.id)
+          .gte('created_at', startISO)
+          .lte('created_at', endISO),
+      ]);
 
-      // Buscar estatísticas do WhatsApp
-      const { data: whatsappData } = await supabase
-        .from('whatsapp_services')
-        .select(`
-          *,
-          services:service_id (name)
-        `)
-        .eq('attendant_id', profile.id);
+      const totalServices = (queueServices || 0) + (appointmentServices || 0) + (whatsappServices || 0);
+      const todayServices = (queueToday || 0) + (appointmentToday || 0) + (whatsappToday || 0);
 
-      console.log('Queue data:', queueData);
-      console.log('Appointment data:', appointmentData);
-      console.log('WhatsApp data:', whatsappData);
+      // Buscar dados detalhados (para histórico e tempo médio) - últimos 50 de cada
+      const [
+        { data: queueData },
+        { data: appointmentData },
+        { data: whatsappData },
+      ] = await Promise.all([
+        supabase
+          .from('queue_customers')
+          .select(`*, services:service_id (name)`)
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('identity_appointments')
+          .select('*')
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('whatsapp_services')
+          .select(`*, services:service_id (name)`)
+          .eq('attendant_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(100),
+      ]);
 
-      // Calcular estatísticas
-      const queueServices = queueData?.length || 0;
-      const appointmentServices = appointmentData?.length || 0;
-      const whatsappServices = whatsappData?.length || 0;
-      const totalServices = queueServices + appointmentServices + whatsappServices;
-
-      // Serviços de hoje
-      const todayQueue = queueData?.filter(item => 
-        item.completed_at && new Date(item.completed_at).toISOString().split('T')[0] === today
-      ).length || 0;
-      
-      const todayAppointments = appointmentData?.filter(item => 
-        item.completed_at && new Date(item.completed_at).toISOString().split('T')[0] === today
-      ).length || 0;
-      
-      const todayWhatsapp = whatsappData?.filter(item => 
-        item.created_at && new Date(item.created_at).toISOString().split('T')[0] === today
-      ).length || 0;
-
-      const todayServices = todayQueue + todayAppointments + todayWhatsapp;
-
-      // Calcular tempo médio de atendimento (apenas fila normal com dados completos)
+      // Calcular tempo médio (apenas fila normal com dados completos, amostra recente)
       const completedQueueWithTimes = queueData?.filter(item => 
         item.started_at && item.completed_at
       ) || [];
@@ -120,7 +151,7 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
         const totalTime = completedQueueWithTimes.reduce((sum, item) => {
           const start = new Date(item.started_at!);
           const end = new Date(item.completed_at!);
-          return sum + (end.getTime() - start.getTime()) / (1000 * 60); // em minutos
+          return sum + (end.getTime() - start.getTime()) / (1000 * 60);
         }, 0);
         avgServiceTime = Math.round(totalTime / completedQueueWithTimes.length);
       }
