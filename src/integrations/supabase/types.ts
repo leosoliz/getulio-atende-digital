@@ -1574,6 +1574,16 @@ export type Database = {
         Args: { location_uuid?: string }
         Returns: number
       }
+      get_today_completed_identity_appointments: {
+        Args: never
+        Returns: {
+          attendant_id: string
+          completed_at: string
+          id: string
+          name: string
+          phone: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_attendant_or_admin: { Args: never; Returns: boolean }
       is_receptionist_or_admin: { Args: never; Returns: boolean }

@@ -181,14 +181,10 @@ const SatisfactionSurvey: React.FC = () => {
         .lte('completed_at', `${today}T23:59:59`)
         .order('completed_at', { ascending: false });
 
-      // Buscar agendamentos de identidade completados
+      // Buscar agendamentos de identidade completados hoje (via RPC pública,
+      // pois identity_appointments tem RLS restrito e não é acessível ao anon)
       const { data: identityData, error: identityError } = await supabasePublic
-        .from('identity_appointments')
-        .select('id, name, phone, completed_at, attendant_id')
-        .eq('status', 'completed')
-        .gte('completed_at', `${today}T00:00:00`)
-        .lte('completed_at', `${today}T23:59:59`)
-        .order('completed_at', { ascending: false });
+        .rpc('get_today_completed_identity_appointments');
 
       // Buscar atendimentos WhatsApp (sempre considerados completados)
       const { data: whatsappData, error: whatsappError } = await supabasePublic
