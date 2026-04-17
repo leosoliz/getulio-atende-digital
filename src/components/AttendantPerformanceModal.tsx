@@ -57,15 +57,17 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
     setLoading(true);
     
     try {
-      // Calcular limites do dia atual no fuso de São Paulo (independente do fuso do navegador)
-      const nowSpStr = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-      const nowSp = new Date(nowSpStr);
-      const startOfToday = new Date(nowSp.getFullYear(), nowSp.getMonth(), nowSp.getDate(), 0, 0, 0, 0);
-      const endOfToday = new Date(nowSp.getFullYear(), nowSp.getMonth(), nowSp.getDate(), 23, 59, 59, 999);
-      // Compensar diferença entre fuso do navegador e America/Sao_Paulo
-      const tzOffsetMs = new Date().getTime() - nowSp.getTime();
-      const startISO = new Date(startOfToday.getTime() + tzOffsetMs).toISOString();
-      const endISO = new Date(endOfToday.getTime() + tzOffsetMs).toISOString();
+      // Janela "hoje" em America/Sao_Paulo (UTC-3, sem horário de verão).
+      // Calcula a data atual em SP e gera o intervalo [00:00 BRT, 24:00 BRT) em UTC.
+      const BRT_OFFSET_HOURS = 3; // BRT = UTC-3
+      const nowUtcMs = Date.now();
+      const nowBrt = new Date(nowUtcMs - BRT_OFFSET_HOURS * 3600 * 1000);
+      const y = nowBrt.getUTCFullYear();
+      const m = nowBrt.getUTCMonth();
+      const d = nowBrt.getUTCDate();
+      // 00:00 BRT == 03:00 UTC do mesmo dia
+      const startISO = new Date(Date.UTC(y, m, d, BRT_OFFSET_HOURS, 0, 0, 0)).toISOString();
+      const endISO = new Date(Date.UTC(y, m, d + 1, BRT_OFFSET_HOURS, 0, 0, 0)).toISOString();
 
       console.log('[Performance] Profile ID:', profile.id);
       console.log('[Performance] Janela hoje (BRT):', { startISO, endISO });
@@ -99,20 +101,20 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
           .eq('attendant_id', profile.id)
           .eq('status', 'completed')
           .gte('completed_at', startISO)
-          .lte('completed_at', endISO),
+          .lt('completed_at', endISO),
         supabase
           .from('identity_appointments')
           .select('*', { count: 'exact', head: true })
           .eq('attendant_id', profile.id)
           .eq('status', 'completed')
           .gte('completed_at', startISO)
-          .lte('completed_at', endISO),
+          .lt('completed_at', endISO),
         supabase
           .from('whatsapp_services')
           .select('*', { count: 'exact', head: true })
           .eq('attendant_id', profile.id)
           .gte('created_at', startISO)
-          .lte('created_at', endISO),
+          .lt('created_at', endISO),
       ]);
 
       console.log('[Performance] Counts:', {
