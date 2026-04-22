@@ -1522,6 +1522,11 @@ export default function Corporate() {
         <div className="mb-1 text-center">
           <h1 className="text-lg font-bold text-foreground mb-0 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
           <p className="text-muted-foreground text-[10px]">Secretaria de Desenvolvimento Econômico e Planejamento</p>
+          {lastUpdate && (
+            <p className="text-muted-foreground text-[9px] mt-0.5">
+              Última atualização: {format(lastUpdate, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+            </p>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
