@@ -140,7 +140,7 @@ export default function Corporate() {
   });
   
   // Estado para controlar a aba ativa
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('weekly');
   
   // Estados para a aba Servidor
   const [selectedAttendant, setSelectedAttendant] = useState<string>('all');
