@@ -163,6 +163,7 @@ export default function Corporate() {
   
   const [loading, setLoading] = useState(true);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const {
     toast
   } = useToast();
