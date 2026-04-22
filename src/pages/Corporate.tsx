@@ -1239,9 +1239,12 @@ export default function Corporate() {
         const { data: wd } = await supabase.from('whatsapp_services').select('*')
           .gte('created_at', attStartDate.toISOString())
           .lte('created_at', attEndDate.toISOString());
+        // Identidade: filtra por completed_at para refletir quando o atendimento ocorreu
+        // (agendamentos podem ser criados num mês e atendidos em outro)
         const { data: id } = await supabase.from('identity_appointments').select('*')
-          .gte('created_at', attStartDate.toISOString())
-          .lte('created_at', attEndDate.toISOString());
+          .not('completed_at', 'is', null)
+          .gte('completed_at', attStartDate.toISOString())
+          .lte('completed_at', attEndDate.toISOString());
         attQueueData = qd || [];
         attWhatsappData = wd || [];
         attIdentityData = id || [];
@@ -1255,10 +1258,12 @@ export default function Corporate() {
           .eq('attendant_id', selectedAttendant)
           .gte('created_at', attStartDate.toISOString())
           .lte('created_at', attEndDate.toISOString());
+        // Identidade: filtra por completed_at do atendente
         const { data: id } = await supabase.from('identity_appointments').select('*')
           .eq('attendant_id', selectedAttendant)
-          .gte('created_at', attStartDate.toISOString())
-          .lte('created_at', attEndDate.toISOString());
+          .not('completed_at', 'is', null)
+          .gte('completed_at', attStartDate.toISOString())
+          .lte('completed_at', attEndDate.toISOString());
         attQueueData = qd || [];
         attWhatsappData = wd || [];
         attIdentityData = id || [];
