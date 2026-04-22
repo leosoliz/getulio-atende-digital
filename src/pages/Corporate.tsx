@@ -1054,8 +1054,9 @@ export default function Corporate() {
 
         // Contar agendamentos de identidade CONCLUÍDOS neste dia
         const dayIdentityCount = identitySelectedMonthData?.filter(appointment => {
-          const appointmentTime = new Date(appointment.created_at);
-          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          if (!appointment.completed_at) return false;
+          const completedTime = new Date(appointment.completed_at);
+          return completedTime >= startOfDayDate && completedTime <= endOfDayDate;
         }).length || 0;
 
         const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
