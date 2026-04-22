@@ -352,18 +352,25 @@ export default function Corporate() {
 
       // Buscar dados de agendamento de identidade
       const identityData = await fetchAllPaginated<any>('identity_appointments');
+      // Identidade: filtra por completed_at para refletir atendimentos efetivamente realizados no período
       const {
         data: identityWeekData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
-      // Buscar dados do mês atual para estatísticas gerais
+      } = await supabase.from('identity_appointments').select('*')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', startOfThisWeek.toISOString())
+        .lte('completed_at', endOfThisWeek.toISOString());
       const {
         data: identityMonthData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisMonth.toISOString()).lte('created_at', endOfThisMonth.toISOString());
-      
-      // Buscar dados do mês selecionado para a aba mensal
+      } = await supabase.from('identity_appointments').select('*')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', startOfThisMonth.toISOString())
+        .lte('completed_at', endOfThisMonth.toISOString());
       const {
         data: identitySelectedMonthData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
+      } = await supabase.from('identity_appointments').select('*')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', startOfSelectedMonth.toISOString())
+        .lte('completed_at', endOfSelectedMonth.toISOString());
 
       // Usar contagens exatas para totais (evita limite de 1000 linhas)
       const queueCount = queueTotalCount || 0;
