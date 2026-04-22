@@ -532,10 +532,10 @@ export default function Corporate() {
           data: whatsappMonthData
         } = await supabase.from('whatsapp_services').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
 
-        // Buscar agendamentos de identidade CONCLUÍDOS
+        // Buscar agendamentos de identidade CONCLUÍDOS no mês (filtra por completed_at)
         const {
           data: identityMonthData
-        } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null).gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
+        } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null).gte('completed_at', startOfMonthDate.toISOString()).lte('completed_at', endOfMonthDate.toISOString());
         const totalMonthServices = (queueMonthData?.length || 0) + (whatsappMonthData?.length || 0) + (identityMonthData?.length || 0);
         monthlyDataArray.push({
           month: format(monthDate, "MMM/yy", {
