@@ -126,17 +126,33 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
       const totalServices = (queueServices || 0) + (appointmentServices || 0) + (whatsappServices || 0);
       const todayServices = (queueToday || 0) + (appointmentToday || 0) + (whatsappToday || 0);
 
-      // Buscar dados detalhados (para histórico e tempo médio) - últimos 50 de cada
+      // Buscar dados detalhados (para histórico e tempo médio).
+      // IMPORTANTE: para garantir que os atendimentos de HOJE sempre apareçam
+      // (mesmo para atendentes com milhares de registros históricos), buscamos
+      // separadamente: (1) tudo de hoje na janela BRT e (2) os 100 mais recentes
+      // anteriores a hoje. Depois unimos sem duplicatas.
       const [
-        { data: queueData },
-        { data: appointmentData },
-        { data: whatsappData },
+        { data: queueTodayData, error: qtErr },
+        { data: queueRecentData },
+        { data: appointmentTodayData, error: atErr },
+        { data: appointmentRecentData },
+        { data: whatsappTodayData, error: wtErr },
+        { data: whatsappRecentData },
       ] = await Promise.all([
         supabase
           .from('queue_customers')
           .select(`*, services:service_id (name)`)
           .eq('attendant_id', profile.id)
           .eq('status', 'completed')
+          .gte('completed_at', startISO)
+          .lt('completed_at', endISO)
+          .order('completed_at', { ascending: false }),
+        supabase
+          .from('queue_customers')
+          .select(`*, services:service_id (name)`)
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed')
+          .lt('completed_at', startISO)
           .order('completed_at', { ascending: false })
           .limit(100),
         supabase
@@ -144,15 +160,43 @@ const AttendantPerformanceModal: React.FC<AttendantPerformanceModalProps> = ({ o
           .select('*')
           .eq('attendant_id', profile.id)
           .eq('status', 'completed')
+          .gte('completed_at', startISO)
+          .lt('completed_at', endISO)
+          .order('completed_at', { ascending: false }),
+        supabase
+          .from('identity_appointments')
+          .select('*')
+          .eq('attendant_id', profile.id)
+          .eq('status', 'completed')
+          .lt('completed_at', startISO)
           .order('completed_at', { ascending: false })
           .limit(100),
         supabase
           .from('whatsapp_services')
           .select(`*, services:service_id (name)`)
           .eq('attendant_id', profile.id)
+          .gte('created_at', startISO)
+          .lt('created_at', endISO)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('whatsapp_services')
+          .select(`*, services:service_id (name)`)
+          .eq('attendant_id', profile.id)
+          .lt('created_at', startISO)
           .order('created_at', { ascending: false })
           .limit(100),
       ]);
+
+      const queueData = [...(queueTodayData || []), ...(queueRecentData || [])];
+      const appointmentData = [...(appointmentTodayData || []), ...(appointmentRecentData || [])];
+      const whatsappData = [...(whatsappTodayData || []), ...(whatsappRecentData || [])];
+
+      console.log('[Performance] Histórico hoje:', {
+        queueHoje: queueTodayData?.length || 0,
+        appointmentHoje: appointmentTodayData?.length || 0,
+        whatsappHoje: whatsappTodayData?.length || 0,
+        errors: { qtErr, atErr, wtErr }
+      });
 
       // Calcular tempo médio (apenas fila normal com dados completos, amostra recente)
       const completedQueueWithTimes = queueData?.filter(item => 
