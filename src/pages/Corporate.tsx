@@ -1506,6 +1506,7 @@ export default function Corporate() {
     } finally {
       setLoading(false);
       if (!initialLoadDone) setInitialLoadDone(true);
+      setLastUpdate(new Date());
     }
   };
   if (loading && !initialLoadDone) {
