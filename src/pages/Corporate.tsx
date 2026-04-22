@@ -295,10 +295,33 @@ export default function Corporate() {
         .select('*', { count: 'exact', head: true })
         .not('completed_at', 'is', null);
 
+      // Helper para buscar todos os registros de uma tabela em páginas (evita limite de 1000)
+      const fetchAllPaginated = async <T,>(table: 'queue_customers' | 'whatsapp_services' | 'identity_appointments'): Promise<T[]> => {
+        const PAGE_SIZE = 1000;
+        const all: T[] = [];
+        let from = 0;
+        // Loop até receber página menor que PAGE_SIZE
+        // (segurança máxima de 100 páginas = 100k registros)
+        for (let i = 0; i < 100; i++) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+          if (error) {
+            console.error(`Error paginating ${table}:`, error);
+            break;
+          }
+          if (!data || data.length === 0) break;
+          all.push(...(data as unknown as T[]));
+          if (data.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+        return all;
+      };
+
       // Buscar dados da fila normal (para cálculos de tempo)
-      const {
-        data: queueData
-      } = await supabase.from('queue_customers').select('*');
+      const queueData = await fetchAllPaginated<any>('queue_customers');
       const {
         data: queueWeekData
       } = await supabase.from('queue_customers').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
@@ -313,9 +336,7 @@ export default function Corporate() {
       } = await supabase.from('queue_customers').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
 
       // Buscar dados do WhatsApp
-      const {
-        data: whatsappData
-      } = await supabase.from('whatsapp_services').select('*');
+      const whatsappData = await fetchAllPaginated<any>('whatsapp_services');
       const {
         data: whatsappWeekData
       } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
@@ -330,9 +351,7 @@ export default function Corporate() {
       } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
 
       // Buscar dados de agendamento de identidade
-      const {
-        data: identityData
-      } = await supabase.from('identity_appointments').select('*');
+      const identityData = await fetchAllPaginated<any>('identity_appointments');
       const {
         data: identityWeekData
       } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
