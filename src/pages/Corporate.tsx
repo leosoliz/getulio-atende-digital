@@ -295,10 +295,33 @@ export default function Corporate() {
         .select('*', { count: 'exact', head: true })
         .not('completed_at', 'is', null);
 
+      // Helper para buscar todos os registros de uma tabela em páginas (evita limite de 1000)
+      const fetchAllPaginated = async <T,>(table: 'queue_customers' | 'whatsapp_services' | 'identity_appointments'): Promise<T[]> => {
+        const PAGE_SIZE = 1000;
+        const all: T[] = [];
+        let from = 0;
+        // Loop até receber página menor que PAGE_SIZE
+        // (segurança máxima de 100 páginas = 100k registros)
+        for (let i = 0; i < 100; i++) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+          if (error) {
+            console.error(`Error paginating ${table}:`, error);
+            break;
+          }
+          if (!data || data.length === 0) break;
+          all.push(...(data as unknown as T[]));
+          if (data.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+        return all;
+      };
+
       // Buscar dados da fila normal (para cálculos de tempo)
-      const {
-        data: queueData
-      } = await supabase.from('queue_customers').select('*');
+      const queueData = await fetchAllPaginated<any>('queue_customers');
       const {
         data: queueWeekData
       } = await supabase.from('queue_customers').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
@@ -313,9 +336,7 @@ export default function Corporate() {
       } = await supabase.from('queue_customers').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
 
       // Buscar dados do WhatsApp
-      const {
-        data: whatsappData
-      } = await supabase.from('whatsapp_services').select('*');
+      const whatsappData = await fetchAllPaginated<any>('whatsapp_services');
       const {
         data: whatsappWeekData
       } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
@@ -330,21 +351,26 @@ export default function Corporate() {
       } = await supabase.from('whatsapp_services').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
 
       // Buscar dados de agendamento de identidade
-      const {
-        data: identityData
-      } = await supabase.from('identity_appointments').select('*');
+      const identityData = await fetchAllPaginated<any>('identity_appointments');
+      // Identidade: filtra por completed_at para refletir atendimentos efetivamente realizados no período
       const {
         data: identityWeekData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisWeek.toISOString()).lte('created_at', endOfThisWeek.toISOString());
-      // Buscar dados do mês atual para estatísticas gerais
+      } = await supabase.from('identity_appointments').select('*')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', startOfThisWeek.toISOString())
+        .lte('completed_at', endOfThisWeek.toISOString());
       const {
         data: identityMonthData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfThisMonth.toISOString()).lte('created_at', endOfThisMonth.toISOString());
-      
-      // Buscar dados do mês selecionado para a aba mensal
+      } = await supabase.from('identity_appointments').select('*')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', startOfThisMonth.toISOString())
+        .lte('completed_at', endOfThisMonth.toISOString());
       const {
         data: identitySelectedMonthData
-      } = await supabase.from('identity_appointments').select('*').gte('created_at', startOfSelectedMonth.toISOString()).lte('created_at', endOfSelectedMonth.toISOString());
+      } = await supabase.from('identity_appointments').select('*')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', startOfSelectedMonth.toISOString())
+        .lte('completed_at', endOfSelectedMonth.toISOString());
 
       // Usar contagens exatas para totais (evita limite de 1000 linhas)
       const queueCount = queueTotalCount || 0;
@@ -506,10 +532,10 @@ export default function Corporate() {
           data: whatsappMonthData
         } = await supabase.from('whatsapp_services').select('id').gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
 
-        // Buscar agendamentos de identidade CONCLUÍDOS
+        // Buscar agendamentos de identidade CONCLUÍDOS no mês (filtra por completed_at)
         const {
           data: identityMonthData
-        } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null).gte('created_at', startOfMonthDate.toISOString()).lte('created_at', endOfMonthDate.toISOString());
+        } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null).gte('completed_at', startOfMonthDate.toISOString()).lte('completed_at', endOfMonthDate.toISOString());
         const totalMonthServices = (queueMonthData?.length || 0) + (whatsappMonthData?.length || 0) + (identityMonthData?.length || 0);
         monthlyDataArray.push({
           month: format(monthDate, "MMM/yy", {
@@ -704,8 +730,9 @@ export default function Corporate() {
 
         // Contar agendamentos de identidade CONCLUÍDOS neste dia
         const dayIdentityCount = identityWeekData?.filter(appointment => {
-          const appointmentTime = new Date(appointment.created_at);
-          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          if (!appointment.completed_at) return false;
+          const completedTime = new Date(appointment.completed_at);
+          return completedTime >= startOfDayDate && completedTime <= endOfDayDate;
         }).length || 0;
 
         const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
@@ -1027,8 +1054,9 @@ export default function Corporate() {
 
         // Contar agendamentos de identidade CONCLUÍDOS neste dia
         const dayIdentityCount = identitySelectedMonthData?.filter(appointment => {
-          const appointmentTime = new Date(appointment.created_at);
-          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          if (!appointment.completed_at) return false;
+          const completedTime = new Date(appointment.completed_at);
+          return completedTime >= startOfDayDate && completedTime <= endOfDayDate;
         }).length || 0;
 
         const totalDayServices = dayQueueCount + dayWhatsappCount + dayIdentityCount;
@@ -1220,9 +1248,12 @@ export default function Corporate() {
         const { data: wd } = await supabase.from('whatsapp_services').select('*')
           .gte('created_at', attStartDate.toISOString())
           .lte('created_at', attEndDate.toISOString());
+        // Identidade: filtra por completed_at para refletir quando o atendimento ocorreu
+        // (agendamentos podem ser criados num mês e atendidos em outro)
         const { data: id } = await supabase.from('identity_appointments').select('*')
-          .gte('created_at', attStartDate.toISOString())
-          .lte('created_at', attEndDate.toISOString());
+          .not('completed_at', 'is', null)
+          .gte('completed_at', attStartDate.toISOString())
+          .lte('completed_at', attEndDate.toISOString());
         attQueueData = qd || [];
         attWhatsappData = wd || [];
         attIdentityData = id || [];
@@ -1236,10 +1267,12 @@ export default function Corporate() {
           .eq('attendant_id', selectedAttendant)
           .gte('created_at', attStartDate.toISOString())
           .lte('created_at', attEndDate.toISOString());
+        // Identidade: filtra por completed_at do atendente
         const { data: id } = await supabase.from('identity_appointments').select('*')
           .eq('attendant_id', selectedAttendant)
-          .gte('created_at', attStartDate.toISOString())
-          .lte('created_at', attEndDate.toISOString());
+          .not('completed_at', 'is', null)
+          .gte('completed_at', attStartDate.toISOString())
+          .lte('completed_at', attEndDate.toISOString());
         attQueueData = qd || [];
         attWhatsappData = wd || [];
         attIdentityData = id || [];
@@ -1353,9 +1386,11 @@ export default function Corporate() {
           return serviceTime >= startOfDayDate && serviceTime <= endOfDayDate;
         }).length;
 
+        // Conta o atendimento de identidade no dia em que foi CONCLUÍDO
         const dayIdentityCount = attIdentityData.filter(appointment => {
-          const appointmentTime = new Date(appointment.created_at);
-          return appointment.completed_at && appointmentTime >= startOfDayDate && appointmentTime <= endOfDayDate;
+          if (!appointment.completed_at) return false;
+          const completedTime = new Date(appointment.completed_at);
+          return completedTime >= startOfDayDate && completedTime <= endOfDayDate;
         }).length;
 
         attDailyData.push({
