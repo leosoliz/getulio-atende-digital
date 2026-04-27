@@ -1288,9 +1288,14 @@ export default function Corporate() {
           .not('completed_at', 'is', null)
           .gte('completed_at', attStartDate.toISOString())
           .lte('completed_at', attEndDate.toISOString());
+        // No-show por mês selecionado (baseado em appointment_date)
+        const { data: idNoShow } = await supabase.from('identity_appointments').select('*')
+          .eq('status', 'no_show')
+          .gte('appointment_date', format(attStartDate, 'yyyy-MM-dd'))
+          .lte('appointment_date', format(attEndDate, 'yyyy-MM-dd'));
         attQueueData = qd || [];
         attWhatsappData = wd || [];
-        attIdentityData = id || [];
+        attIdentityData = [...(id || []), ...(idNoShow || [])];
       } else {
         // Filtra pelo atendente selecionado
         const { data: qd } = await supabase.from('queue_customers').select('*')
@@ -1307,9 +1312,14 @@ export default function Corporate() {
           .not('completed_at', 'is', null)
           .gte('completed_at', attStartDate.toISOString())
           .lte('completed_at', attEndDate.toISOString());
+        const { data: idNoShow } = await supabase.from('identity_appointments').select('*')
+          .eq('attendant_id', selectedAttendant)
+          .eq('status', 'no_show')
+          .gte('appointment_date', format(attStartDate, 'yyyy-MM-dd'))
+          .lte('appointment_date', format(attEndDate, 'yyyy-MM-dd'));
         attQueueData = qd || [];
         attWhatsappData = wd || [];
-        attIdentityData = id || [];
+        attIdentityData = [...(id || []), ...(idNoShow || [])];
       }
 
       const attQueueCount = attQueueData.filter(s => s.completed_at).length;
