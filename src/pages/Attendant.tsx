@@ -585,6 +585,37 @@ const Attendant: React.FC = () => {
     setLoading(false);
   };
 
+  const markAppointmentAsNoShow = async (appointmentId: string) => {
+    setLoading(true);
+    try {
+      const appointment = identityAppointments.find(a => a.id === appointmentId);
+      const { error } = await supabase
+        .from('identity_appointments')
+        .update({
+          status: 'no_show',
+          attendant_id: profile?.id,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Não compareceu registrado',
+        description: `${appointment?.name ?? 'Agendamento'} marcado como não compareceu`,
+      });
+
+      fetchIdentityAppointments();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao marcar não compareceu',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+    setLoading(false);
+  };
+
   const startIdentityAppointment = async (appointmentId: string) => {
     setLoading(true);
     
