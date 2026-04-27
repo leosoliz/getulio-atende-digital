@@ -306,6 +306,24 @@ export default function Corporate() {
         .select('*', { count: 'exact', head: true })
         .not('completed_at', 'is', null);
 
+      // Contagens de não comparecimento (no_show)
+      const { count: noShowTotalCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'no_show');
+      const { count: noShowWeekCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'no_show')
+        .gte('appointment_date', format(startOfThisWeek, 'yyyy-MM-dd'))
+        .lte('appointment_date', format(endOfThisWeek, 'yyyy-MM-dd'));
+      const { count: noShowMonthSelectedCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'no_show')
+        .gte('appointment_date', format(startOfSelectedMonth, 'yyyy-MM-dd'))
+        .lte('appointment_date', format(endOfSelectedMonth, 'yyyy-MM-dd'));
+
       // Helper para buscar todos os registros de uma tabela em páginas (evita limite de 1000)
       const fetchAllPaginated = async <T,>(table: 'queue_customers' | 'whatsapp_services' | 'identity_appointments'): Promise<T[]> => {
         const PAGE_SIZE = 1000;
@@ -455,8 +473,13 @@ export default function Corporate() {
         whatsappServices: whatsappCount,
         identityServices: identityCount,
         averageServiceTime: averageServiceTimeMinutes,
-        averageWaitTime: averageWaitTimeMinutes
+        averageWaitTime: averageWaitTimeMinutes,
+        noShowTotal: noShowTotalCount || 0,
+        noShowWeek: noShowWeekCount || 0,
+        noShowMonth: noShowMonthSelectedCount || 0
       });
+      setWeeklyNoShow(noShowWeekCount || 0);
+      setMonthlyNoShow(noShowMonthSelectedCount || 0);
 
       // Buscar todos os serviços disponíveis
       const {
