@@ -998,15 +998,46 @@ const Attendant: React.FC = () => {
                       </div>
                       
                       {appointment.status === 'scheduled' && (
-                        <Button 
-                          onClick={() => callIdentityAppointment(appointment.id)}
-                          disabled={loading}
-                          size="sm"
-                          className="w-full"
-                        >
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Chamar Agendamento
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => callIdentityAppointment(appointment.id)}
+                            disabled={loading}
+                            size="sm"
+                            className="flex-1"
+                          >
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Chamar Agendamento
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={loading}
+                                className="flex-1"
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Não Compareceu
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar não comparecimento</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Deseja registrar que <strong>{appointment.name}</strong> ({appointment.appointment_time}) não compareceu ao agendamento? Esta ação removerá o agendamento da fila.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => markAppointmentAsNoShow(appointment.id)}
+                                >
+                                  Confirmar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       )}
                     </div>
                   ))}
