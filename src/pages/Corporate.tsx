@@ -22,6 +22,9 @@ interface ServiceStats {
   identityServices: number;
   averageServiceTime: number;
   averageWaitTime: number;
+  noShowTotal: number;
+  noShowWeek: number;
+  noShowMonth: number;
 }
 interface ServiceTypeData {
   name: string;
@@ -67,6 +70,7 @@ interface AttendantStats {
   satisfactionStats: SatisfactionStats;
   serviceTypeData: ServiceTypeData[];
   dailyData: MonthlyData[];
+  noShow: number;
 }
 export default function Corporate() {
   const [serviceStats, setServiceStats] = useState<ServiceStats>({
@@ -77,7 +81,10 @@ export default function Corporate() {
     whatsappServices: 0,
     identityServices: 0,
     averageServiceTime: 0,
-    averageWaitTime: 0
+    averageWaitTime: 0,
+    noShowTotal: 0,
+    noShowWeek: 0,
+    noShowMonth: 0
   });
   const [satisfactionStats, setSatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
@@ -98,6 +105,8 @@ export default function Corporate() {
   const [weeklyIdentityServices, setWeeklyIdentityServices] = useState(0);
   const [weeklyAverageServiceTime, setWeeklyAverageServiceTime] = useState(0);
   const [weeklyAverageWaitTime, setWeeklyAverageWaitTime] = useState(0);
+  const [weeklyNoShow, setWeeklyNoShow] = useState(0);
+  const [monthlyNoShow, setMonthlyNoShow] = useState(0);
   const [weeklySatisfactionStats, setWeeklySatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
     averageRating: 0,
@@ -158,7 +167,8 @@ export default function Corporate() {
     averageWaitTime: 0,
     satisfactionStats: { totalSurveys: 0, averageRating: 0, ratingDistribution: {} },
     serviceTypeData: [],
-    dailyData: []
+    dailyData: [],
+    noShow: 0
   });
   
   const [loading, setLoading] = useState(true);
