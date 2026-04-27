@@ -1600,11 +1600,12 @@ export default function Corporate() {
 
           <TabsContent value="overview" className="flex-1 overflow-y-auto">
             <div className="space-y-1">
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
               <MetricsCard title="Total de Atendimentos" value={serviceStats.total} icon={<Users className="h-6 w-6" />} subtitle="Todos os tipos de atendimento" color="blue" />
               <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento" color="green" />
               <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado" color="purple" />
               <MetricsCard title="Satisfação" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
+              <MetricsCard title="Não Compareceram" value={serviceStats.noShowTotal} icon={<UserCheck className="h-6 w-6" />} subtitle="Agendamentos sem comparecimento" color="orange" />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
@@ -1648,11 +1649,12 @@ export default function Corporate() {
                 </Select>
               </div>
               
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
                 <MetricsCard title="Atendimentos da Semana" value={serviceStats.thisWeek} icon={<Users className="h-6 w-6" />} subtitle={weekPeriod} color="blue" />
                 <MetricsCard title="Tempo Médio de Atendimento" value={weeklyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento na semana" color="green" />
                 <MetricsCard title="Tempo Médio de Espera" value={weeklyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado na semana" color="purple" />
                 <MetricsCard title="Satisfação da Semana" value={Math.round(weeklySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${weeklySatisfactionStats.totalSurveys} avaliações na semana`} color="orange" isPercentage={true} />
+                <MetricsCard title="Não Compareceram" value={weeklyNoShow} icon={<UserCheck className="h-6 w-6" />} subtitle="Agendamentos da semana" color="orange" />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
@@ -1693,7 +1695,7 @@ export default function Corporate() {
                 </Select>
               </div>
               
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
                 <MetricsCard title="Atendimentos Este Mês" value={selectedMonthTotalServices} icon={<Users className="h-6 w-6" />} subtitle={(() => {
                   const [year, month] = selectedMonth.split('-').map(Number);
                   const date = new Date(year, month - 1, 1);
@@ -1702,6 +1704,7 @@ export default function Corporate() {
                 <MetricsCard title="Tempo Médio de Atendimento" value={monthlyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento no mês" color="green" />
                 <MetricsCard title="Tempo Médio de Espera" value={monthlyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado no mês" color="purple" />
                 <MetricsCard title="Satisfação do Mês" value={Math.round(monthlySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${monthlySatisfactionStats.totalSurveys} avaliações no mês`} color="orange" isPercentage={true} />
+                <MetricsCard title="Não Compareceram" value={monthlyNoShow} icon={<UserCheck className="h-6 w-6" />} subtitle="Agendamentos do mês" color="orange" />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
@@ -1763,7 +1766,7 @@ export default function Corporate() {
                 </div>
               </div>
               
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
                 <MetricsCard 
                   title="Total de Atendimentos" 
                   value={attendantStats.total} 
@@ -1792,6 +1795,13 @@ export default function Corporate() {
                   subtitle={`${attendantStats.satisfactionStats.totalSurveys} avaliações`} 
                   color="orange" 
                   isPercentage={true} 
+                />
+                <MetricsCard 
+                  title="Não Compareceram" 
+                  value={attendantStats.noShow} 
+                  icon={<UserCheck className="h-6 w-6" />} 
+                  subtitle="Agendamentos no mês" 
+                  color="orange" 
                 />
               </div>
 
