@@ -1316,6 +1316,7 @@ export default function Corporate() {
       const attWhatsappCount = attWhatsappData.length;
       const attIdentityCount = attIdentityData.filter(a => a.completed_at).length;
       const attTotal = attQueueCount + attWhatsappCount + attIdentityCount;
+      const attNoShowCount = attIdentityData.filter(a => a.status === 'no_show').length;
 
       // Tempo médio de atendimento do atendente
       let attTotalServiceTime = 0;
@@ -1526,7 +1527,8 @@ export default function Corporate() {
         averageWaitTime: attAvgWaitTime,
         satisfactionStats: attSatisfactionStats,
         serviceTypeData: attServiceTypesArray,
-        dailyData: attDailyData
+        dailyData: attDailyData,
+        noShow: attNoShowCount
       });
 
     } catch (error) {
