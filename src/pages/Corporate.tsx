@@ -22,6 +22,9 @@ interface ServiceStats {
   identityServices: number;
   averageServiceTime: number;
   averageWaitTime: number;
+  noShowTotal: number;
+  noShowWeek: number;
+  noShowMonth: number;
 }
 interface ServiceTypeData {
   name: string;
@@ -67,6 +70,7 @@ interface AttendantStats {
   satisfactionStats: SatisfactionStats;
   serviceTypeData: ServiceTypeData[];
   dailyData: MonthlyData[];
+  noShow: number;
 }
 export default function Corporate() {
   const [serviceStats, setServiceStats] = useState<ServiceStats>({
@@ -77,7 +81,10 @@ export default function Corporate() {
     whatsappServices: 0,
     identityServices: 0,
     averageServiceTime: 0,
-    averageWaitTime: 0
+    averageWaitTime: 0,
+    noShowTotal: 0,
+    noShowWeek: 0,
+    noShowMonth: 0
   });
   const [satisfactionStats, setSatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
@@ -98,6 +105,8 @@ export default function Corporate() {
   const [weeklyIdentityServices, setWeeklyIdentityServices] = useState(0);
   const [weeklyAverageServiceTime, setWeeklyAverageServiceTime] = useState(0);
   const [weeklyAverageWaitTime, setWeeklyAverageWaitTime] = useState(0);
+  const [weeklyNoShow, setWeeklyNoShow] = useState(0);
+  const [monthlyNoShow, setMonthlyNoShow] = useState(0);
   const [weeklySatisfactionStats, setWeeklySatisfactionStats] = useState<SatisfactionStats>({
     totalSurveys: 0,
     averageRating: 0,
@@ -158,7 +167,8 @@ export default function Corporate() {
     averageWaitTime: 0,
     satisfactionStats: { totalSurveys: 0, averageRating: 0, ratingDistribution: {} },
     serviceTypeData: [],
-    dailyData: []
+    dailyData: [],
+    noShow: 0
   });
   
   const [loading, setLoading] = useState(true);
@@ -295,6 +305,24 @@ export default function Corporate() {
         .from('identity_appointments')
         .select('*', { count: 'exact', head: true })
         .not('completed_at', 'is', null);
+
+      // Contagens de não comparecimento (no_show)
+      const { count: noShowTotalCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'no_show');
+      const { count: noShowWeekCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'no_show')
+        .gte('appointment_date', format(startOfThisWeek, 'yyyy-MM-dd'))
+        .lte('appointment_date', format(endOfThisWeek, 'yyyy-MM-dd'));
+      const { count: noShowMonthSelectedCount } = await supabase
+        .from('identity_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'no_show')
+        .gte('appointment_date', format(startOfSelectedMonth, 'yyyy-MM-dd'))
+        .lte('appointment_date', format(endOfSelectedMonth, 'yyyy-MM-dd'));
 
       // Helper para buscar todos os registros de uma tabela em páginas (evita limite de 1000)
       const fetchAllPaginated = async <T,>(table: 'queue_customers' | 'whatsapp_services' | 'identity_appointments'): Promise<T[]> => {
@@ -445,8 +473,13 @@ export default function Corporate() {
         whatsappServices: whatsappCount,
         identityServices: identityCount,
         averageServiceTime: averageServiceTimeMinutes,
-        averageWaitTime: averageWaitTimeMinutes
+        averageWaitTime: averageWaitTimeMinutes,
+        noShowTotal: noShowTotalCount || 0,
+        noShowWeek: noShowWeekCount || 0,
+        noShowMonth: noShowMonthSelectedCount || 0
       });
+      setWeeklyNoShow(noShowWeekCount || 0);
+      setMonthlyNoShow(noShowMonthSelectedCount || 0);
 
       // Buscar todos os serviços disponíveis
       const {
@@ -1255,9 +1288,14 @@ export default function Corporate() {
           .not('completed_at', 'is', null)
           .gte('completed_at', attStartDate.toISOString())
           .lte('completed_at', attEndDate.toISOString());
+        // No-show por mês selecionado (baseado em appointment_date)
+        const { data: idNoShow } = await supabase.from('identity_appointments').select('*')
+          .eq('status', 'no_show')
+          .gte('appointment_date', format(attStartDate, 'yyyy-MM-dd'))
+          .lte('appointment_date', format(attEndDate, 'yyyy-MM-dd'));
         attQueueData = qd || [];
         attWhatsappData = wd || [];
-        attIdentityData = id || [];
+        attIdentityData = [...(id || []), ...(idNoShow || [])];
       } else {
         // Filtra pelo atendente selecionado
         const { data: qd } = await supabase.from('queue_customers').select('*')
@@ -1274,15 +1312,21 @@ export default function Corporate() {
           .not('completed_at', 'is', null)
           .gte('completed_at', attStartDate.toISOString())
           .lte('completed_at', attEndDate.toISOString());
+        const { data: idNoShow } = await supabase.from('identity_appointments').select('*')
+          .eq('attendant_id', selectedAttendant)
+          .eq('status', 'no_show')
+          .gte('appointment_date', format(attStartDate, 'yyyy-MM-dd'))
+          .lte('appointment_date', format(attEndDate, 'yyyy-MM-dd'));
         attQueueData = qd || [];
         attWhatsappData = wd || [];
-        attIdentityData = id || [];
+        attIdentityData = [...(id || []), ...(idNoShow || [])];
       }
 
       const attQueueCount = attQueueData.filter(s => s.completed_at).length;
       const attWhatsappCount = attWhatsappData.length;
       const attIdentityCount = attIdentityData.filter(a => a.completed_at).length;
       const attTotal = attQueueCount + attWhatsappCount + attIdentityCount;
+      const attNoShowCount = attIdentityData.filter(a => a.status === 'no_show').length;
 
       // Tempo médio de atendimento do atendente
       let attTotalServiceTime = 0;
@@ -1493,7 +1537,8 @@ export default function Corporate() {
         averageWaitTime: attAvgWaitTime,
         satisfactionStats: attSatisfactionStats,
         serviceTypeData: attServiceTypesArray,
-        dailyData: attDailyData
+        dailyData: attDailyData,
+        noShow: attNoShowCount
       });
 
     } catch (error) {
@@ -1555,11 +1600,12 @@ export default function Corporate() {
 
           <TabsContent value="overview" className="flex-1 overflow-y-auto">
             <div className="space-y-1">
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
               <MetricsCard title="Total de Atendimentos" value={serviceStats.total} icon={<Users className="h-6 w-6" />} subtitle="Todos os tipos de atendimento" color="blue" />
               <MetricsCard title="Tempo Médio de Atendimento" value={serviceStats.averageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento" color="green" />
               <MetricsCard title="Tempo Médio de Espera" value={serviceStats.averageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado" color="purple" />
               <MetricsCard title="Satisfação" value={Math.round(satisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${satisfactionStats.totalSurveys} avaliações`} color="orange" isPercentage={true} />
+              <MetricsCard title="Não Compareceram" value={serviceStats.noShowTotal} icon={<UserCheck className="h-6 w-6" />} subtitle="Agendamentos sem comparecimento" color="orange" />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
@@ -1603,11 +1649,12 @@ export default function Corporate() {
                 </Select>
               </div>
               
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
                 <MetricsCard title="Atendimentos da Semana" value={serviceStats.thisWeek} icon={<Users className="h-6 w-6" />} subtitle={weekPeriod} color="blue" />
                 <MetricsCard title="Tempo Médio de Atendimento" value={weeklyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento na semana" color="green" />
                 <MetricsCard title="Tempo Médio de Espera" value={weeklyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado na semana" color="purple" />
                 <MetricsCard title="Satisfação da Semana" value={Math.round(weeklySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${weeklySatisfactionStats.totalSurveys} avaliações na semana`} color="orange" isPercentage={true} />
+                <MetricsCard title="Não Compareceram" value={weeklyNoShow} icon={<UserCheck className="h-6 w-6" />} subtitle="Agendamentos da semana" color="orange" />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
@@ -1648,7 +1695,7 @@ export default function Corporate() {
                 </Select>
               </div>
               
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
                 <MetricsCard title="Atendimentos Este Mês" value={selectedMonthTotalServices} icon={<Users className="h-6 w-6" />} subtitle={(() => {
                   const [year, month] = selectedMonth.split('-').map(Number);
                   const date = new Date(year, month - 1, 1);
@@ -1657,6 +1704,7 @@ export default function Corporate() {
                 <MetricsCard title="Tempo Médio de Atendimento" value={monthlyAverageServiceTime} icon={<Clock className="h-6 w-6" />} subtitle="Minutos por atendimento no mês" color="green" />
                 <MetricsCard title="Tempo Médio de Espera" value={monthlyAverageWaitTime} icon={<Timer className="h-6 w-6" />} subtitle="Minutos até ser chamado no mês" color="purple" />
                 <MetricsCard title="Satisfação do Mês" value={Math.round(monthlySatisfactionStats.averageRating * 20)} icon={<Star className="h-6 w-6" />} subtitle={`${monthlySatisfactionStats.totalSurveys} avaliações no mês`} color="orange" isPercentage={true} />
+                <MetricsCard title="Não Compareceram" value={monthlyNoShow} icon={<UserCheck className="h-6 w-6" />} subtitle="Agendamentos do mês" color="orange" />
               </div>
 
               <div className="grid gap-1 lg:grid-cols-3">
@@ -1718,7 +1766,7 @@ export default function Corporate() {
                 </div>
               </div>
               
-              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-5">
                 <MetricsCard 
                   title="Total de Atendimentos" 
                   value={attendantStats.total} 
@@ -1747,6 +1795,13 @@ export default function Corporate() {
                   subtitle={`${attendantStats.satisfactionStats.totalSurveys} avaliações`} 
                   color="orange" 
                   isPercentage={true} 
+                />
+                <MetricsCard 
+                  title="Não Compareceram" 
+                  value={attendantStats.noShow} 
+                  icon={<UserCheck className="h-6 w-6" />} 
+                  subtitle="Agendamentos no mês" 
+                  color="orange" 
                 />
               </div>
 
