@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp, Bell, BellOff } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp, Bell, BellOff, UserX } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -574,6 +585,37 @@ const Attendant: React.FC = () => {
     setLoading(false);
   };
 
+  const markAppointmentAsNoShow = async (appointmentId: string) => {
+    setLoading(true);
+    try {
+      const appointment = identityAppointments.find(a => a.id === appointmentId);
+      const { error } = await supabase
+        .from('identity_appointments')
+        .update({
+          status: 'no_show',
+          attendant_id: profile?.id,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Não compareceu registrado',
+        description: `${appointment?.name ?? 'Agendamento'} marcado como não compareceu`,
+      });
+
+      fetchIdentityAppointments();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao marcar não compareceu',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+    setLoading(false);
+  };
+
   const startIdentityAppointment = async (appointmentId: string) => {
     setLoading(true);
     
@@ -956,15 +998,46 @@ const Attendant: React.FC = () => {
                       </div>
                       
                       {appointment.status === 'scheduled' && (
-                        <Button 
-                          onClick={() => callIdentityAppointment(appointment.id)}
-                          disabled={loading}
-                          size="sm"
-                          className="w-full"
-                        >
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Chamar Agendamento
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => callIdentityAppointment(appointment.id)}
+                            disabled={loading}
+                            size="sm"
+                            className="flex-1"
+                          >
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Chamar Agendamento
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={loading}
+                                className="flex-1"
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Não Compareceu
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar não comparecimento</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Deseja registrar que <strong>{appointment.name}</strong> ({appointment.appointment_time}) não compareceu ao agendamento? Esta ação removerá o agendamento da fila.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => markAppointmentAsNoShow(appointment.id)}
+                                >
+                                  Confirmar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       )}
                     </div>
                   ))}
