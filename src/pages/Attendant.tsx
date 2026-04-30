@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp, Bell, BellOff, UserX } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, User, Clock, AlertTriangle, MessageSquare, Calendar, TrendingUp, Bell, BellOff, UserX, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1014,10 +1014,11 @@ const Attendant: React.FC = () => {
                                 variant="destructive"
                                 size="sm"
                                 disabled={loading}
-                                className="flex-1"
+                                className="px-3"
+                                title="Não compareceu - remover da fila"
+                                aria-label="Não compareceu"
                               >
-                                <UserX className="h-4 w-4 mr-2" />
-                                Não Compareceu
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
