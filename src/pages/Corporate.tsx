@@ -1670,6 +1670,8 @@ export default function Corporate() {
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
 
+              <AttendantChannelChart data={attendantChannelData} />
+
               <TrendChart monthlyData={monthlyData} title="Histórico dos Últimos 12 Meses" />
             </div>
           </TabsContent>
@@ -1718,6 +1720,8 @@ export default function Corporate() {
                 <ServiceDistributionChart queueServices={weeklyQueueServices} whatsappServices={weeklyWhatsappServices} identityServices={weeklyIdentityServices} total={serviceStats.thisWeek} topAttendants={weeklyAttendantData} />
                 <ServiceTypeDistributionChart serviceTypes={weeklyServiceTypeData} total={serviceStats.thisWeek} />
               </div>
+
+              <AttendantChannelChart data={weeklyAttendantChannelData} title="Distribuição por Canal por Atendente (Semana)" />
 
               <TrendChart monthlyData={weeklyHistoryData} title="Histórico das Últimas 12 Semanas" />
             </div>
@@ -1768,6 +1772,8 @@ export default function Corporate() {
                 <ServiceDistributionChart queueServices={monthlyQueueServices} whatsappServices={monthlyWhatsappServices} identityServices={monthlyIdentityServices} total={selectedMonthTotalServices} topAttendants={monthlyAttendantData} />
                 <ServiceTypeDistributionChart serviceTypes={monthlyServiceTypeData} total={selectedMonthTotalServices} />
               </div>
+
+              <AttendantChannelChart data={monthlyAttendantChannelData} title="Distribuição por Canal por Atendente (Mês)" />
 
               <TrendChart monthlyData={dailyMonthData} />
             </div>
