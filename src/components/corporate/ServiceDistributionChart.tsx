@@ -61,6 +61,14 @@ export default function ServiceDistributionChart({
       <CardContent className="px-2 pb-1.5">
         {top4.length > 0 ? (
           <>
+            <div className="flex items-center justify-center gap-3 mb-1 text-[10px]">
+              {(["queue", "whatsapp", "identity"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[k] }} />
+                  <span className="text-indigo-900 font-medium">{LABELS[k]}</span>
+                </div>
+              ))}
+            </div>
             <div className="grid grid-cols-2 gap-1">
               {top4.map((att, idx) => {
                 const pieData = [
@@ -104,20 +112,8 @@ export default function ServiceDistributionChart({
                       <div className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">
                         {idx + 1}. {att.name}
                       </div>
-                      <div className="text-[9px] text-muted-foreground leading-tight mb-1">
+                      <div className="text-[9px] text-muted-foreground leading-tight">
                         {att.total} atendimentos
-                      </div>
-                      <div className="space-y-0.5">
-                        {pieData.map((d) => {
-                          const pct = att.total > 0 ? Math.round((d.value / att.total) * 100) : 0;
-                          return (
-                            <div key={d.key} className="flex items-center gap-1 text-[9px]">
-                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                              <span className="truncate">{d.name}</span>
-                              <span className="ml-auto font-semibold tabular-nums">{d.value} ({pct}%)</span>
-                            </div>
-                          );
-                        })}
                       </div>
                     </div>
                   </div>
