@@ -1610,7 +1610,7 @@ export default function Corporate() {
 
               <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
-                <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} />
+                <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} topAttendants={attendantData} />
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
 
@@ -1659,7 +1659,7 @@ export default function Corporate() {
 
               <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={weeklyAttendantData} total={serviceStats.thisWeek} />
-                <ServiceDistributionChart queueServices={weeklyQueueServices} whatsappServices={weeklyWhatsappServices} identityServices={weeklyIdentityServices} total={serviceStats.thisWeek} />
+                <ServiceDistributionChart queueServices={weeklyQueueServices} whatsappServices={weeklyWhatsappServices} identityServices={weeklyIdentityServices} total={serviceStats.thisWeek} topAttendants={weeklyAttendantData} />
                 <ServiceTypeDistributionChart serviceTypes={weeklyServiceTypeData} total={serviceStats.thisWeek} />
               </div>
 
@@ -1709,7 +1709,7 @@ export default function Corporate() {
 
               <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={monthlyAttendantData} total={selectedMonthTotalServices} />
-                <ServiceDistributionChart queueServices={monthlyQueueServices} whatsappServices={monthlyWhatsappServices} identityServices={monthlyIdentityServices} total={selectedMonthTotalServices} />
+                <ServiceDistributionChart queueServices={monthlyQueueServices} whatsappServices={monthlyWhatsappServices} identityServices={monthlyIdentityServices} total={selectedMonthTotalServices} topAttendants={monthlyAttendantData} />
                 <ServiceTypeDistributionChart serviceTypes={monthlyServiceTypeData} total={selectedMonthTotalServices} />
               </div>
 

@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Users } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 
 interface ServiceDistributionChartProps {
@@ -8,13 +8,15 @@ interface ServiceDistributionChartProps {
   whatsappServices: number;
   identityServices: number;
   total: number;
+  topAttendants?: { name: string; value: number; color: string }[];
 }
 
 export default function ServiceDistributionChart({ 
   queueServices, 
   whatsappServices, 
   identityServices, 
-  total 
+  total,
+  topAttendants = []
 }: ServiceDistributionChartProps) {
   const barData = [
     {
@@ -112,6 +114,31 @@ export default function ServiceDistributionChart({
             </div>
           ))}
         </div>
+
+        {topAttendants.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-indigo-200/60">
+            <div className="flex items-center gap-1 mb-1">
+              <Users className="h-3 w-3 text-indigo-600" />
+              <span className="text-[10px] font-semibold text-indigo-900">TOP 4 Atendentes</span>
+            </div>
+            <div className="space-y-0.5">
+              {topAttendants.slice(0, 4).map((att, idx) => {
+                const pct = total > 0 ? Math.round((att.value / total) * 100) : 0;
+                return (
+                  <div key={att.name + idx} className="flex items-center gap-1 text-[10px]">
+                    <span className="w-3 text-muted-foreground font-bold">{idx + 1}.</span>
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: att.color }}
+                    />
+                    <span className="flex-1 truncate font-medium">{att.name}</span>
+                    <span className="text-muted-foreground">{att.value} ({pct}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
