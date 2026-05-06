@@ -13,6 +13,7 @@ import ServiceDistributionChart from "@/components/corporate/ServiceDistribution
 import ServiceTypeDistributionChart from "@/components/corporate/ServiceTypeDistributionChart";
 import TrendChart from "@/components/corporate/TrendChart";
 import IdentityCalendar from "@/components/corporate/IdentityCalendar";
+import AttendantChannelChart, { AttendantChannelData } from "@/components/corporate/AttendantChannelChart";
 interface ServiceStats {
   total: number;
   thisWeek: number;
@@ -100,6 +101,9 @@ export default function Corporate() {
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [attendantData, setAttendantData] = useState<AttendantData[]>([]);
   const [weeklyAttendantData, setWeeklyAttendantData] = useState<AttendantData[]>([]);
+  const [attendantChannelData, setAttendantChannelData] = useState<AttendantChannelData[]>([]);
+  const [weeklyAttendantChannelData, setWeeklyAttendantChannelData] = useState<AttendantChannelData[]>([]);
+  const [monthlyAttendantChannelData, setMonthlyAttendantChannelData] = useState<AttendantChannelData[]>([]);
   const [weeklyQueueServices, setWeeklyQueueServices] = useState(0);
   const [weeklyWhatsappServices, setWeeklyWhatsappServices] = useState(0);
   const [weeklyIdentityServices, setWeeklyIdentityServices] = useState(0);
@@ -636,6 +640,24 @@ export default function Corporate() {
       attendantsArray.sort((a, b) => b.value - a.value);
       console.log('Attendants array:', attendantsArray);
       setAttendantData(attendantsArray);
+
+      // Distribuição por canal por atendente (geral)
+      const channelByAttendant: Record<string, { queue: number; whatsapp: number; identity: number }> = {};
+      const ensureCh = (k: string) => {
+        if (!channelByAttendant[k]) channelByAttendant[k] = { queue: 0, whatsapp: 0, identity: 0 };
+        return channelByAttendant[k];
+      };
+      queueData?.filter(s => s.completed_at).forEach(s => { ensureCh(s.attendant_id || 'no_attendant').queue++; });
+      whatsappData?.forEach(s => { ensureCh(s.attendant_id || 'no_attendant').whatsapp++; });
+      identityData?.filter(a => a.completed_at).forEach(a => { ensureCh(a.attendant_id || 'no_attendant').identity++; });
+      const channelArray: AttendantChannelData[] = Object.entries(channelByAttendant).map(([id, ch]) => ({
+        name: id === 'no_attendant' ? 'Sem atendente' : (profilesData?.find(p => p.id === id)?.full_name || 'Não identificado'),
+        queue: ch.queue,
+        whatsapp: ch.whatsapp,
+        identity: ch.identity,
+        total: ch.queue + ch.whatsapp + ch.identity,
+      }));
+      setAttendantChannelData(channelArray);
       
       // Popula lista de atendentes para o filtro da aba Servidor
       const attendantOptions: AttendantOption[] = profilesData?.map(p => ({
@@ -734,6 +756,23 @@ export default function Corporate() {
       // Ordenar por quantidade (decrescente)
       weeklyAttendantsArray.sort((a, b) => b.value - a.value);
       setWeeklyAttendantData(weeklyAttendantsArray);
+
+      // Distribuição por canal por atendente (semanal)
+      const wChannelByAtt: Record<string, { queue: number; whatsapp: number; identity: number }> = {};
+      const ensureWCh = (k: string) => {
+        if (!wChannelByAtt[k]) wChannelByAtt[k] = { queue: 0, whatsapp: 0, identity: 0 };
+        return wChannelByAtt[k];
+      };
+      queueWeekData?.filter(s => s.completed_at).forEach(s => { ensureWCh(s.attendant_id || 'no_attendant').queue++; });
+      whatsappWeekData?.forEach(s => { ensureWCh(s.attendant_id || 'no_attendant').whatsapp++; });
+      identityWeekData?.filter(a => a.completed_at).forEach(a => { ensureWCh(a.attendant_id || 'no_attendant').identity++; });
+      setWeeklyAttendantChannelData(Object.entries(wChannelByAtt).map(([id, ch]) => ({
+        name: id === 'no_attendant' ? 'Sem atendente' : (profilesData?.find(p => p.id === id)?.full_name || 'Não identificado'),
+        queue: ch.queue,
+        whatsapp: ch.whatsapp,
+        identity: ch.identity,
+        total: ch.queue + ch.whatsapp + ch.identity,
+      })));
 
       // Armazenar contagens de serviços semanais
       setWeeklyQueueServices(queueWeekCount);
@@ -993,6 +1032,23 @@ export default function Corporate() {
       // Ordenar por quantidade (decrescente)
       monthlyAttendantsArray.sort((a, b) => b.value - a.value);
       setMonthlyAttendantData(monthlyAttendantsArray);
+
+      // Distribuição por canal por atendente (mensal)
+      const mChannelByAtt: Record<string, { queue: number; whatsapp: number; identity: number }> = {};
+      const ensureMCh = (k: string) => {
+        if (!mChannelByAtt[k]) mChannelByAtt[k] = { queue: 0, whatsapp: 0, identity: 0 };
+        return mChannelByAtt[k];
+      };
+      queueSelectedMonthData?.filter(s => s.completed_at).forEach(s => { ensureMCh(s.attendant_id || 'no_attendant').queue++; });
+      whatsappSelectedMonthData?.forEach(s => { ensureMCh(s.attendant_id || 'no_attendant').whatsapp++; });
+      identitySelectedMonthData?.filter(a => a.completed_at).forEach(a => { ensureMCh(a.attendant_id || 'no_attendant').identity++; });
+      setMonthlyAttendantChannelData(Object.entries(mChannelByAtt).map(([id, ch]) => ({
+        name: id === 'no_attendant' ? 'Sem atendente' : (profilesData?.find(p => p.id === id)?.full_name || 'Não identificado'),
+        queue: ch.queue,
+        whatsapp: ch.whatsapp,
+        identity: ch.identity,
+        total: ch.queue + ch.whatsapp + ch.identity,
+      })));
 
       // Calcular tempo médio de atendimento MENSAL (em minutos) - do mês selecionado
       let monthlyTotalServiceTime = 0;
@@ -1614,6 +1670,8 @@ export default function Corporate() {
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
 
+              <AttendantChannelChart data={attendantChannelData} />
+
               <TrendChart monthlyData={monthlyData} title="Histórico dos Últimos 12 Meses" />
             </div>
           </TabsContent>
@@ -1662,6 +1720,8 @@ export default function Corporate() {
                 <ServiceDistributionChart queueServices={weeklyQueueServices} whatsappServices={weeklyWhatsappServices} identityServices={weeklyIdentityServices} total={serviceStats.thisWeek} topAttendants={weeklyAttendantData} />
                 <ServiceTypeDistributionChart serviceTypes={weeklyServiceTypeData} total={serviceStats.thisWeek} />
               </div>
+
+              <AttendantChannelChart data={weeklyAttendantChannelData} title="Distribuição por Canal por Atendente (Semana)" />
 
               <TrendChart monthlyData={weeklyHistoryData} title="Histórico das Últimas 12 Semanas" />
             </div>
@@ -1712,6 +1772,8 @@ export default function Corporate() {
                 <ServiceDistributionChart queueServices={monthlyQueueServices} whatsappServices={monthlyWhatsappServices} identityServices={monthlyIdentityServices} total={selectedMonthTotalServices} topAttendants={monthlyAttendantData} />
                 <ServiceTypeDistributionChart serviceTypes={monthlyServiceTypeData} total={selectedMonthTotalServices} />
               </div>
+
+              <AttendantChannelChart data={monthlyAttendantChannelData} title="Distribuição por Canal por Atendente (Mês)" />
 
               <TrendChart monthlyData={dailyMonthData} />
             </div>
