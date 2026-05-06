@@ -1862,11 +1862,16 @@ export default function Corporate() {
               </div>
 
               <div className="grid gap-1 lg:grid-cols-2">
-                <ServiceDistributionChart 
-                  queueServices={attendantStats.queueServices} 
-                  whatsappServices={attendantStats.whatsappServices} 
-                  identityServices={attendantStats.identityServices} 
-                  total={attendantStats.total} 
+                <ServiceDistributionChart
+                  attendantChannelData={[{
+                    name: selectedAttendant === 'all'
+                      ? 'Todos os atendentes'
+                      : (attendantList.find(a => a.id === selectedAttendant)?.name || 'Atendente'),
+                    queue: attendantStats.queueServices,
+                    whatsapp: attendantStats.whatsappServices,
+                    identity: attendantStats.identityServices,
+                    total: attendantStats.total,
+                  }]}
                 />
                 <ServiceTypeDistributionChart 
                   serviceTypes={attendantStats.serviceTypeData} 
