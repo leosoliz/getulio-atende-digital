@@ -1666,11 +1666,9 @@ export default function Corporate() {
 
               <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={attendantData} total={serviceStats.total} />
-                <ServiceDistributionChart queueServices={serviceStats.queueServices} whatsappServices={serviceStats.whatsappServices} identityServices={serviceStats.identityServices} total={serviceStats.total} topAttendants={attendantData} />
+                <ServiceDistributionChart attendantChannelData={attendantChannelData} />
                 <ServiceTypeDistributionChart serviceTypes={serviceTypeData} total={serviceStats.total} />
               </div>
-
-              <AttendantChannelChart data={attendantChannelData} />
 
               <TrendChart monthlyData={monthlyData} title="Histórico dos Últimos 12 Meses" />
             </div>
@@ -1717,11 +1715,9 @@ export default function Corporate() {
 
               <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={weeklyAttendantData} total={serviceStats.thisWeek} />
-                <ServiceDistributionChart queueServices={weeklyQueueServices} whatsappServices={weeklyWhatsappServices} identityServices={weeklyIdentityServices} total={serviceStats.thisWeek} topAttendants={weeklyAttendantData} />
+                <ServiceDistributionChart attendantChannelData={weeklyAttendantChannelData} />
                 <ServiceTypeDistributionChart serviceTypes={weeklyServiceTypeData} total={serviceStats.thisWeek} />
               </div>
-
-              <AttendantChannelChart data={weeklyAttendantChannelData} title="Distribuição por Canal por Atendente (Semana)" />
 
               <TrendChart monthlyData={weeklyHistoryData} title="Histórico das Últimas 12 Semanas" />
             </div>
@@ -1769,11 +1765,9 @@ export default function Corporate() {
 
               <div className="grid gap-1 lg:grid-cols-3">
                 <SatisfactionChart attendants={monthlyAttendantData} total={selectedMonthTotalServices} />
-                <ServiceDistributionChart queueServices={monthlyQueueServices} whatsappServices={monthlyWhatsappServices} identityServices={monthlyIdentityServices} total={selectedMonthTotalServices} topAttendants={monthlyAttendantData} />
+                <ServiceDistributionChart attendantChannelData={monthlyAttendantChannelData} />
                 <ServiceTypeDistributionChart serviceTypes={monthlyServiceTypeData} total={selectedMonthTotalServices} />
               </div>
-
-              <AttendantChannelChart data={monthlyAttendantChannelData} title="Distribuição por Canal por Atendente (Mês)" />
 
               <TrendChart monthlyData={dailyMonthData} />
             </div>
@@ -1868,11 +1862,16 @@ export default function Corporate() {
               </div>
 
               <div className="grid gap-1 lg:grid-cols-2">
-                <ServiceDistributionChart 
-                  queueServices={attendantStats.queueServices} 
-                  whatsappServices={attendantStats.whatsappServices} 
-                  identityServices={attendantStats.identityServices} 
-                  total={attendantStats.total} 
+                <ServiceDistributionChart
+                  attendantChannelData={[{
+                    name: selectedAttendant === 'all'
+                      ? 'Todos os atendentes'
+                      : (attendantList.find(a => a.id === selectedAttendant)?.name || 'Atendente'),
+                    queue: attendantStats.queueServices,
+                    whatsapp: attendantStats.whatsappServices,
+                    identity: attendantStats.identityServices,
+                    total: attendantStats.total,
+                  }]}
                 />
                 <ServiceTypeDistributionChart 
                   serviceTypes={attendantStats.serviceTypeData} 
