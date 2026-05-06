@@ -61,7 +61,7 @@ export default function ServiceDistributionChart({
       <CardContent className="px-2 pb-1.5">
         {top4.length > 0 ? (
           <>
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-2 gap-1">
               {top4.map((att, idx) => {
                 const pieData = [
                   { key: "queue", name: LABELS.queue, value: att.queue, color: COLORS.queue },
@@ -70,14 +70,8 @@ export default function ServiceDistributionChart({
                 ].filter((d) => d.value > 0);
 
                 return (
-                  <div key={att.name + idx} className="flex flex-col items-center bg-white/60 rounded-md py-0.5 px-1 border border-indigo-100">
-                    <div className="text-[9px] font-semibold text-indigo-900 truncate max-w-full text-center leading-tight">
-                      {idx + 1}. {att.name}
-                    </div>
-                    <div className="text-[8px] text-muted-foreground leading-tight">
-                      {att.total} atendimentos
-                    </div>
-                    <div className="h-20 w-full">
+                  <div key={att.name + idx} className="flex items-center gap-2 bg-white/60 rounded-md py-1 px-2 border border-indigo-100">
+                    <div className="h-24 w-24 shrink-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
                           <Pie
@@ -86,8 +80,8 @@ export default function ServiceDistributionChart({
                             cy="50%"
                             labelLine={false}
                             label={renderLabel}
-                            innerRadius={12}
-                            outerRadius={34}
+                            innerRadius={16}
+                            outerRadius={44}
                             paddingAngle={1}
                             stroke="#ffffff"
                             strokeWidth={1.5}
@@ -106,22 +100,31 @@ export default function ServiceDistributionChart({
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">
+                        {idx + 1}. {att.name}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground leading-tight mb-1">
+                        {att.total} atendimentos
+                      </div>
+                      <div className="space-y-0.5">
+                        {pieData.map((d) => {
+                          const pct = att.total > 0 ? Math.round((d.value / att.total) * 100) : 0;
+                          return (
+                            <div key={d.key} className="flex items-center gap-1 text-[9px]">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                              <span className="truncate">{d.name}</span>
+                              <span className="ml-auto font-semibold tabular-nums">{d.value} ({pct}%)</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="grid grid-cols-3 gap-1 mt-0.5 pt-0.5 border-t border-indigo-200/60">
-              {(["queue", "whatsapp", "identity"] as const).map((k) => (
-                <div key={k} className="flex items-center justify-center gap-1">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: COLORS[k] }}
-                  />
-                  <div className="text-[9px] font-medium">{LABELS[k]}</div>
-                </div>
-              ))}
-            </div>
           </>
         ) : (
           <div className="text-center text-muted-foreground py-8 text-xs">
