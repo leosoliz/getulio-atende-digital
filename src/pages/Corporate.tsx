@@ -640,6 +640,24 @@ export default function Corporate() {
       attendantsArray.sort((a, b) => b.value - a.value);
       console.log('Attendants array:', attendantsArray);
       setAttendantData(attendantsArray);
+
+      // Distribuição por canal por atendente (geral)
+      const channelByAttendant: Record<string, { queue: number; whatsapp: number; identity: number }> = {};
+      const ensureCh = (k: string) => {
+        if (!channelByAttendant[k]) channelByAttendant[k] = { queue: 0, whatsapp: 0, identity: 0 };
+        return channelByAttendant[k];
+      };
+      queueData?.filter(s => s.completed_at).forEach(s => { ensureCh(s.attendant_id || 'no_attendant').queue++; });
+      whatsappData?.forEach(s => { ensureCh(s.attendant_id || 'no_attendant').whatsapp++; });
+      identityData?.filter(a => a.completed_at).forEach(a => { ensureCh(a.attendant_id || 'no_attendant').identity++; });
+      const channelArray: AttendantChannelData[] = Object.entries(channelByAttendant).map(([id, ch]) => ({
+        name: id === 'no_attendant' ? 'Sem atendente' : (profilesData?.find(p => p.id === id)?.full_name || 'Não identificado'),
+        queue: ch.queue,
+        whatsapp: ch.whatsapp,
+        identity: ch.identity,
+        total: ch.queue + ch.whatsapp + ch.identity,
+      }));
+      setAttendantChannelData(channelArray);
       
       // Popula lista de atendentes para o filtro da aba Servidor
       const attendantOptions: AttendantOption[] = profilesData?.map(p => ({
@@ -738,6 +756,23 @@ export default function Corporate() {
       // Ordenar por quantidade (decrescente)
       weeklyAttendantsArray.sort((a, b) => b.value - a.value);
       setWeeklyAttendantData(weeklyAttendantsArray);
+
+      // Distribuição por canal por atendente (semanal)
+      const wChannelByAtt: Record<string, { queue: number; whatsapp: number; identity: number }> = {};
+      const ensureWCh = (k: string) => {
+        if (!wChannelByAtt[k]) wChannelByAtt[k] = { queue: 0, whatsapp: 0, identity: 0 };
+        return wChannelByAtt[k];
+      };
+      queueWeekData?.filter(s => s.completed_at).forEach(s => { ensureWCh(s.attendant_id || 'no_attendant').queue++; });
+      whatsappWeekData?.forEach(s => { ensureWCh(s.attendant_id || 'no_attendant').whatsapp++; });
+      identityWeekData?.filter(a => a.completed_at).forEach(a => { ensureWCh(a.attendant_id || 'no_attendant').identity++; });
+      setWeeklyAttendantChannelData(Object.entries(wChannelByAtt).map(([id, ch]) => ({
+        name: id === 'no_attendant' ? 'Sem atendente' : (profilesData?.find(p => p.id === id)?.full_name || 'Não identificado'),
+        queue: ch.queue,
+        whatsapp: ch.whatsapp,
+        identity: ch.identity,
+        total: ch.queue + ch.whatsapp + ch.identity,
+      })));
 
       // Armazenar contagens de serviços semanais
       setWeeklyQueueServices(queueWeekCount);
@@ -997,6 +1032,23 @@ export default function Corporate() {
       // Ordenar por quantidade (decrescente)
       monthlyAttendantsArray.sort((a, b) => b.value - a.value);
       setMonthlyAttendantData(monthlyAttendantsArray);
+
+      // Distribuição por canal por atendente (mensal)
+      const mChannelByAtt: Record<string, { queue: number; whatsapp: number; identity: number }> = {};
+      const ensureMCh = (k: string) => {
+        if (!mChannelByAtt[k]) mChannelByAtt[k] = { queue: 0, whatsapp: 0, identity: 0 };
+        return mChannelByAtt[k];
+      };
+      queueSelectedMonthData?.filter(s => s.completed_at).forEach(s => { ensureMCh(s.attendant_id || 'no_attendant').queue++; });
+      whatsappSelectedMonthData?.forEach(s => { ensureMCh(s.attendant_id || 'no_attendant').whatsapp++; });
+      identitySelectedMonthData?.filter(a => a.completed_at).forEach(a => { ensureMCh(a.attendant_id || 'no_attendant').identity++; });
+      setMonthlyAttendantChannelData(Object.entries(mChannelByAtt).map(([id, ch]) => ({
+        name: id === 'no_attendant' ? 'Sem atendente' : (profilesData?.find(p => p.id === id)?.full_name || 'Não identificado'),
+        queue: ch.queue,
+        whatsapp: ch.whatsapp,
+        identity: ch.identity,
+        total: ch.queue + ch.whatsapp + ch.identity,
+      })));
 
       // Calcular tempo médio de atendimento MENSAL (em minutos) - do mês selecionado
       let monthlyTotalServiceTime = 0;
