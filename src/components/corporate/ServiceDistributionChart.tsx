@@ -20,7 +20,7 @@ const LABELS = {
 };
 
 const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  if (percent < 0.04) return null;
+  if (percent < 0.05) return null;
   const RADIAN = Math.PI / 180;
   // Centralizar o rótulo no meio da fatia (entre raio interno e externo)
   const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
@@ -33,9 +33,9 @@ const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: an
       fill="#ffffff"
       textAnchor="middle"
       dominantBaseline="central"
-      fontSize="11"
+      fontSize="9"
       fontWeight="700"
-      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 2 }}
+      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 1.5 }}
     >
       {`${Math.round(percent * 100)}%`}
     </text>
@@ -61,7 +61,7 @@ export default function ServiceDistributionChart({
       <CardContent className="px-2 pb-1.5">
         {top4.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-4 gap-1">
               {top4.map((att, idx) => {
                 const pieData = [
                   { key: "queue", name: LABELS.queue, value: att.queue, color: COLORS.queue },
@@ -70,24 +70,24 @@ export default function ServiceDistributionChart({
                 ].filter((d) => d.value > 0);
 
                 return (
-                  <div key={att.name + idx} className="flex flex-col items-center bg-white/60 rounded-md py-1 px-1 border border-indigo-100">
-                    <div className="text-[10px] font-semibold text-indigo-900 truncate max-w-full text-center leading-tight">
+                  <div key={att.name + idx} className="flex flex-col items-center bg-white/60 rounded-md py-0.5 px-1 border border-indigo-100">
+                    <div className="text-[9px] font-semibold text-indigo-900 truncate max-w-full text-center leading-tight">
                       {idx + 1}. {att.name}
                     </div>
-                    <div className="text-[9px] text-muted-foreground leading-tight mb-0.5">
+                    <div className="text-[8px] text-muted-foreground leading-tight">
                       {att.total} atendimentos
                     </div>
-                    <div className="h-32 w-full">
+                    <div className="h-20 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                        <PieChart margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
                           <Pie
                             data={pieData}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
                             label={renderLabel}
-                            innerRadius={20}
-                            outerRadius={52}
+                            innerRadius={12}
+                            outerRadius={34}
                             paddingAngle={1}
                             stroke="#ffffff"
                             strokeWidth={1.5}
@@ -111,14 +111,14 @@ export default function ServiceDistributionChart({
               })}
             </div>
 
-            <div className="grid grid-cols-3 gap-1 mt-1 pt-1 border-t border-indigo-200/60">
+            <div className="grid grid-cols-3 gap-1 mt-0.5 pt-0.5 border-t border-indigo-200/60">
               {(["queue", "whatsapp", "identity"] as const).map((k) => (
-                <div key={k} className="text-center">
+                <div key={k} className="flex items-center justify-center gap-1">
                   <div
-                    className="w-2.5 h-2.5 rounded-full mx-auto mb-0.5"
+                    className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: COLORS[k] }}
                   />
-                  <div className="text-[10px] font-medium">{LABELS[k]}</div>
+                  <div className="text-[9px] font-medium">{LABELS[k]}</div>
                 </div>
               ))}
             </div>
