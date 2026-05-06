@@ -13,6 +13,7 @@ import ServiceDistributionChart from "@/components/corporate/ServiceDistribution
 import ServiceTypeDistributionChart from "@/components/corporate/ServiceTypeDistributionChart";
 import TrendChart from "@/components/corporate/TrendChart";
 import IdentityCalendar from "@/components/corporate/IdentityCalendar";
+import AttendantChannelChart, { AttendantChannelData } from "@/components/corporate/AttendantChannelChart";
 interface ServiceStats {
   total: number;
   thisWeek: number;
@@ -100,6 +101,9 @@ export default function Corporate() {
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [attendantData, setAttendantData] = useState<AttendantData[]>([]);
   const [weeklyAttendantData, setWeeklyAttendantData] = useState<AttendantData[]>([]);
+  const [attendantChannelData, setAttendantChannelData] = useState<AttendantChannelData[]>([]);
+  const [weeklyAttendantChannelData, setWeeklyAttendantChannelData] = useState<AttendantChannelData[]>([]);
+  const [monthlyAttendantChannelData, setMonthlyAttendantChannelData] = useState<AttendantChannelData[]>([]);
   const [weeklyQueueServices, setWeeklyQueueServices] = useState(0);
   const [weeklyWhatsappServices, setWeeklyWhatsappServices] = useState(0);
   const [weeklyIdentityServices, setWeeklyIdentityServices] = useState(0);
