@@ -827,21 +827,26 @@ export default function Corporate() {
         const histWeekNum = getWeek(histStartOfWeek, { weekStartsOn: 1 });
 
         // Buscar atendimentos CONCLUÍDOS da fila nesta semana
-        const { data: histQueueData } = await supabase.from('queue_customers').select('id').not('completed_at', 'is', null)
+        const { count: histQueueCount } = await supabase.from('queue_customers')
+          .select('*', { count: 'exact', head: true })
+          .not('completed_at', 'is', null)
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
         // Buscar atendimentos do WhatsApp nesta semana
-        const { data: histWhatsappData } = await supabase.from('whatsapp_services').select('id')
+        const { count: histWhatsappCount } = await supabase.from('whatsapp_services')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', histStartOfWeek.toISOString())
           .lte('created_at', histEndOfWeek.toISOString());
 
         // Buscar agendamentos de identidade CONCLUÍDOS nesta semana
-        const { data: histIdentityData } = await supabase.from('identity_appointments').select('id').not('completed_at', 'is', null)
-          .gte('created_at', histStartOfWeek.toISOString())
-          .lte('created_at', histEndOfWeek.toISOString());
+        const { count: histIdentityCount } = await supabase.from('identity_appointments')
+          .select('*', { count: 'exact', head: true })
+          .not('completed_at', 'is', null)
+          .gte('completed_at', histStartOfWeek.toISOString())
+          .lte('completed_at', histEndOfWeek.toISOString());
 
-        const totalWeekServices = (histQueueData?.length || 0) + (histWhatsappData?.length || 0) + (histIdentityData?.length || 0);
+        const totalWeekServices = (histQueueCount || 0) + (histWhatsappCount || 0) + (histIdentityCount || 0);
         const weekLabel = `S${histWeekNum}`;
         const weekPeriodLabel = `${format(histStartOfWeek, "dd/MM", { locale: ptBR })} a ${format(histEndOfWeek, "dd/MM", { locale: ptBR })}`;
 
