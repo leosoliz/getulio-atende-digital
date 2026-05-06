@@ -20,22 +20,24 @@ const LABELS = {
 };
 
 const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  if (percent < 0.08) return null;
+  if (percent < 0.04) return null;
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  // Centralizar o rótulo no meio da fatia (entre raio interno e externo)
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   return (
     <text
       x={x}
       y={y}
-      fill="white"
-      textAnchor={x > cx ? "start" : "end"}
+      fill="#ffffff"
+      textAnchor="middle"
       dominantBaseline="central"
-      fontSize="10"
-      fontWeight="bold"
+      fontSize="11"
+      fontWeight="700"
+      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 2 }}
     >
-      {`${(percent * 100).toFixed(0)}%`}
+      {`${Math.round(percent * 100)}%`}
     </text>
   );
 };
@@ -68,23 +70,27 @@ export default function ServiceDistributionChart({
                 ].filter((d) => d.value > 0);
 
                 return (
-                  <div key={att.name + idx} className="flex flex-col items-center">
-                    <div className="text-[10px] font-semibold text-indigo-900 truncate max-w-full text-center px-1">
+                  <div key={att.name + idx} className="flex flex-col items-center bg-white/60 rounded-md py-1 px-1 border border-indigo-100">
+                    <div className="text-[10px] font-semibold text-indigo-900 truncate max-w-full text-center leading-tight">
                       {idx + 1}. {att.name}
                     </div>
-                    <div className="text-[9px] text-muted-foreground -mt-0.5">
+                    <div className="text-[9px] text-muted-foreground leading-tight mb-0.5">
                       {att.total} atendimentos
                     </div>
-                    <div className="h-24 w-full">
+                    <div className="h-32 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                        <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                           <Pie
                             data={pieData}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
                             label={renderLabel}
-                            outerRadius={38}
+                            innerRadius={20}
+                            outerRadius={52}
+                            paddingAngle={1}
+                            stroke="#ffffff"
+                            strokeWidth={1.5}
                             dataKey="value"
                           >
                             {pieData.map((entry, i) => (
@@ -92,7 +98,10 @@ export default function ServiceDistributionChart({
                             ))}
                           </Pie>
                           <Tooltip
-                            formatter={(value: number, name: string) => [`${value}`, name]}
+                            formatter={(value: number, name: string) => {
+                              const pct = att.total > 0 ? Math.round((value / att.total) * 100) : 0;
+                              return [`${value} (${pct}%)`, name];
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
