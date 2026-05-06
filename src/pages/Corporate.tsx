@@ -1620,39 +1620,45 @@ export default function Corporate() {
   }
   return <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
       <div className="container mx-auto px-2 py-1 flex-1 flex flex-col overflow-hidden">
-        <div className="mb-1 text-center">
-          <h1 className="text-lg font-bold text-foreground mb-0 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Indicadores de Atendimento</h1>
-          <p className="text-muted-foreground text-[10px]">Secretaria de Desenvolvimento Econômico e Planejamento</p>
-          {lastUpdate && (
-            <p className="text-muted-foreground text-[9px] mt-0.5">
-              Última atualização: {format(lastUpdate, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
-            </p>
-          )}
-        </div>
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-5 bg-white/70 backdrop-blur mb-1 h-7">
-            <TabsTrigger value="overview" className="flex items-center gap-1 text-xs py-1">
-              <BarChart3 className="h-3 w-3" />
-              Visão Geral
-            </TabsTrigger>
-            <TabsTrigger value="weekly" className="flex items-center gap-1 text-xs py-1">
-              <CalendarDays className="h-3 w-3" />
-              Semanal
-            </TabsTrigger>
-            <TabsTrigger value="monthly" className="flex items-center gap-1 text-xs py-1">
-              <TrendingUp className="h-3 w-3" />
-              Mensal
-            </TabsTrigger>
-            <TabsTrigger value="servidor" className="flex items-center gap-1 text-xs py-1">
-              <UserCheck className="h-3 w-3" />
-              Servidor
-            </TabsTrigger>
-            <TabsTrigger value="agenda" className="flex items-center gap-1 text-xs py-1">
-              <Calendar className="h-3 w-3" />
-              Agenda
-            </TabsTrigger>
-          </TabsList>
+          {/* Barra superior compacta: título + abas + atualização em uma única linha */}
+          <div className="flex items-center gap-2 mb-1 bg-white/70 backdrop-blur rounded-md px-2 py-1 border border-slate-200">
+            <div className="flex flex-col leading-tight shrink-0">
+              <h1 className="text-sm font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Indicadores de Atendimento
+              </h1>
+              <p className="text-muted-foreground text-[9px]">
+                Sec. de Desenvolvimento Econômico e Planejamento
+              </p>
+            </div>
+            <TabsList className="flex-1 grid grid-cols-5 bg-slate-100/70 h-7">
+              <TabsTrigger value="overview" className="flex items-center gap-1 text-xs py-1">
+                <BarChart3 className="h-3 w-3" />
+                Visão Geral
+              </TabsTrigger>
+              <TabsTrigger value="weekly" className="flex items-center gap-1 text-xs py-1">
+                <CalendarDays className="h-3 w-3" />
+                Semanal
+              </TabsTrigger>
+              <TabsTrigger value="monthly" className="flex items-center gap-1 text-xs py-1">
+                <TrendingUp className="h-3 w-3" />
+                Mensal
+              </TabsTrigger>
+              <TabsTrigger value="servidor" className="flex items-center gap-1 text-xs py-1">
+                <UserCheck className="h-3 w-3" />
+                Servidor
+              </TabsTrigger>
+              <TabsTrigger value="agenda" className="flex items-center gap-1 text-xs py-1">
+                <Calendar className="h-3 w-3" />
+                Agenda
+              </TabsTrigger>
+            </TabsList>
+            {lastUpdate && (
+              <p className="text-muted-foreground text-[9px] shrink-0 hidden md:block">
+                Atualizado: {format(lastUpdate, "dd/MM HH:mm:ss", { locale: ptBR })}
+              </p>
+            )}
+          </div>
 
           <TabsContent value="overview" className="flex-1 overflow-y-auto">
             <div className="space-y-1">
