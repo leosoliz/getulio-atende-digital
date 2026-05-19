@@ -1567,6 +1567,10 @@ export type Database = {
         Returns: boolean
       }
       check_survey_rate_limit: { Args: never; Returns: boolean }
+      check_survey_rate_limit_by_attendant: {
+        Args: { _attendant_id: string }
+        Returns: boolean
+      }
       generate_unique_qr_code: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_next_queue_number: { Args: never; Returns: number }
