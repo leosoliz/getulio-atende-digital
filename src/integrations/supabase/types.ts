@@ -50,33 +50,6 @@ export type Database = {
           },
         ]
       }
-      boletins: {
-        Row: {
-          created_at: string
-          event_type: string
-          id: string
-          mensagem: string
-          payload: Json | null
-          stop_reason: string
-        }
-        Insert: {
-          created_at?: string
-          event_type: string
-          id?: string
-          mensagem: string
-          payload?: Json | null
-          stop_reason: string
-        }
-        Update: {
-          created_at?: string
-          event_type?: string
-          id?: string
-          mensagem?: string
-          payload?: Json | null
-          stop_reason?: string
-        }
-        Relationships: []
-      }
       cancelled_surveys: {
         Row: {
           attendant_id: string
@@ -449,33 +422,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      project_observations: {
-        Row: {
-          created_at: string
-          id: string
-          observation: string
-          project_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          observation: string
-          project_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          observation?: string
-          project_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       projects: {
         Row: {
@@ -1244,47 +1190,6 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "fleet_vehicles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      vistoria_fotos: {
-        Row: {
-          arquivo_url: string
-          created_at: string
-          id: string
-          legenda: string
-          ordem: number | null
-          tamanho_arquivo: number | null
-          tipo_arquivo: string | null
-          vistoria_id: string | null
-        }
-        Insert: {
-          arquivo_url: string
-          created_at?: string
-          id?: string
-          legenda: string
-          ordem?: number | null
-          tamanho_arquivo?: number | null
-          tipo_arquivo?: string | null
-          vistoria_id?: string | null
-        }
-        Update: {
-          arquivo_url?: string
-          created_at?: string
-          id?: string
-          legenda?: string
-          ordem?: number | null
-          tamanho_arquivo?: number | null
-          tipo_arquivo?: string | null
-          vistoria_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vistoria_fotos_vistoria_id_fkey"
-            columns: ["vistoria_id"]
-            isOneToOne: false
-            referencedRelation: "obra_vistorias"
             referencedColumns: ["id"]
           },
         ]
