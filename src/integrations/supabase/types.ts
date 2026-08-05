@@ -176,6 +176,45 @@ export type Database = {
         }
         Relationships: []
       }
+      forecast_bias: {
+        Row: {
+          factor: number
+          id: string
+          mean_forecast: number | null
+          mean_observed: number | null
+          model_id: string
+          rmse: number | null
+          sample_count: number
+          updated_at: string
+          window_days: number
+          window_hours: number
+        }
+        Insert: {
+          factor?: number
+          id?: string
+          mean_forecast?: number | null
+          mean_observed?: number | null
+          model_id: string
+          rmse?: number | null
+          sample_count?: number
+          updated_at?: string
+          window_days?: number
+          window_hours: number
+        }
+        Update: {
+          factor?: number
+          id?: string
+          mean_forecast?: number | null
+          mean_observed?: number | null
+          model_id?: string
+          rmse?: number | null
+          sample_count?: number
+          updated_at?: string
+          window_days?: number
+          window_hours?: number
+        }
+        Relationships: []
+      }
       identity_appointments: {
         Row: {
           appointment_date: string
@@ -471,6 +510,45 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          failure_count: number
+          id: string
+          last_notified_at: string | null
+          p256dh: string
+          topics: string[]
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          failure_count?: number
+          id?: string
+          last_notified_at?: string | null
+          p256dh: string
+          topics?: string[]
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          failure_count?: number
+          id?: string
+          last_notified_at?: string | null
+          p256dh?: string
+          topics?: string[]
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       queue_customers: {
         Row: {
           attendant_id: string | null
@@ -586,6 +664,33 @@ export type Database = {
           service_id?: string | null
           started_at?: string | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      rainfall_alert_state: {
+        Row: {
+          active: boolean
+          first_triggered_at: string | null
+          last_notified_at: string | null
+          last_value_mm: number | null
+          station: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          first_triggered_at?: string | null
+          last_notified_at?: string | null
+          last_value_mm?: number | null
+          station: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          first_triggered_at?: string | null
+          last_notified_at?: string | null
+          last_value_mm?: number | null
+          station?: string
+          updated_at?: string
         }
         Relationships: []
       }
