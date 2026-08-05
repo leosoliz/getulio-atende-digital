@@ -379,8 +379,8 @@ const Attendant: React.FC = () => {
     }
   };
 
-  const callNextCustomer = async () => {
-    if (waitingQueue.length === 0) {
+  const callNextCustomer = async (selectedCustomer?: any) => {
+    if (!selectedCustomer && waitingQueue.length === 0) {
       toast({
         title: "Fila vazia",
         description: "Não há cidadãos aguardando atendimento",
@@ -392,7 +392,7 @@ const Attendant: React.FC = () => {
     setLoading(true);
     
     try {
-      const nextCustomer = waitingQueue[0];
+      const nextCustomer = selectedCustomer ?? waitingQueue[0];
       
       // Primeiro, chamar o cliente
       const { error: callError } = await supabase
@@ -870,7 +870,7 @@ const Attendant: React.FC = () => {
                     Chame o próximo cidadão da fila para iniciar o atendimento
                   </p>
                   <Button 
-                    onClick={callNextCustomer}
+                    onClick={() => callNextCustomer()}
                     disabled={loading || waitingQueue.length === 0}
                     size="lg"
                   >
@@ -940,6 +940,18 @@ const Attendant: React.FC = () => {
                           <p className="text-xs text-muted-foreground">
                             Tempo estimado: {customer.services?.estimated_time} min
                           </p>
+                          {!currentCustomer && (
+                            <Button
+                              size="sm"
+                              variant={index === 0 ? "default" : "outline"}
+                              className="mt-2"
+                              disabled={loading}
+                              onClick={() => callNextCustomer(customer)}
+                            >
+                              <Phone className="h-3 w-3 mr-1" />
+                              Chamar
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -950,7 +962,7 @@ const Attendant: React.FC = () => {
               {!currentCustomer && waitingQueue.length > 0 && (
                 <div className="pt-4 border-t">
                   <Button 
-                    onClick={callNextCustomer}
+                    onClick={() => callNextCustomer()}
                     disabled={loading}
                     className="w-full"
                     size="lg"
