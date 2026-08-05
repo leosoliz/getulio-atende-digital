@@ -379,8 +379,8 @@ const Attendant: React.FC = () => {
     }
   };
 
-  const callNextCustomer = async () => {
-    if (waitingQueue.length === 0) {
+  const callNextCustomer = async (selectedCustomer?: any) => {
+    if (!selectedCustomer && waitingQueue.length === 0) {
       toast({
         title: "Fila vazia",
         description: "Não há cidadãos aguardando atendimento",
@@ -392,7 +392,7 @@ const Attendant: React.FC = () => {
     setLoading(true);
     
     try {
-      const nextCustomer = waitingQueue[0];
+      const nextCustomer = selectedCustomer ?? waitingQueue[0];
       
       // Primeiro, chamar o cliente
       const { error: callError } = await supabase
