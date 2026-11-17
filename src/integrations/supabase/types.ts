@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.3"
   }
   public: {
     Tables: {
@@ -212,6 +212,33 @@ export type Database = {
           updated_at?: string
           window_days?: number
           window_hours?: number
+        }
+        Relationships: []
+      }
+      goes_rain_samples: {
+        Row: {
+          created_at: string
+          id: number
+          observed_at: string
+          pixels_valid: number | null
+          point_key: string
+          rain_mm_h: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          observed_at: string
+          pixels_valid?: number | null
+          point_key: string
+          rain_mm_h: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          observed_at?: string
+          pixels_valid?: number | null
+          point_key?: string
+          rain_mm_h?: number
         }
         Relationships: []
       }
@@ -742,6 +769,42 @@ export type Database = {
         }
         Relationships: []
       }
+      river_model_state: {
+        Row: {
+          covariance: Json
+          gain_cm_per_mm: number
+          last_assimilated_at: string | null
+          level_m: number | null
+          n_assimilated: number
+          recent_mae_m: number | null
+          recession_per_hour: number
+          river_key: string
+          updated_at: string
+        }
+        Insert: {
+          covariance?: Json
+          gain_cm_per_mm: number
+          last_assimilated_at?: string | null
+          level_m?: number | null
+          n_assimilated?: number
+          recent_mae_m?: number | null
+          recession_per_hour: number
+          river_key: string
+          updated_at?: string
+        }
+        Update: {
+          covariance?: Json
+          gain_cm_per_mm?: number
+          last_assimilated_at?: string | null
+          level_m?: number | null
+          n_assimilated?: number
+          recent_mae_m?: number | null
+          recession_per_hour?: number
+          river_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       satisfaction_surveys: {
         Row: {
           attendant_id: string
@@ -935,6 +998,252 @@ export type Database = {
           phone?: string | null
           risk_level?: string | null
           shelter_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      solicitacoes_ajuda: {
+        Row: {
+          bairro: string
+          created_at: string
+          descricao: string
+          encaminhado: boolean
+          encaminhado_erro: string | null
+          endereco: string
+          foto: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          nome_solicitante: string
+          origem_ref: string | null
+          referencia: string | null
+          status: string
+          telefone: string
+        }
+        Insert: {
+          bairro: string
+          created_at?: string
+          descricao: string
+          encaminhado?: boolean
+          encaminhado_erro?: string | null
+          endereco: string
+          foto?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nome_solicitante: string
+          origem_ref?: string | null
+          referencia?: string | null
+          status?: string
+          telefone: string
+        }
+        Update: {
+          bairro?: string
+          created_at?: string
+          descricao?: string
+          encaminhado?: boolean
+          encaminhado_erro?: string | null
+          endereco?: string
+          foto?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nome_solicitante?: string
+          origem_ref?: string | null
+          referencia?: string | null
+          status?: string
+          telefone?: string
+        }
+        Relationships: []
+      }
+      station_daily: {
+        Row: {
+          day: string
+          is_rainy: boolean
+          rain_12h_max: number | null
+          rain_12h_max_at: string | null
+          rain_168h_max: number | null
+          rain_168h_max_at: string | null
+          rain_24h_max: number | null
+          rain_24h_max_at: string | null
+          rain_48h_max: number | null
+          rain_48h_max_at: string | null
+          rain_6h_max: number | null
+          rain_6h_max_at: string | null
+          rain_total: number
+          river_avg: number | null
+          river_last: number | null
+          river_max: number | null
+          river_max_at: string | null
+          river_min: number | null
+          sta_code: string | null
+          sta_name: string
+          updated_at: string
+        }
+        Insert: {
+          day: string
+          is_rainy?: boolean
+          rain_12h_max?: number | null
+          rain_12h_max_at?: string | null
+          rain_168h_max?: number | null
+          rain_168h_max_at?: string | null
+          rain_24h_max?: number | null
+          rain_24h_max_at?: string | null
+          rain_48h_max?: number | null
+          rain_48h_max_at?: string | null
+          rain_6h_max?: number | null
+          rain_6h_max_at?: string | null
+          rain_total?: number
+          river_avg?: number | null
+          river_last?: number | null
+          river_max?: number | null
+          river_max_at?: string | null
+          river_min?: number | null
+          sta_code?: string | null
+          sta_name: string
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          is_rainy?: boolean
+          rain_12h_max?: number | null
+          rain_12h_max_at?: string | null
+          rain_168h_max?: number | null
+          rain_168h_max_at?: string | null
+          rain_24h_max?: number | null
+          rain_24h_max_at?: string | null
+          rain_48h_max?: number | null
+          rain_48h_max_at?: string | null
+          rain_6h_max?: number | null
+          rain_6h_max_at?: string | null
+          rain_total?: number
+          river_avg?: number | null
+          river_last?: number | null
+          river_max?: number | null
+          river_max_at?: string | null
+          river_min?: number | null
+          sta_code?: string | null
+          sta_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      station_hourly: {
+        Row: {
+          hour_ts: string
+          rain_12h_max: number | null
+          rain_168h_max: number | null
+          rain_1h_snap: number | null
+          rain_24h_max: number | null
+          rain_48h_max: number | null
+          rain_6h_max: number | null
+          river_avg: number | null
+          river_last: number | null
+          river_max: number | null
+          river_min: number | null
+          samples: number
+          sta_code: string | null
+          sta_name: string
+          updated_at: string
+        }
+        Insert: {
+          hour_ts: string
+          rain_12h_max?: number | null
+          rain_168h_max?: number | null
+          rain_1h_snap?: number | null
+          rain_24h_max?: number | null
+          rain_48h_max?: number | null
+          rain_6h_max?: number | null
+          river_avg?: number | null
+          river_last?: number | null
+          river_max?: number | null
+          river_min?: number | null
+          samples?: number
+          sta_code?: string | null
+          sta_name: string
+          updated_at?: string
+        }
+        Update: {
+          hour_ts?: string
+          rain_12h_max?: number | null
+          rain_168h_max?: number | null
+          rain_1h_snap?: number | null
+          rain_24h_max?: number | null
+          rain_48h_max?: number | null
+          rain_6h_max?: number | null
+          river_avg?: number | null
+          river_last?: number | null
+          river_max?: number | null
+          river_min?: number | null
+          samples?: number
+          sta_code?: string | null
+          sta_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      station_monthly: {
+        Row: {
+          days_count: number
+          month: string
+          rain_12h_max: number | null
+          rain_12h_max_at: string | null
+          rain_168h_max: number | null
+          rain_168h_max_at: string | null
+          rain_24h_max: number | null
+          rain_24h_max_at: string | null
+          rain_48h_max: number | null
+          rain_48h_max_at: string | null
+          rain_6h_max: number | null
+          rain_6h_max_at: string | null
+          rain_total: number
+          rainy_days: number
+          river_max: number | null
+          river_max_at: string | null
+          sta_code: string | null
+          sta_name: string
+          updated_at: string
+        }
+        Insert: {
+          days_count?: number
+          month: string
+          rain_12h_max?: number | null
+          rain_12h_max_at?: string | null
+          rain_168h_max?: number | null
+          rain_168h_max_at?: string | null
+          rain_24h_max?: number | null
+          rain_24h_max_at?: string | null
+          rain_48h_max?: number | null
+          rain_48h_max_at?: string | null
+          rain_6h_max?: number | null
+          rain_6h_max_at?: string | null
+          rain_total?: number
+          rainy_days?: number
+          river_max?: number | null
+          river_max_at?: string | null
+          sta_code?: string | null
+          sta_name: string
+          updated_at?: string
+        }
+        Update: {
+          days_count?: number
+          month?: string
+          rain_12h_max?: number | null
+          rain_12h_max_at?: string | null
+          rain_168h_max?: number | null
+          rain_168h_max_at?: string | null
+          rain_24h_max?: number | null
+          rain_24h_max_at?: string | null
+          rain_48h_max?: number | null
+          rain_48h_max_at?: string | null
+          rain_6h_max?: number | null
+          rain_6h_max_at?: string | null
+          rain_total?: number
+          rainy_days?: number
+          river_max?: number | null
+          river_max_at?: string | null
+          sta_code?: string | null
+          sta_name?: string
           updated_at?: string
         }
         Relationships: []
@@ -1609,6 +1918,10 @@ export type Database = {
           user_type: string
         }[]
       }
+      refresh_station_rollups: {
+        Args: { p_since: string; p_until?: string }
+        Returns: undefined
+      }
       register_time_record: {
         Args: { p_location?: Json; p_notes?: string; p_user_id: string }
         Returns: Json
@@ -1631,12 +1944,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1660,11 +1973,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1685,11 +1998,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1710,11 +2023,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1727,11 +2040,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
